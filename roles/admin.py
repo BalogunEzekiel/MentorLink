@@ -2,11 +2,21 @@
 import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime
+from auth import register_user
 
 def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard features will go here: manage users, matches, and sessions.")
 
+    st.subheader("📝 Register New User")
+    with st.form("register_user"):
+        email = st.text_input("User Email")
+        role = st.selectbox("Assign Role", ["Mentor", "Mentee"])
+        submitted = st.form_submit_button("Create")
+
+        if submitted:
+            message = register_user(email, role)
+            st.success(message)
 
     st.header("👥 All Users")
     users = supabase.table("users").select("*").execute().data
