@@ -53,4 +53,3 @@ def show():
                 st.success("Email sent successfully!")
             else:
                 st.error("Failed to send email.")
-"""
