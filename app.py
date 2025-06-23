@@ -3,7 +3,7 @@ import streamlit as st
 from auth import login, logout, register, get_user_role
 from roles import admin, mentor, mentee
 
-st.set_page_config(page_title="Mentorship Platform", layout="wide")
+st.set_page_config(page_title="MentorLink", layout="wide")
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
