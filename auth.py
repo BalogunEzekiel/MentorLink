@@ -28,7 +28,7 @@ def login():
                 st.session_state.user = user
                 st.session_state.role = user["role"]
                 st.success(f"Welcome, {user['email']}!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Incorrect password.")
         else:
