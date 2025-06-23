@@ -5,18 +5,14 @@ from roles import admin, mentor, mentee
 
 st.set_page_config(page_title="MentorLink", layout="wide")
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-
-if not st.session_state.authenticated:
-    action = st.sidebar.radio("Choose", ["Login", "Register"])
-    if action == "Login":
-        login()
-    else:
-        register()
+if not st.session_state.get("authenticated", False):
+    login()
+elif st.session_state.get("force_change_password", False):
+    change_password()
 else:
-    role = get_user_role()
+    role = st.session_state.get("role")
     st.sidebar.button("Logout", on_click=logout)
+
     if role == "Admin":
         admin.show()
     elif role == "Mentor":
