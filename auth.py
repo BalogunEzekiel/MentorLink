@@ -56,9 +56,9 @@ def register():
             st.error(f"Error: {e}")
 
 def logout():
-    st.session_state.clear()
-    st.success("Logged out.")
-    st.rerun()
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.session_state["do_rerun"] = True  # ✅ Set a rerun flag
 
 def get_user_role():
     return st.session_state.get("role", None)
