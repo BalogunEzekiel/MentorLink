@@ -58,7 +58,7 @@ def register():
 def logout():
     st.session_state.clear()
     st.success("Logged out.")
-    st.experimental_rerun()
+    st.rerun()
 
 def get_user_role():
     return st.session_state.get("role", None)
