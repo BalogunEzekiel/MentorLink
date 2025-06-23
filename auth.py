@@ -7,6 +7,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# One-time setup: Create Admin if not exists
+def setup_admin_account():
+    admin_email = "admin@theincubatorhub.com"
+    admin_password = "Admin@123"  # 🔒 Replace or hash externally for security
+    admin_role = "Admin"
+
+    # Check if admin already exists
+    result = supabase.table("users").select("*").eq("email", admin_email).execute()
+    if result.data:
+        return  # Admin already exists, no action needed
+
+    # Create admin account
+    import bcrypt
+    hashed_pw = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
+
+    supabase.table("users").insert({
+        "email": admin_email,
+        "password": hashed_pw,
+        "role": admin_role
+    }).execute()
+    print("✅ Admin account created.")
+
+setup_admin_account()
+
 # Initialize Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
