@@ -23,3 +23,7 @@ else:
         mentor.show()
     elif role == "Mentee":
         mentee.show()
+
+if st.session_state.get("do_rerun"):
+    del st.session_state["do_rerun"]  # clean up
+    st.rerun()
