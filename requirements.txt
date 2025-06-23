@@ -1,6 +1,7 @@
-
 streamlit
 supabase
 python-dotenv
 bcrypt
 email-validator
+plotly
+pandas
