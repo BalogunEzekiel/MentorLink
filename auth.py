@@ -40,10 +40,12 @@ def login():
     st.title("Login")
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
+
     if st.button("Login"):
         if not email or not password:
             st.warning("Please enter both email and password.")
             return
+
         result = supabase.table("users").select("*").eq("email", email).execute()
         if result.data:
             user = result.data[0]
@@ -51,8 +53,13 @@ def login():
                 st.session_state.authenticated = True
                 st.session_state.user = user
                 st.session_state.role = user["role"]
-                st.success(f"Welcome, {user['email']}!")
-                st.rerun()
+
+                if user["role"] != "Admin" and user.get("must_change_password", False):
+                    st.session_state.force_change_password = True
+                    st.experimental_rerun() if hasattr(st, "experimental_rerun") else st.rerun()
+                else:
+                    st.success(f"Welcome, {user['email']}!")
+                    st.experimental_rerun() if hasattr(st, "experimental_rerun") else st.rerun()
             else:
                 st.error("Incorrect password.")
         else:
@@ -86,3 +93,49 @@ def logout():
 
 def get_user_role():
     return st.session_state.get("role", None)
+
+def register_user(email, role):
+    # Check if user already exists
+    result = supabase.table("users").select("*").eq("email", email).execute()
+    if result.data:
+        return "User already exists."
+
+    default_password = "default-1234"
+    hashed_pw = bcrypt.hashpw(default_password.encode(), bcrypt.gensalt()).decode()
+
+    user_data = {
+        "email": email,
+        "password": hashed_pw,
+        "role": role,
+        "must_change_password": True  # 👈 flag for first login
+    }
+
+    try:
+        supabase.table("users").insert(user_data).execute()
+        return f"{role} user '{email}' created successfully with default password."
+    except Exception:
+        return "Error creating user."
+
+def change_password():
+    st.title("Change Your Password")
+
+    new_password = st.text_input("New Password", type="password")
+    confirm_password = st.text_input("Confirm Password", type="password")
+
+    if st.button("Update Password"):
+        if new_password != confirm_password:
+            st.warning("Passwords do not match.")
+            return
+        if len(new_password) < 6:
+            st.warning("Password must be at least 6 characters.")
+            return
+
+        hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+        supabase.table("users").update({
+            "password": hashed_pw,
+            "must_change_password": False
+        }).eq("email", st.session_state.user["email"]).execute()
+
+        st.success("Password updated. Please log in again.")
+        st.session_state.clear()
+        st.rerun()
