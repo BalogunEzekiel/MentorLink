@@ -31,6 +31,7 @@ def setup_admin_account():
 
     try:
         supabase.table("users").insert({
+            # Optional: You can omit this if Supabase uses default UUID
             "userid": str(uuid.uuid4()),
             "email": admin_email,
             "password": hashed_pw,
@@ -38,10 +39,10 @@ def setup_admin_account():
             "must_change_password": False,
             "profile_completed": True
         }).execute()
-       print("✅ Admin account created.")
+        print("✅ Admin account created.")
     except Exception as e:
         print("🔥 Failed to insert admin account:")
-        print(e)  # ← this will reveal the actual cause in the Streamlit logs
+        print(e)
 
 setup_admin_account()
 
