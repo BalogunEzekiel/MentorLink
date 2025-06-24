@@ -31,7 +31,7 @@ def setup_admin_account():
 
     try:
         supabase.table("users").insert({
-            "userid": str(uuid.uuid4()),  -- optional if Supabase handles it automatically
+            "userid": str(uuid.uuid4()),
             "email": admin_email,
             "password": hashed_pw,
             "role": admin_role,
