@@ -22,6 +22,7 @@ def setup_admin_account():
     admin_role = "Admin"
 
     result = supabase.table("users").select("*").eq("email", admin_email).execute()
+    print("Admin lookup result:", result.data)
     if result.data:
         return  # Admin already exists
 
