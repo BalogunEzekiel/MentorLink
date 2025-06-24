@@ -5,10 +5,14 @@ from roles import admin, mentor, mentee
 
 st.set_page_config(page_title="MentorLink", layout="wide")
 
+from auth import login, logout, change_password, profile_form
+
 if not st.session_state.get("authenticated", False):
     login()
 elif st.session_state.get("force_change_password", False):
     change_password()
+elif st.session_state.get("force_profile_update", False):
+    profile_form()
 else:
     role = st.session_state.get("role")
     st.sidebar.button("Logout", on_click=logout)
