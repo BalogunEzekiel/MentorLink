@@ -4,6 +4,7 @@ from supabase import create_client, Client
 import bcrypt
 import os
 from dotenv import load_dotenv
+import uuid
 
 load_dotenv()
 
