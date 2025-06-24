@@ -29,7 +29,7 @@ def show():
 
     for user in users:
         with st.expander(f"📧 {user['email']}"):
-            st.write(f"**ID:** {user['id']}")
+            st.write(f"**ID:** {user['userid']}")
             st.write(f"**Role:** {user['role']}")
             st.write(f"**Must Change Password:** {user.get('must_change_password')}")
             st.write(f"**Profile Completed:** {user.get('profile_completed')}")
