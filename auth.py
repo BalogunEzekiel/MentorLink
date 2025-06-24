@@ -54,12 +54,16 @@ def login():
                 st.session_state.user = user
                 st.session_state.role = user["role"]
 
-                if user["role"] != "Admin" and user.get("must_change_password", False):
-                    st.session_state.force_change_password = True
-                    st.experimental_rerun() if hasattr(st, "experimental_rerun") else st.rerun()
-                else:
-                    st.success(f"Welcome, {user['email']}!")
-                    st.experimental_rerun() if hasattr(st, "experimental_rerun") else st.rerun()
+                if user["role"] != "Admin":
+                    if user.get("must_change_password", False):
+                        st.session_state.force_change_password = True
+                    else:
+                        # Check if profile exists
+                        profile = supabase.table("profile").select("*").eq("userid", user["userid"]).execute()
+                        if not profile.data:
+                            st.session_state.force_profile_update = True
+
+                st.rerun()
             else:
                 st.error("Incorrect password.")
         else:
@@ -138,4 +142,33 @@ def change_password():
 
         st.success("Password updated. Please log in again.")
         st.session_state.clear()
+        st.rerun()
+
+def profile_form():
+    st.title("🧑‍💼 Complete Your Profile")
+
+    name = st.text_input("Full Name")
+    bio = st.text_area("Bio", max_chars=500)
+    skills = st.text_input("Skills (comma-separated)")
+    goals = st.text_area("Your Goals")
+
+    if st.button("Submit Profile"):
+        if not name or not bio or not skills or not goals:
+            st.warning("All fields are required.")
+            return
+
+        supabase.table("profile").insert({
+            "userid": st.session_state.user["userid"],
+            "name": name,
+            "bio": bio,
+            "skills": skills,
+            "goals": goals
+        }).execute()
+
+        # Optional: update profile_completed flag in users table
+        supabase.table("users").update({"profile_completed": True}) \
+            .eq("id", st.session_state.user["userid"]).execute()
+
+        del st.session_state["force_profile_update"]
+        st.success("Profile submitted.")
         st.rerun()
