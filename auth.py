@@ -12,8 +12,11 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+DEFAULT_PASSWORD = "changeme123"  # 🔐 Admin's assigned default
+
 def login():
     st.title("Login")
+
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
@@ -22,29 +25,32 @@ def login():
             st.warning("Please enter both email and password.")
             return
 
+        # ✅ Step 1: Check if user exists
         result = supabase.table("users").select("*").eq("email", email).execute()
-        if result.data:
-            user = result.data[0]
-            if bcrypt.checkpw(password.encode(), user["password"].encode()):
-                st.session_state.authenticated = True
-                st.session_state.user = user
-                st.session_state.role = user["role"]
+        users = result.data
 
-                if user["role"] != "Admin":
-                    if user.get("must_change_password", False):
-                        st.session_state.force_change_password = True
-                    else:
-                        # Check if profile exists
-                        profile = supabase.table("profile").select("*").eq("userid", user["userid"]).execute()
-                        if not profile.data:
-                            st.session_state.force_profile_update = True
+        if not users:
+            st.error("You must be registered by an admin before logging in.")
+            return
 
-                st.rerun()
-            else:
-                st.error("Incorrect password.")
+        user = users[0]
+
+        # ✅ Step 2: Check if password matches the default or updated password
+        if password == DEFAULT_PASSWORD or password == user.get("password"):
+            st.session_state.authenticated = True
+            st.session_state.user = user
+            st.session_state.role = user.get("role")
+
+            if user.get("must_change_password"):
+                st.session_state.force_change_password = True
+            elif not user.get("profile_completed"):
+                st.session_state.force_profile_update = True
+
+            st.success(f"Welcome {user.get('email')}!")
+            st.rerun()
         else:
-            st.error("User not found.")
-
+            st.error("Invalid password.")
+            
 # One-time setup: Create Admin if not exists
 def setup_admin_account():
     admin_email = "admin@theincubatorhub.com"
