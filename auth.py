@@ -40,7 +40,7 @@ setup_admin_account()
 def login():
     st.title("Login")
 
-    email = st.text_input("Email")
+    email = st.text_input("Email").strip().lower()
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
@@ -48,8 +48,13 @@ def login():
             st.warning("Please enter both email and password.")
             return
 
-        result = supabase.table("users").select("*").eq("email", email).execute()
-        users = result.data
+        try:
+            result = supabase.table("users").select("*").eq("email", email).execute()
+            users = result.data
+        except Exception as e:
+            st.error("An error occurred while connecting to the database.")
+            st.exception(e)
+            return
 
         if not users:
             st.error("You must be registered by an admin before logging in.")
@@ -63,16 +68,21 @@ def login():
             st.session_state.user = user
             st.session_state.role = user.get("role")
 
-            if user.get("must_change_password"):
-                st.session_state.force_change_password = True
-            elif not user.get("profile_completed"):
-                st.session_state.force_profile_update = True
+            role = user.get("role", "")
+            if role == "Admin":
+                # 🔐 Skip password change and profile setup
+                st.success("Welcome Admin! Redirecting to dashboard...")
+            else:
+                # 🔁 Enforce setup for mentors/mentees
+                if user.get("must_change_password"):
+                    st.session_state.force_change_password = True
+                elif not user.get("profile_completed"):
+                    st.session_state.force_profile_update = True
 
-            st.success(f"Welcome {user.get('email')}!")
             st.rerun()
         else:
-            st.error("Invalid password.")          
-
+            st.error("Invalid password.")
+        
 def logout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
