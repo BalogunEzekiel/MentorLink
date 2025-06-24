@@ -27,3 +27,6 @@ else:
 if st.session_state.get("do_rerun"):
     del st.session_state["do_rerun"]  # clean up
     st.rerun()
+
+import sys
+st.write("Python Path:", sys.path)
