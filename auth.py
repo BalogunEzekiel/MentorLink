@@ -14,6 +14,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 DEFAULT_PASSWORD = "default@1234"  # 🔐 Admin's assigned default
 
+setup_admin_account()
+
 def login():
     st.title("Login")
 
@@ -25,7 +27,6 @@ def login():
             st.warning("Please enter both email and password.")
             return
 
-        # ✅ Step 1: Check if user exists
         result = supabase.table("users").select("*").eq("email", email).execute()
         users = result.data
 
@@ -34,9 +35,9 @@ def login():
             return
 
         user = users[0]
+        stored_hashed = user.get("password")
 
-        # ✅ Step 2: Check if password matches the default or updated password
-        if password == DEFAULT_PASSWORD or password == user.get("password"):
+        if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
             st.session_state.authenticated = True
             st.session_state.user = user
             st.session_state.role = user.get("role")
@@ -54,26 +55,24 @@ def login():
 # One-time setup: Create Admin if not exists
 def setup_admin_account():
     admin_email = "admin@theincubatorhub.com"
-    admin_password = "Admin@123"  # 🔒 Replace or hash externally for security
+    admin_password = "Admin@123"
     admin_role = "Admin"
 
-    # Check if admin already exists
     result = supabase.table("users").select("*").eq("email", admin_email).execute()
     if result.data:
-        return  # Admin already exists, no action needed
+        return  # Admin already exists
 
-    # Create admin account
-    import bcrypt
-    hashed_pw = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
+    hashed_pw = bcrypt.hashpw(admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
     supabase.table("users").insert({
         "email": admin_email,
         "password": hashed_pw,
-        "role": admin_role
+        "role": admin_role,
+        "must_change_password": False,
+        "profile_completed": True
     }).execute()
-    print("✅ Admin account created.")
 
-setup_admin_account()
+    print("✅ Admin account created.")
 
 def logout():
     for key in list(st.session_state.keys()):
@@ -84,49 +83,25 @@ def get_user_role():
     return st.session_state.get("role", None)
 
 def register_user(email, role):
-    existing = supabase.table("users").select("*").eq("email", email).execute()
-    if existing.data:
-        return "User already exists."
+    default_password = "changeme123"
+    hashed_pw = bcrypt.hashpw(default_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    default_password = "default-1234"
-    hashed_pw = bcrypt.hashpw(default_password.encode(), bcrypt.gensalt()).decode()
+    result = supabase.table("users").select("*").eq("email", email).execute()
+    if result.data:
+        return f"User with email {email} already exists."
 
-    user_data = {
+    supabase.table("users").insert({
         "email": email,
         "password": hashed_pw,
         "role": role,
-        "must_change_password": True
-    }
+        "must_change_password": True,
+        "profile_completed": False
+    }).execute()
 
-    try:
-        supabase.table("users").insert(user_data).execute()
-        return f"{role} user '{email}' created successfully with default password."
-    except Exception:
-        return "Failed to create user."
+    from mailer import send_welcome_email
+    send_welcome_email(email, default_password)
 
-def change_password():
-    st.title("Change Your Password")
-
-    new_password = st.text_input("New Password", type="password")
-    confirm_password = st.text_input("Confirm Password", type="password")
-
-    if st.button("Update Password"):
-        if new_password != confirm_password:
-            st.warning("Passwords do not match.")
-            return
-        if len(new_password) < 6:
-            st.warning("Password must be at least 6 characters.")
-            return
-
-        hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-        supabase.table("users").update({
-            "password": hashed_pw,
-            "must_change_password": False
-        }).eq("email", st.session_state.user["email"]).execute()
-
-        st.success("Password updated. Please log in again.")
-        st.session_state.clear()
-        st.rerun()
+    return f"User {email} registered and notified via email."
 
 def profile_form():
     st.title("🧑‍💼 Complete Your Profile")
