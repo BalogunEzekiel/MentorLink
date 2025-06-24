@@ -25,15 +25,19 @@ def show():
 
     # All users
     st.header("👥 All Users")
-    users = supabase.table("users").select("*").execute().data
+    try:
+        users = supabase.table("users").select("*").execute().data
+    except Exception as e:
+        st.error(f"Failed to load users: {e}")
+        users = []
 
     for user in users:
-        with st.expander(f"📧 {user['email']}"):
-            st.write(f"**ID:** {user['userid']}")
-            st.write(f"**Role:** {user['role']}")
-            st.write(f"**Must Change Password:** {user.get('must_change_password')}")
-            st.write(f"**Profile Completed:** {user.get('profile_completed')}")
-            st.write(f"**Created At:** {user.get('created_at')}")
+        with st.expander(f"📧 {user.get('email', 'No Email')}"):
+            st.write(f"**ID:** {user.get('userid')}")
+            st.write(f"**Role:** {user.get('role')}")
+            st.write(f"**Must Change Password:** {user.get('must_change_password', '-')}")
+            st.write(f"**Profile Completed:** {user.get('profile_completed', '-')}")
+            st.write(f"**Created At:** {user.get('created_at', '-')}")
 
             confirm_key = f"confirm_delete_{user['userid']}"
             delete_key = f"delete_{user['userid']}"
@@ -42,39 +46,56 @@ def show():
 
             if confirm:
                 if st.button("❌ Confirm Delete User", key=delete_key):
-                    supabase.table("users").delete().eq("id", user["userid"]).execute()
-                    st.success(f"User {user['email']} deleted.")
-                    st.rerun()
+                    try:
+                        supabase.table("users").delete().eq("userid", user["userid"]).execute()
+                        st.success(f"User {user['email']} deleted.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Deletion failed: {e}")
             else:
                 st.info("Check the box to confirm deletion.")
 
     # Mentorship requests
     st.header("🔁 Mentorship Requests")
-    requests = supabase.table("mentorshiprequest") \
-        .select("*, users!mentorshiprequest_menteeid_fkey(email), users!mentorshiprequest_mentorid_fkey(email)") \
-        .execute().data
+    try:
+        requests = supabase.table("mentorshiprequest") \
+            .select("""
+                *,
+                mentee:users!mentorshiprequest_menteeid_fkey(email),
+                mentor:users!mentorshiprequest_mentorid_fkey(email)
+            """).execute().data
+    except Exception as e:
+        st.error(f"Could not fetch mentorship requests: {e}")
+        requests = []
 
     if requests:
         for req in requests:
             st.markdown(f"""
-            - Mentee: **{req['users']['email']}**
-            - Mentor ID: **{req['mentorid']}**
-            - Status: **{req['status']}**
+            - Mentee: **{req['mentee']['email']}**
+            - Mentor: **{req['mentor']['email']}**
+            - Status: **{req.get('status', 'Unknown')}**
             """)
     else:
         st.info("No mentorship requests found.")
 
     # All sessions
     st.header("📆 All Sessions")
-    sessions = supabase.table("session") \
-        .select("*, users!session_menteeid_fkey(email), users!session_mentorid_fkey(email)") \
-        .execute().data
+    try:
+        sessions = supabase.table("session") \
+            .select("""
+                *,
+                mentee:users!session_menteeid_fkey(email),
+                mentor:users!session_mentorid_fkey(email)
+            """).execute().data
+    except Exception as e:
+        st.error(f"Could not fetch sessions: {e}")
+        sessions = []
 
     if sessions:
         for s in sessions:
             st.markdown(f"""
-            - Mentor: **{s['users']['email']}**
-            - Mentee ID: **{s['menteeid']}**
+            - Mentor: **{s['mentor']['email']}**
+            - Mentee: **{s['mentee']['email']}**
             - Date: {format_datetime(s['date'])}
             - Rating: {s.get('rating', '-')}
             """)
