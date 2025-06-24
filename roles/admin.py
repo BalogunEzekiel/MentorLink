@@ -4,7 +4,7 @@ from auth import register_user
 from utils import format_datetime
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # go up one level
+#sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # go up one level
 
 from datetime import datetime
 
