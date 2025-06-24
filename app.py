@@ -1,6 +1,6 @@
 
 import streamlit as st
-from auth import login, logout, register, get_user_role
+from auth import login, logout, register_user, get_user_role
 from roles import admin, mentor, mentee
 
 st.set_page_config(page_title="MentorLink", layout="wide")
