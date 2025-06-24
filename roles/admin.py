@@ -36,13 +36,13 @@ def show():
             st.write(f"**Created At:** {user.get('created_at')}")
 
             confirm_key = f"confirm_delete_{user['userid']}"
-            delete_key = f"delete_{user['id']}"
+            delete_key = f"delete_{user['userid']}"
 
             confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
 
             if confirm:
                 if st.button("❌ Confirm Delete User", key=delete_key):
-                    supabase.table("users").delete().eq("id", user["id"]).execute()
+                    supabase.table("users").delete().eq("id", user["userid"]).execute()
                     st.success(f"User {user['email']} deleted.")
                     st.rerun()
             else:
