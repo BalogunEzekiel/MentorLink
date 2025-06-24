@@ -135,17 +135,23 @@ def profile_form():
             st.warning("All fields are required.")
             return
 
+        userid = st.session_state.user.get("userid")
+
+        if not userid:
+            st.error("User ID not found in session.")
+            return
+
         supabase.table("profile").insert({
-            "userid": st.session_state.user["userid"],
+            "userid": userid,
             "name": name,
             "bio": bio,
             "skills": skills,
             "goals": goals
         }).execute()
 
-        # Optional: update profile_completed flag in users table
+        # ✅ Update the correct column in the users table
         supabase.table("users").update({"profile_completed": True}) \
-            .eq("id", st.session_state.user["userid"]).execute()
+            .eq("userid", userid).execute()
 
         del st.session_state["force_profile_update"]
         st.success("Profile submitted.")
