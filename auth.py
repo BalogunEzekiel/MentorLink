@@ -141,13 +141,18 @@ def profile_form():
             st.error("User ID not found in session.")
             return
 
-        supabase.table("profile").insert({
-            "userid": userid,
-            "name": name,
-            "bio": bio,
-            "skills": skills,
-            "goals": goals
-        }).execute()
+        try:
+            response = supabase.table("profile").insert({
+                "userid": userid,
+                "name": name,
+                "bio": bio,
+                "skills": skills,
+                "goals": goals
+            }).execute()
+            st.success("Profile submitted.")
+        except Exception as e:
+            st.error("Error submitting profile.")
+            st.exception(e)
 
         # ✅ Update the correct column in the users table
         supabase.table("users").update({"profile_completed": True}) \
