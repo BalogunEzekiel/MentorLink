@@ -23,11 +23,11 @@ def show():
             if col1.button("Accept", key=f"accept_{req['mentorshiprequestid']}"):
                 supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                 st.success(f"Accepted request from {mentee_email}")
-                st.experimental_rerun()
+                st.rerun()
             if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                 supabase.table("mentorshiprequest").update({"status": "REJECTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                 st.warning(f"Rejected request from {mentee_email}")
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.info("No pending requests.")
 
