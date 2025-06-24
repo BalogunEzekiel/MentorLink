@@ -1,8 +1,7 @@
-# Admin dashboard view logic
 import streamlit as st
 from database import supabase
-from utils.helpers import format_datetime
 from auth import register_user
+from utils import format_datetime  # assuming you have a datetime formatter
 
 def show():
     st.title("Admin Dashboard")
@@ -24,22 +23,26 @@ def show():
     st.header("👥 All Users")
     users = supabase.table("users").select("*").execute().data
 
-    if users:
-        for user in users:
-            with st.expander(f"📧 {user['email']}"):
-                st.write(f"**ID:** {user['id']}")
-                st.write(f"**Role:** {user['role']}")
-                st.write(f"**Must Change Password:** {user.get('must_change_password')}")
-                st.write(f"**Profile Completed:** {user.get('profile_completed')}")
-                st.write(f"**Created At:** {user.get('created_at')}")
+for user in users:
+    with st.expander(f"📧 {user['email']}"):
+        st.write(f"**ID:** {user['id']}")
+        st.write(f"**Role:** {user['role']}")
+        st.write(f"**Must Change Password:** {user.get('must_change_password')}")
+        st.write(f"**Profile Completed:** {user.get('profile_completed')}")
+        st.write(f"**Created At:** {user.get('created_at')}")
 
-                delete_key = f"delete_{user['id']}"
-                if st.button("❌ Delete User", key=delete_key):
-                    supabase.table("users").delete().eq("id", user["id"]).execute()
-                    st.success(f"User {user['email']} deleted.")
-                    st.rerun()
-    else:
-        st.info("No users found.")
+        confirm_key = f"confirm_delete_{user['id']}"
+        delete_key = f"delete_{user['id']}"
+
+        confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
+
+        if confirm:
+            if st.button("❌ Confirm Delete User", key=delete_key):
+                supabase.table("users").delete().eq("id", user["id"]).execute()
+                st.success(f"User {user['email']} deleted.")
+                st.rerun()
+        else:
+            st.info("Check the box to confirm deletion.")
 
     # Mentorship requests
     st.header("🔁 Mentorship Requests")
