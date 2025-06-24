@@ -1,13 +1,12 @@
+import streamlit as st
 import sys
 import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Ensure the parent directory of 'roles/' is in the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from utils import format_datetime
-import streamlit as st
+from utils import format_datetime  # ✅ now works reliably
 from auth import login, logout, register_user, get_user_role, change_password, profile_form
 from roles import admin, mentor, mentee
+import streamlit as st
 
 st.set_page_config(page_title="MentorLink", layout="wide")
 
