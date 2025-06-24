@@ -35,7 +35,7 @@ def show():
             st.write(f"**Profile Completed:** {user.get('profile_completed')}")
             st.write(f"**Created At:** {user.get('created_at')}")
 
-            confirm_key = f"confirm_delete_{user['id']}"
+            confirm_key = f"confirm_delete_{user['userid']}"
             delete_key = f"delete_{user['id']}"
 
             confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
