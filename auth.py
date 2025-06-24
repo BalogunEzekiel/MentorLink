@@ -69,27 +69,6 @@ def login():
         else:
             st.error("User not found.")
 
-def register():
-    st.title("Register")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    role = st.selectbox("Role", ["Mentee", "Mentor"])
-    if st.button("Register"):
-        if not email or not password:
-            st.warning("Please provide an email and password.")
-            return
-        hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        try:
-            result = supabase.table("users").insert({
-                "email": email,
-                "password": hashed_pw,
-                "role": role
-            }).execute()
-            st.success("Registered successfully! You can now login.")
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
-
 def logout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
@@ -99,9 +78,8 @@ def get_user_role():
     return st.session_state.get("role", None)
 
 def register_user(email, role):
-    # Check if user already exists
-    result = supabase.table("users").select("*").eq("email", email).execute()
-    if result.data:
+    existing = supabase.table("users").select("*").eq("email", email).execute()
+    if existing.data:
         return "User already exists."
 
     default_password = "default-1234"
@@ -111,14 +89,14 @@ def register_user(email, role):
         "email": email,
         "password": hashed_pw,
         "role": role,
-        "must_change_password": True  # 👈 flag for first login
+        "must_change_password": True
     }
 
     try:
         supabase.table("users").insert(user_data).execute()
         return f"{role} user '{email}' created successfully with default password."
     except Exception:
-        return "Error creating user."
+        return "Failed to create user."
 
 def change_password():
     st.title("Change Your Password")
