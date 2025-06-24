@@ -2,24 +2,10 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils import format_datetime  ✅
-
 from utils import format_datetime
 import streamlit as st
 from database import supabase
 from auth import register_user
-from utils import format_datetime
-import sys
-import os
-#sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # go up one level
-
-from datetime import datetime
-
-def format_datetime(dt_str):
-    try:
-        return datetime.fromisoformat(dt_str).strftime("%Y-%m-%d %H:%M")
-    except Exception:
-        return dt_str
 
 def show():
     st.title("Admin Dashboard")
@@ -41,26 +27,26 @@ def show():
     st.header("👥 All Users")
     users = supabase.table("users").select("*").execute().data
 
-for user in users:
-    with st.expander(f"📧 {user['email']}"):
-        st.write(f"**ID:** {user['id']}")
-        st.write(f"**Role:** {user['role']}")
-        st.write(f"**Must Change Password:** {user.get('must_change_password')}")
-        st.write(f"**Profile Completed:** {user.get('profile_completed')}")
-        st.write(f"**Created At:** {user.get('created_at')}")
+    for user in users:
+        with st.expander(f"📧 {user['email']}"):
+            st.write(f"**ID:** {user['id']}")
+            st.write(f"**Role:** {user['role']}")
+            st.write(f"**Must Change Password:** {user.get('must_change_password')}")
+            st.write(f"**Profile Completed:** {user.get('profile_completed')}")
+            st.write(f"**Created At:** {user.get('created_at')}")
 
-        confirm_key = f"confirm_delete_{user['id']}"
-        delete_key = f"delete_{user['id']}"
+            confirm_key = f"confirm_delete_{user['id']}"
+            delete_key = f"delete_{user['id']}"
 
-        confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
+            confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
 
-        if confirm:
-            if st.button("❌ Confirm Delete User", key=delete_key):
-                supabase.table("users").delete().eq("id", user["id"]).execute()
-                st.success(f"User {user['email']} deleted.")
-                st.rerun()
-        else:
-            st.info("Check the box to confirm deletion.")
+            if confirm:
+                if st.button("❌ Confirm Delete User", key=delete_key):
+                    supabase.table("users").delete().eq("id", user["id"]).execute()
+                    st.success(f"User {user['email']} deleted.")
+                    st.rerun()
+            else:
+                st.info("Check the box to confirm deletion.")
 
     # Mentorship requests
     st.header("🔁 Mentorship Requests")
