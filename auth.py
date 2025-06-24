@@ -141,3 +141,29 @@ def profile_form():
         del st.session_state["force_profile_update"]
         st.success("Profile submitted.")
         st.rerun()
+
+def change_password():
+    st.title("🔐 Change Password")
+
+    new_password = st.text_input("Enter new password", type="password")
+    confirm_password = st.text_input("Confirm new password", type="password")
+
+    if st.button("Update Password"):
+        if not new_password or not confirm_password:
+            st.warning("Please fill in both fields.")
+            return
+        if new_password != confirm_password:
+            st.error("Passwords do not match.")
+            return
+
+        hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        userid = st.session_state.user.get("userid")
+
+        supabase.table("users").update({
+            "password": hashed_pw,
+            "must_change_password": False
+        }).eq("userid", userid).execute()
+
+        del st.session_state["force_change_password"]
+        st.success("Password updated successfully.")
+        st.rerun()
