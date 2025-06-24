@@ -26,15 +26,19 @@ def setup_admin_account():
 
     hashed_pw = bcrypt.hashpw(admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    supabase.table("users").insert({
-        "email": admin_email,
-        "password": hashed_pw,
-        "role": admin_role,
-        "must_change_password": False,
-        "profile_completed": True
-    }).execute()
+    try:
+        supabase.table("users").insert({
+            "email": admin_email,
+            "password": hashed_pw,
+            "role": admin_role,
+            "must_change_password": False,
+            "profile_completed": True
+        }).execute()
+        print("✅ Admin account created.")
+    except Exception as e:
+        print("🔥 Failed to insert admin account:")
+        print(e)  # ← this will reveal the actual cause in the Streamlit logs
 
-    print("✅ Admin account created.")
 setup_admin_account()
 
 def login():
