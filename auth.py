@@ -67,7 +67,7 @@ def login():
             return
 
         if not users:
-            st.error("You must be registered by an admin before logging in.")
+            st.error("You must be registered by the Admin before log-in.")
             return
 
         user = users[0]
