@@ -9,28 +9,26 @@ import streamlit as st
 
 st.set_page_config(page_title="MentorLink", layout="wide")
 
-from auth import login, logout, change_password, profile_form
-
 if not st.session_state.get("authenticated", False):
     login()
-elif st.session_state.get("force_change_password", False):
-    change_password()
-elif st.session_state.get("force_profile_update", False):
-    profile_form()
 else:
     role = st.session_state.get("role")
-    st.sidebar.button("Logout", on_click=logout)
+    user = st.session_state.get("user", {})
 
-    if role == "Admin":
+    if role != "Admin":
+        if user.get("must_change_password", False):
+            change_password()
+        elif not user.get("profile_completed", False):
+            profile_form()
+        else:
+            st.sidebar.button("Logout", on_click=logout)
+            if role == "Mentor":
+                mentor.show()
+            elif role == "Mentee":
+                mentee.show()
+    else:
+        st.sidebar.button("Logout", on_click=logout)
         admin.show()
-    elif role == "Mentor":
-        mentor.show()
-    elif role == "Mentee":
-        mentee.show()
-
-if st.session_state.get("do_rerun"):
-    del st.session_state["do_rerun"]  # clean up
-    st.rerun()
 
 #import sys
 #st.write("Python Path:", sys.path)
