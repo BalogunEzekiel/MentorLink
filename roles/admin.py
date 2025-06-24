@@ -1,7 +1,18 @@
 import streamlit as st
 from database import supabase
 from auth import register_user
-from utils import format_datetime  # assuming you have a datetime formatter
+from utils import format_datetime
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # go up one level
+
+from datetime import datetime
+
+def format_datetime(dt_str):
+    try:
+        return datetime.fromisoformat(dt_str).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return dt_str
 
 def show():
     st.title("Admin Dashboard")
