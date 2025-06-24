@@ -26,6 +26,8 @@ def setup_admin_account():
 
     hashed_pw = bcrypt.hashpw(admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
+    admin_id = str(uuid.uuid4())
+
     try:
         supabase.table("users").insert({
             "email": admin_email,
