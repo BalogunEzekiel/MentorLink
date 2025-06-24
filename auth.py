@@ -14,6 +14,27 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 DEFAULT_PASSWORD = "default@1234"  # 🔐 Admin's assigned default
 
+# One-time setup: Create Admin if not exists
+def setup_admin_account():
+    admin_email = "admin@theincubatorhub.com"
+    admin_password = "Admin@123"
+    admin_role = "Admin"
+
+    result = supabase.table("users").select("*").eq("email", admin_email).execute()
+    if result.data:
+        return  # Admin already exists
+
+    hashed_pw = bcrypt.hashpw(admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    supabase.table("users").insert({
+        "email": admin_email,
+        "password": hashed_pw,
+        "role": admin_role,
+        "must_change_password": False,
+        "profile_completed": True
+    }).execute()
+
+    print("✅ Admin account created.")
 setup_admin_account()
 
 def login():
@@ -50,29 +71,7 @@ def login():
             st.success(f"Welcome {user.get('email')}!")
             st.rerun()
         else:
-            st.error("Invalid password.")
-            
-# One-time setup: Create Admin if not exists
-def setup_admin_account():
-    admin_email = "admin@theincubatorhub.com"
-    admin_password = "Admin@123"
-    admin_role = "Admin"
-
-    result = supabase.table("users").select("*").eq("email", admin_email).execute()
-    if result.data:
-        return  # Admin already exists
-
-    hashed_pw = bcrypt.hashpw(admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-    supabase.table("users").insert({
-        "email": admin_email,
-        "password": hashed_pw,
-        "role": admin_role,
-        "must_change_password": False,
-        "profile_completed": True
-    }).execute()
-
-    print("✅ Admin account created.")
+            st.error("Invalid password.")          
 
 def logout():
     for key in list(st.session_state.keys()):
