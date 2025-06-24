@@ -13,7 +13,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-DEFAULT_PASSWORD = "default@1234"  # 🔐 Admin's assigned default
+#DEFAULT_PASSWORD = "default@1234"  # 🔐 Admin's assigned default
 
 # One-time setup: Create Admin if not exists
 def setup_admin_account():
@@ -101,6 +101,7 @@ def logout():
 def get_user_role():
     return st.session_state.get("role", None)
 
+# REGISTER USER FUNCTION
 def register_user(email, role):
     default_password = "changeme123"
     hashed_pw = bcrypt.hashpw(default_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -122,6 +123,8 @@ def register_user(email, role):
 
     return f"User {email} registered and notified via email."
 
+
+# COMPLETE PROFILE FORM
 def profile_form():
     st.title("🧑‍💼 Complete Your Profile")
 
@@ -136,32 +139,31 @@ def profile_form():
             return
 
         userid = st.session_state.user.get("userid")
-
         if not userid:
             st.error("User ID not found in session.")
             return
 
         try:
-            response = supabase.table("profile").insert({
+            supabase.table("profile").insert({
                 "userid": userid,
                 "name": name,
                 "bio": bio,
                 "skills": skills,
                 "goals": goals
             }).execute()
-            st.success("Profile submitted.")
+
+            supabase.table("users").update({"profile_completed": True}) \
+                .eq("userid", userid).execute()
+
+            del st.session_state["force_profile_update"]
+            st.success("Profile submitted successfully.")
+            st.rerun()
         except Exception as e:
             st.error("Error submitting profile.")
             st.exception(e)
 
-        # ✅ Update the correct column in the users table
-        supabase.table("users").update({"profile_completed": True}) \
-            .eq("userid", userid).execute()
 
-        del st.session_state["force_profile_update"]
-        st.success("Profile submitted.")
-        st.rerun()
-
+# CHANGE PASSWORD FUNCTION
 def change_password():
     st.title("🔐 Change Password")
 
