@@ -15,17 +15,16 @@ st.set_page_config(page_title="MentorLink", layout="wide")
 
 # ROUTER: Handle authentication and role-based rendering
 if not st.session_state.get("authenticated", False):
-    login()  # Show login screen
+    login()
 else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
-    # Non-admins go through onboarding steps
     if role != "Admin":
         if user.get("must_change_password", False):
-            change_password()  # Step 1: Password change
+            change_password()
         elif not user.get("profile_completed", False):
-            profile_form()     # Step 2: Profile form
+            profile_form()
         else:
             st.sidebar.button("Logout", on_click=logout)
             if role == "Mentor":
@@ -33,6 +32,5 @@ else:
             elif role == "Mentee":
                 mentee.show()
     else:
-        # Admin bypasses onboarding
         st.sidebar.button("Logout", on_click=logout)
         admin.show()
