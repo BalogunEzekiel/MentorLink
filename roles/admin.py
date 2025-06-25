@@ -31,23 +31,23 @@ def show():
     with tabs[1]:
         st.subheader("All Users")
         try:
-            # Join with profile to get username or name if it's stored there
+            # Get users and their profiles, including status
             users = supabase.table("users").select("""
-                *,
+                userid, email, role, must_change_password, profile_completed, created_at, status,
                 profile:profile(userid, bio, skills)
-            """).execute().data
+            """).neq("status", "Delete").execute().data  # Exclude deleted users
         except Exception as e:
             st.error(f"Failed to load users: {e}")
             users = []
     
         if users:
-            # Flatten nested profile data if available
             flat_users = []
             for user in users:
                 flat_users.append({
                     "User ID": user.get("userid"),
                     "Email": user.get("email"),
                     "Role": user.get("role"),
+                    "Status": user.get("status") if user.get("role") != "Admin" else "N/A",  # Admins don't have status
                     "Must Change Password": user.get("must_change_password"),
                     "Profile Completed": user.get("profile_completed"),
                     "Created At": user.get("created_at"),
@@ -56,9 +56,16 @@ def show():
                 })
     
             df = pd.DataFrame(flat_users)
+    
+            # Optional filters
+            status_filter = st.selectbox("Filter by Status", options=["All", "Active", "Inactive"])
+            if status_filter != "All":
+                df = df[df["Status"] == status_filter]
+    
             st.dataframe(df, use_container_width=True)
         else:
             st.info("No users found.")
+
         
     # 🔁 Requests Tab
     with tabs[2]:
