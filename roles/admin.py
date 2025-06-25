@@ -32,7 +32,7 @@ def show():
         st.subheader("All Users")
     
         try:
-            # Fetch users excluding those already deleted
+            # Get users and their profiles, excluding deleted users
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status,
                 profile:profile(userid, bio, skills)
@@ -42,14 +42,26 @@ def show():
             users = []
     
         if users:
-            # Flatten for display
-            flat_users = []
+            # 🔍 Search & filter inputs
+            email_search = st.text_input("Search by Email").lower()
+            status_filter = st.selectbox("Filter by Status", options=["All", "Active", "Inactive"])
+    
+            # Build user table
+            filtered_users = []
             for user in users:
-                flat_users.append({
+                email = user.get("email", "").lower()
+                status = user.get("status", "Active")
+    
+                if email_search and email_search not in email:
+                    continue
+                if status_filter != "All" and status != status_filter:
+                    continue
+    
+                filtered_users.append({
                     "User ID": user.get("userid"),
                     "Email": user.get("email"),
                     "Role": user.get("role"),
-                    "Status": user.get("status") if user.get("role") != "Admin" else "N/A",
+                    "Status": status if user.get("role") != "Admin" else "N/A",
                     "Must Change Password": user.get("must_change_password"),
                     "Profile Completed": user.get("profile_completed"),
                     "Created At": user.get("created_at") or "-",
@@ -57,49 +69,39 @@ def show():
                     "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
                 })
     
-            df = pd.DataFrame(flat_users)
+            # Display static table for reference
+            st.dataframe(pd.DataFrame(filtered_users), use_container_width=True)
     
-            # 🔍 Filter UI
-            email_search = st.text_input("Search by Email").lower()
-            if email_search:
-                df = df[df["Email"].str.lower().str.contains(email_search)]
+            st.markdown("### 🛠 Manage User Status")
     
-            status_filter = st.selectbox("Filter by Status", options=["All", "Active", "Inactive"])
-            if status_filter != "All":
-                df = df[df["Status"] == status_filter]
-    
-            st.dataframe(df, use_container_width=True)
-    
-            st.markdown("### 🔄 Toggle User Status")
-    
-            for user in flat_users:
+            for user in filtered_users:
                 if user["Role"] == "Admin":
-                    continue  # Skip admin modification
+                    continue  # Skip Admins
     
                 col1, col2, col3 = st.columns([4, 3, 2])
                 with col1:
                     st.markdown(f"**{user['Email']}**")
                 with col2:
-                    current_status = user["Status"] or "Active"
+                    current_status = user["Status"]
                     new_status = st.selectbox(
                         "Status",
-                        options=["Active", "Inactive", "Delete"],
-                        index=["Active", "Inactive", "Delete"].index(current_status) if current_status in ["Active", "Inactive", "Delete"] else 0,
-                        key=f"status_{user['User ID']}"
+                        ["Active", "Inactive", "Delete"],
+                        index=["Active", "Inactive", "Delete"].index(current_status) if current_status in ["Active", "Inactive"] else 0,
+                        key=f"status_select_{user['User ID']}"
                     )
                 with col3:
-                    if st.button("Apply", key=f"apply_{user['User ID']}"):
+                    if st.button("Update", key=f"update_btn_{user['User ID']}"):
                         if new_status == "Delete":
                             try:
                                 supabase.table("users").delete().eq("userid", user["User ID"]).execute()
-                                st.success(f"Deleted user: {user['Email']}")
+                                st.success(f"User {user['Email']} deleted permanently.")
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"Error deleting user: {e}")
+                                st.error(f"Failed to delete user: {e}")
                         else:
                             try:
                                 supabase.table("users").update({"status": new_status}).eq("userid", user["User ID"]).execute()
-                                st.success(f"{user['Email']} updated to {new_status}")
+                                st.success(f"Status updated to {new_status} for {user['Email']}.")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to update status: {e}")
