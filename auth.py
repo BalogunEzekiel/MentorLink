@@ -144,24 +144,34 @@ def profile_form():
             return
 
         try:
-            supabase.table("profile").insert({
-                "userid": userid,
-                "name": name,
-                "bio": bio,
-                "skills": skills,
-                "goals": goals
-            }).execute()
+            # Check if profile already exists
+            existing = supabase.table("profile").select("*").eq("userid", userid).execute()
+            if existing.data:
+                # If profile exists, update instead
+                supabase.table("profile").update({
+                    "name": name,
+                    "bio": bio,
+                    "skills": skills,
+                    "goals": goals
+                }).eq("userid", userid).execute()
+            else:
+                supabase.table("profile").insert({
+                    "userid": userid,
+                    "name": name,
+                    "bio": bio,
+                    "skills": skills,
+                    "goals": goals
+                }).execute()
 
-            supabase.table("users").update({"profile_completed": True}) \
-                .eq("userid", userid).execute()
+            supabase.table("users").update({"profile_completed": True}).eq("userid", userid).execute()
 
             del st.session_state["force_profile_update"]
-            st.success("Profile submitted successfully.")
+            st.success("✅ Profile submitted successfully! Redirecting to your dashboard...")
             st.rerun()
-        except Exception as e:
-            st.error("Error submitting profile.")
-            st.exception(e)
 
+        except Exception as e:
+            st.error("❌ Error submitting profile.")
+            st.exception(e)
 
 # CHANGE PASSWORD FUNCTION
 def change_password():
@@ -178,14 +188,30 @@ def change_password():
             st.error("Passwords do not match.")
             return
 
-        hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         userid = st.session_state.user.get("userid")
+        if not userid:
+            st.error("User ID not found in session.")
+            return
 
-        supabase.table("users").update({
-            "password": hashed_pw,
-            "must_change_password": False
-        }).eq("userid", userid).execute()
+        try:
+            hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-        del st.session_state["force_change_password"]
-        st.success("Password updated successfully.")
-        st.rerun()
+            supabase.table("users").update({
+                "password": hashed_pw,
+                "must_change_password": False
+            }).eq("userid", userid).execute()
+
+            del st.session_state["force_change_password"]
+            st.success("✅ Password updated successfully!")
+
+            # Route to profile update or dashboard
+            if not st.session_state.user.get("profile_completed"):
+                st.session_state.force_profile_update = True
+            else:
+                st.session_state.show_dashboard = True
+
+            st.rerun()
+
+        except Exception as e:
+            st.error("❌ Error updating password.")
+            st.exception(e)
