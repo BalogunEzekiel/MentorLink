@@ -5,7 +5,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from roles.utils import format_datetime
 from auth import login, logout, register_user, get_user_role, change_password, profile_form
 from roles import admin, mentor, mentee
-import streamlit as st
 
 st.set_page_config(page_title="MentorLink", layout="wide")
 
