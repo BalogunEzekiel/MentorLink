@@ -32,7 +32,6 @@ def show():
         st.subheader("All Users")
     
         try:
-            # Get users and their profiles, excluding deleted users
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status,
                 profile:profile(userid, bio, skills)
@@ -42,12 +41,12 @@ def show():
             users = []
     
         if users:
-            # 🔍 Search & filter inputs
+            # 🔍 Filter inputs
             email_search = st.text_input("Search by Email").lower()
             status_filter = st.selectbox("Filter by Status", options=["All", "Active", "Inactive"])
     
-            # Build user table
-            filtered_users = []
+            # Filter and flatten users
+            display_users = []
             for user in users:
                 email = user.get("email", "").lower()
                 status = user.get("status", "Active")
@@ -57,54 +56,67 @@ def show():
                 if status_filter != "All" and status != status_filter:
                     continue
     
-                filtered_users.append({
-                    "User ID": user.get("userid"),
-                    "Email": user.get("email"),
-                    "Role": user.get("role"),
-                    "Status": status if user.get("role") != "Admin" else "N/A",
-                    "Must Change Password": user.get("must_change_password"),
-                    "Profile Completed": user.get("profile_completed"),
-                    "Created At": user.get("created_at") or "-",
-                    "Bio": user.get("profile", {}).get("bio", "-") if user.get("profile") else "-",
-                    "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
+                display_users.append({
+                    "userid": user.get("userid"),
+                    "email": user.get("email"),
+                    "role": user.get("role"),
+                    "status": status,
+                    "must_change_password": user.get("must_change_password"),
+                    "profile_completed": user.get("profile_completed"),
+                    "created_at": user.get("created_at") or "-",
+                    "bio": user.get("profile", {}).get("bio", "-") if user.get("profile") else "-",
+                    "skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
                 })
     
-            # Display static table for reference
-            st.dataframe(pd.DataFrame(filtered_users), use_container_width=True)
+            # ✅ Table Header
+            st.markdown("#### User Table")
+            header_cols = st.columns([2, 2, 1, 1.5, 1.5, 1.5, 2.5, 2.5, 2.5, 2])
+            headers = ["Email", "Role", "Status", "Must Change", "Profile Done", "Created At", "Bio", "Skills", "", ""]
+            for col, header in zip(header_cols, headers):
+                col.markdown(f"**{header}**")
     
-            st.markdown("### 🛠 Manage User Status")
+            # ✅ Table Rows
+            for user in display_users:
+                cols = st.columns([2, 2, 1, 1.5, 1.5, 1.5, 2.5, 2.5, 2.5, 2])
+                cols[0].markdown(user["email"])
+                cols[1].markdown(user["role"])
     
-            for user in filtered_users:
-                if user["Role"] == "Admin":
-                    continue  # Skip Admins
-    
-                col1, col2, col3 = st.columns([4, 3, 2])
-                with col1:
-                    st.markdown(f"**{user['Email']}**")
-                with col2:
-                    current_status = user["Status"]
-                    new_status = st.selectbox(
+                if user["role"] == "Admin":
+                    cols[2].markdown("N/A")
+                    cols[9].markdown("🚫")
+                else:
+                    # Dropdown for status
+                    new_status = cols[2].selectbox(
                         "Status",
                         ["Active", "Inactive", "Delete"],
-                        index=["Active", "Inactive", "Delete"].index(current_status) if current_status in ["Active", "Inactive"] else 0,
-                        key=f"status_select_{user['User ID']}"
+                        index=["Active", "Inactive", "Delete"].index(user["status"]),
+                        key=f"status_{user['userid']}"
                     )
-                with col3:
-                    if st.button("Update", key=f"update_btn_{user['User ID']}"):
+    
+                    # Update button
+                    if cols[9].button("Update", key=f"update_{user['userid']}"):
                         if new_status == "Delete":
                             try:
-                                supabase.table("users").delete().eq("userid", user["User ID"]).execute()
-                                st.success(f"User {user['Email']} deleted permanently.")
+                                supabase.table("users").delete().eq("userid", user["userid"]).execute()
+                                st.success(f"Deleted user: {user['email']}")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to delete user: {e}")
                         else:
                             try:
-                                supabase.table("users").update({"status": new_status}).eq("userid", user["User ID"]).execute()
-                                st.success(f"Status updated to {new_status} for {user['Email']}.")
+                                supabase.table("users").update({"status": new_status}).eq("userid", user["userid"]).execute()
+                                st.success(f"Updated {user['email']} to {new_status}")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to update status: {e}")
+    
+                cols[3].markdown(str(user["must_change_password"]))
+                cols[4].markdown(str(user["profile_completed"]))
+                cols[5].markdown(str(user["created_at"]))
+                cols[6].markdown(user["bio"])
+                cols[7].markdown(user["skills"])
+                cols[8].markdown("")  # Spacer
+    
         else:
             st.info("No users found.")
         
