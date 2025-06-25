@@ -30,4 +30,31 @@ def show():
                     st.success(f"Accepted request from {mentee_email}")
                     st.rerun()
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
-                    supabase.table("mentorshiprequest").update({"status": "REJECTED"}).eq("mento
+                    supabase.table("mentorshiprequest").update({"status": "REJECTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                    st.warning(f"Rejected request from {mentee_email}")
+                    st.rerun()
+        else:
+            st.info("No pending requests.")
+
+    # 📅 Scheduled Sessions Tab
+    with tabs[1]:
+        st.subheader("Scheduled Sessions")
+        sessions = supabase.table("session") \
+            .select("*, users!session_menteeid_fkey(email)") \
+            .eq("mentorid", mentor_id).execute().data
+
+        if sessions:
+            for s in sessions:
+                st.markdown(f"""
+                #### Session with {s['users']['email']}
+                - 🗓 **Date:** {format_datetime(s['date'])}
+                - ⭐ **Rating:** {s.get('rating', 'Pending')}
+                - 💬 **Feedback:** {s.get('feedback', 'Not submitted yet')}
+                """)
+        else:
+            st.info("No upcoming or past sessions yet.")
+
+    # 🗓 Visual Schedule Tab
+    with tabs[2]:
+        st.subheader("Visual Schedule")
+        show_calendar()
