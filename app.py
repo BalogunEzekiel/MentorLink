@@ -22,17 +22,17 @@ else:
 
     # Non-admins go through onboarding steps
     if role != "Admin":
-        if st.session_state.user.get("must_change_password", False):
-            change_password()
-        elif not st.session_state.user.get("profile_completed", False):
-            profile_form()
+        if user.get("must_change_password", False):
+            change_password()  # Step 1: Password change
+        elif not user.get("profile_completed", False):
+            profile_form()     # Step 2: Profile form
         else:
             st.sidebar.button("Logout", on_click=logout)
             if role == "Mentor":
                 mentor.show()
             elif role == "Mentee":
                 mentee.show()
-        else:
+    else:
         # Admin bypasses onboarding
         st.sidebar.button("Logout", on_click=logout)
         admin.show()
