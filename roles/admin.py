@@ -30,6 +30,7 @@ def show():
     # 👥 Users Tab
     with tabs[1]:
         st.subheader("All Users")
+    
         try:
             # Get users and their profiles, including status
             users = supabase.table("users").select("""
@@ -41,13 +42,14 @@ def show():
             users = []
     
         if users:
+            # Flatten user records
             flat_users = []
             for user in users:
                 flat_users.append({
                     "User ID": user.get("userid"),
                     "Email": user.get("email"),
                     "Role": user.get("role"),
-                    "Status": user.get("status") if user.get("role") != "Admin" else "N/A",  # Admins don't have status
+                    "Status": user.get("status") if user.get("role") != "Admin" else "N/A",  # No status for Admins
                     "Must Change Password": user.get("must_change_password"),
                     "Profile Completed": user.get("profile_completed"),
                     "Created At": user.get("created_at"),
@@ -57,15 +59,20 @@ def show():
     
             df = pd.DataFrame(flat_users)
     
-            # Optional filters
+            # Email search box
+            email_search = st.text_input("Search by Email").lower()
+            if email_search:
+                df = df[df["Email"].str.lower().str.contains(email_search)]
+    
+            # Status filter dropdown
             status_filter = st.selectbox("Filter by Status", options=["All", "Active", "Inactive"])
             if status_filter != "All":
                 df = df[df["Status"] == status_filter]
     
             st.dataframe(df, use_container_width=True)
+    
         else:
             st.info("No users found.")
-
         
     # 🔁 Requests Tab
     with tabs[2]:
