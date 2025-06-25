@@ -32,7 +32,7 @@ if role != "Admin":
             mentor.show()
         elif role == "Mentee":
             mentee.show()
-    else:
+        else:
         # Admin bypasses onboarding
         st.sidebar.button("Logout", on_click=logout)
         admin.show()
