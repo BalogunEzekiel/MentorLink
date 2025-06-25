@@ -147,7 +147,7 @@ def profile_form():
             # Check if profile already exists
             existing = supabase.table("profile").select("*").eq("userid", userid).execute()
             if existing.data:
-                # If profile exists, update instead
+                # Update existing profile
                 supabase.table("profile").update({
                     "name": name,
                     "bio": bio,
@@ -155,6 +155,7 @@ def profile_form():
                     "goals": goals
                 }).eq("userid", userid).execute()
             else:
+                # Insert new profile
                 supabase.table("profile").insert({
                     "userid": userid,
                     "name": name,
@@ -163,9 +164,15 @@ def profile_form():
                     "goals": goals
                 }).execute()
 
-            supabase.table("users").update({"profile_completed": True}).eq("userid", userid).execute()
+            # Mark profile as completed
+            supabase.table("users").update({"profile_completed": True}) \
+                .eq("userid", userid).execute()
 
-            del st.session_state["force_profile_update"]
+            # ✅ Update session state to reflect the change
+            st.session_state.user["profile_completed"] = True
+            if "force_profile_update" in st.session_state:
+                del st.session_state["force_profile_update"]
+
             st.success("✅ Profile submitted successfully! Redirecting to your dashboard...")
             st.rerun()
 
