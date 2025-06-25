@@ -27,128 +27,128 @@ def show():
                 st.success(message)
                 st.rerun()
 
-# 👥 Users Tab
-with tabs[1]:
-    st.subheader("All Users")
-
-    try:
-        users = supabase.table("users").select("""
-            userid, email, role, must_change_password, profile_completed, created_at, status
-        """).neq("status", "Delete").execute().data
-    except Exception as e:
-        st.error(f"Failed to load users: {e}")
-        users = []
-
-    if users:
-        email_search = st.text_input("Search by Email").lower()
-        status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
-
-        display_users = []
-        for i, user in enumerate(users, 1):
-            email = user.get("email", "").lower()
-            status = user.get("status", "Active")
-            if email_search and email_search not in email:
-                continue
-            if status_filter != "All" and status != status_filter:
-                continue
-
-            is_admin_email = email == "admin@theincubatorhub.com"
-
-            display_users.append({
-                "index": i,
-                "userid": user.get("userid"),
-                "email": user.get("email"),
-                "role": user.get("role"),
-                "status": status,
-                "must_change_password": "N/A" if is_admin_email else user.get("must_change_password"),
-                "profile_completed": "N/A" if is_admin_email else user.get("profile_completed"),
-                "created_at": user.get("created_at") or "-"
-            })
-
-        st.markdown("#### User Table")
-
-        # Custom CSS for scrollable, bordered, aligned table
-        st.markdown("""
-        <style>
-        .scrollable-table-container {
-            overflow-x: auto;
-            width: 100%;
-        }
-        .user-table {
-            min-width: 900px;
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-        .user-table th, .user-table td {
-            border: 1px solid #ccc;
-            padding: 8px 6px;
-            text-align: left;
-            vertical-align: middle;
-            word-wrap: break-word;
-            white-space: nowrap;
-            font-size: 0.9rem;
-        }
-        .user-table th {
-            background-color: #f5f5f5;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # HTML Table container open
-        st.markdown('<div class="scrollable-table-container">', unsafe_allow_html=True)
-
-        # HTML header row
-        st.markdown("""
-        <table class="user-table">
-            <tr>
-                <th>#</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Must Change</th>
-                <th>Profile Done</th>
-                <th>Created At</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        """, unsafe_allow_html=True)
-
-        for user in display_users:
-            cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
-
-            cols[0].markdown(f"{user['index']}")
-            cols[1].markdown(user["email"])
-            cols[2].markdown(user["role"])
-            cols[3].markdown(str(user["must_change_password"]))
-            cols[4].markdown(str(user["profile_completed"]))
-            cols[5].markdown(user["created_at"])  # Display single line
-
-            if user["role"] == "Admin":
-                cols[6].markdown("N/A")
-                cols[7].markdown("🚫")
-            else:
-                new_status = cols[6].selectbox(
-                    "", ["Active", "Inactive", "Delete"],
-                    index=["Active", "Inactive", "Delete"].index(user["status"]),
-                    key=f"status_{user['userid']}"
-                )
-                if cols[7].button("Update", key=f"update_{user['userid']}"):
-                    try:
-                        if new_status == "Delete":
-                            supabase.table("users").delete().eq("userid", user["userid"]).execute()
-                            st.success(f"Deleted user: {user['email']}")
-                        else:
-                            supabase.table("users").update({"status": new_status}).eq("userid", user["userid"]).execute()
-                            st.success(f"Updated {user['email']} to {new_status}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to update user: {e}")
-
-        # Close table and scroll container
-        st.markdown("</table></div>", unsafe_allow_html=True)
-
-    else:
-        st.info("No users found.")
+    # 👥 Users Tab
+    with tabs[1]:
+        st.subheader("All Users")
+    
+        try:
+            users = supabase.table("users").select("""
+                userid, email, role, must_change_password, profile_completed, created_at, status
+            """).neq("status", "Delete").execute().data
+        except Exception as e:
+            st.error(f"Failed to load users: {e}")
+            users = []
+    
+        if users:
+            email_search = st.text_input("Search by Email").lower()
+            status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
+    
+            display_users = []
+            for i, user in enumerate(users, 1):
+                email = user.get("email", "").lower()
+                status = user.get("status", "Active")
+                if email_search and email_search not in email:
+                    continue
+                if status_filter != "All" and status != status_filter:
+                    continue
+    
+                is_admin_email = email == "admin@theincubatorhub.com"
+    
+                display_users.append({
+                    "index": i,
+                    "userid": user.get("userid"),
+                    "email": user.get("email"),
+                    "role": user.get("role"),
+                    "status": status,
+                    "must_change_password": "N/A" if is_admin_email else user.get("must_change_password"),
+                    "profile_completed": "N/A" if is_admin_email else user.get("profile_completed"),
+                    "created_at": user.get("created_at") or "-"
+                })
+    
+            st.markdown("#### User Table")
+    
+            # Custom CSS for scrollable, bordered, aligned table
+            st.markdown("""
+            <style>
+            .scrollable-table-container {
+                overflow-x: auto;
+                width: 100%;
+            }
+            .user-table {
+                min-width: 900px;
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }
+            .user-table th, .user-table td {
+                border: 1px solid #ccc;
+                padding: 8px 6px;
+                text-align: left;
+                vertical-align: middle;
+                word-wrap: break-word;
+                white-space: nowrap;
+                font-size: 0.9rem;
+            }
+            .user-table th {
+                background-color: #f5f5f5;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+    
+            # HTML Table container open
+            st.markdown('<div class="scrollable-table-container">', unsafe_allow_html=True)
+    
+            # HTML header row
+            st.markdown("""
+            <table class="user-table">
+                <tr>
+                    <th>#</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Must Change</th>
+                    <th>Profile Done</th>
+                    <th>Created At</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            """, unsafe_allow_html=True)
+    
+            for user in display_users:
+                cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
+    
+                cols[0].markdown(f"{user['index']}")
+                cols[1].markdown(user["email"])
+                cols[2].markdown(user["role"])
+                cols[3].markdown(str(user["must_change_password"]))
+                cols[4].markdown(str(user["profile_completed"]))
+                cols[5].markdown(user["created_at"])  # Display single line
+    
+                if user["role"] == "Admin":
+                    cols[6].markdown("N/A")
+                    cols[7].markdown("🚫")
+                else:
+                    new_status = cols[6].selectbox(
+                        "", ["Active", "Inactive", "Delete"],
+                        index=["Active", "Inactive", "Delete"].index(user["status"]),
+                        key=f"status_{user['userid']}"
+                    )
+                    if cols[7].button("Update", key=f"update_{user['userid']}"):
+                        try:
+                            if new_status == "Delete":
+                                supabase.table("users").delete().eq("userid", user["userid"]).execute()
+                                st.success(f"Deleted user: {user['email']}")
+                            else:
+                                supabase.table("users").update({"status": new_status}).eq("userid", user["userid"]).execute()
+                                st.success(f"Updated {user['email']} to {new_status}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to update user: {e}")
+    
+            # Close table and scroll container
+            st.markdown("</table></div>", unsafe_allow_html=True)
+    
+        else:
+            st.info("No users found.")
         
     # 🔁 Requests Tab
     with tabs[2]:
