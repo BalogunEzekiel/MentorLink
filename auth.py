@@ -196,20 +196,19 @@ def change_password():
         try:
             hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
+            # ✅ Update in DB
             supabase.table("users").update({
                 "password": hashed_pw,
                 "must_change_password": False
             }).eq("userid", userid).execute()
 
-            del st.session_state["force_change_password"]
-            st.success("✅ Password updated successfully!")
+            # ✅ Update session user object
+            st.session_state.user["must_change_password"] = False
 
-            # Route to profile update or dashboard
-            if not st.session_state.user.get("profile_completed"):
-                st.session_state.force_profile_update = True
-            else:
-                st.session_state.show_dashboard = True
+            # ✅ Set profile update step
+            st.session_state.force_profile_update = True
 
+            st.success("✅ Password updated successfully! Proceeding to profile setup...")
             st.rerun()
 
         except Exception as e:
