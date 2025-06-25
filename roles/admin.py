@@ -60,7 +60,7 @@ def show():
                     "status": status,
                     "must_change_password": user.get("must_change_password"),
                     "profile_completed": user.get("profile_completed"),
-                    "created_at": user.get("created_at") or "-"
+                    "created_at": user.get("created_at")
                 })
     
             st.markdown("#### User Table")
@@ -112,6 +112,8 @@ def show():
                 cols[5].markdown(str(user["created_at"]))
     
                 if user["role"] == "Admin":
+                    cols[3].markdown("N/A")
+                    cols[4].markdown("N/A")
                     cols[6].markdown("N/A")
                     cols[7].markdown("🚫")
                 else:
