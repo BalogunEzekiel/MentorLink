@@ -54,4 +54,18 @@ def show():
                 st.markdown(f"""
                 #### With: {s['users']['email']}
                 - Date: {format_datetime(s['date'])}
-                - Rating: {
+                - Rating: {s.get('rating', 'Pending')}
+                - Feedback: {s.get('feedback', 'Not submitted')}
+                """)
+                if st.button("Send Reminder Email", key=s["sessionid"]):
+                    email_sent = send_email(
+                        to_email=s["users"]["email"],
+                        subject="Session Reminder",
+                        body=f"This is a reminder for your mentorship session on {format_datetime(s['date'])}."
+                    )
+                    if email_sent:
+                        st.success("Email sent successfully!")
+                    else:
+                        st.error("Failed to send email.")
+        else:
+            st.info("You don’t have any sessions yet.")
