@@ -27,38 +27,38 @@ def show():
                 st.success(message)
                 st.rerun()
 
-# 👥 Users Tab
-with tabs[1]:
-    st.subheader("All Users")
-    try:
-        # Join with profile to get username or name if it's stored there
-        users = supabase.table("users").select("""
-            *,
-            profile:profile(userid, bio, skills)
-        """).execute().data
-    except Exception as e:
-        st.error(f"Failed to load users: {e}")
-        users = []
-
-    if users:
-        # Flatten nested profile data if available
-        flat_users = []
-        for user in users:
-            flat_users.append({
-                "User ID": user.get("userid"),
-                "Email": user.get("email"),
-                "Role": user.get("role"),
-                "Must Change Password": user.get("must_change_password"),
-                "Profile Completed": user.get("profile_completed"),
-                "Created At": user.get("created_at"),
-                "Bio": user.get("profile", {}).get("bio", "-") if user.get("profile") else "-",
-                "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
-            })
-
-        df = pd.DataFrame(flat_users)
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.info("No users found.")
+    # 👥 Users Tab
+    with tabs[1]:
+        st.subheader("All Users")
+        try:
+            # Join with profile to get username or name if it's stored there
+            users = supabase.table("users").select("""
+                *,
+                profile:profile(userid, bio, skills)
+            """).execute().data
+        except Exception as e:
+            st.error(f"Failed to load users: {e}")
+            users = []
+    
+        if users:
+            # Flatten nested profile data if available
+            flat_users = []
+            for user in users:
+                flat_users.append({
+                    "User ID": user.get("userid"),
+                    "Email": user.get("email"),
+                    "Role": user.get("role"),
+                    "Must Change Password": user.get("must_change_password"),
+                    "Profile Completed": user.get("profile_completed"),
+                    "Created At": user.get("created_at"),
+                    "Bio": user.get("profile", {}).get("bio", "-") if user.get("profile") else "-",
+                    "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
+                })
+    
+            df = pd.DataFrame(flat_users)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No users found.")
         
     # 🔁 Requests Tab
     with tabs[2]:
