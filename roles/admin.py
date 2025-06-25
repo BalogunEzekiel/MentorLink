@@ -14,18 +14,29 @@ def show():
 
     tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Requests", "📆 Sessions"])
 
-    # 📝 Register Tab
-    with tabs[0]:
-        st.subheader("Register New User")
-        with st.form("register_user"):
-            email = st.text_input("User Email")
-            role = st.selectbox("Assign Role", ["Mentor", "Mentee"])
-            submitted = st.form_submit_button("Create")
+# 📝 Register Tab
+with tabs[0]:
+    st.subheader("Register New User")
 
-            if submitted:
-                message = register_user(email, role)
-                st.success(message)
-                st.rerun()
+    # 🔧 Use session state to store form inputs
+    if "new_user_email" not in st.session_state:
+        st.session_state.new_user_email = ""
+    if "new_user_role" not in st.session_state:
+        st.session_state.new_user_role = "Mentor"
+
+    with st.form("register_user"):
+        st.session_state.new_user_email = st.text_input("User Email", value=st.session_state.new_user_email)
+        st.session_state.new_user_role = st.selectbox("Assign Role", ["Mentor", "Mentee"],
+                                                      index=["Mentor", "Mentee"].index(st.session_state.new_user_role))
+        submitted = st.form_submit_button("Create")
+
+        if submitted:
+            message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
+            st.success(f"✅ {message}")
+            # 🔧 Clear fields
+            st.session_state.new_user_email = ""
+            st.session_state.new_user_role = "Mentor"
+            st.rerun()
 
     # 👥 Users Tab
     with tabs[1]:
