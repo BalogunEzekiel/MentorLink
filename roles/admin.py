@@ -26,11 +26,13 @@ def show():
                 st.success(message)
                 st.rerun()
 
+import pandas as pd
+
 # 👥 Users Tab
 with tabs[1]:
     st.subheader("All Users")
     try:
-        # Join with profile to get username or name if it's stored there
+        # Join with profile to get name (e.g., username), bio, skills
         users = supabase.table("users").select("""
             *,
             profile:profile(userid, bio, skills)
@@ -40,7 +42,7 @@ with tabs[1]:
         users = []
 
     if users:
-        # Flatten nested profile data if available
+        # Flatten user data for display
         flat_users = []
         for user in users:
             flat_users.append({
@@ -54,8 +56,39 @@ with tabs[1]:
                 "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
             })
 
+        # Display table
         df = pd.DataFrame(flat_users)
         st.dataframe(df, use_container_width=True)
+
+        st.markdown("---")
+        st.markdown("### 🔄 Update User Status")
+        for user in users:
+            col1, col2, col3 = st.columns([3, 2, 2])
+            with col1:
+                st.markdown(f"**{user.get('email')}**")
+            with col2:
+                status = st.selectbox(
+                    "Set Status",
+                    options=["Active", "Inactive", "Delete"],
+                    key=f"status_{user['userid']}"
+                )
+            with col3:
+                if st.button("Update", key=f"update_{user['userid']}"):
+                    if status == "Delete":
+                        try:
+                            supabase.table("users").delete().eq("userid", user["userid"]).execute()
+                            st.success(f"{user['email']} deleted permanently.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to delete {user['email']}: {e}")
+                    else:
+                        try:
+                            supabase.table("users").update({
+                                "status": status
+                            }).eq("userid", user["userid"]).execute()
+                            st.success(f"Status of {user['email']} updated to {status}.")
+                        except Exception as e:
+                            st.error(f"Failed to update status: {e}")
     else:
         st.info("No users found.")
         
