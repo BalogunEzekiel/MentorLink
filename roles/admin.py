@@ -26,39 +26,39 @@ def show():
                 st.success(message)
                 st.rerun()
 
-    # 👥 Users Tab
-    with tabs[1]:
-        st.subheader("All Users")
-        try:
-            users = supabase.table("users").select("*").execute().data
-        except Exception as e:
-            st.error(f"Failed to load users: {e}")
-            users = []
+# 👥 Users Tab
+with tabs[1]:
+    st.subheader("All Users")
+    try:
+        # Join with profile to get username or name if it's stored there
+        users = supabase.table("users").select("""
+            *,
+            profile:profile(userid, bio, skills)
+        """).execute().data
+    except Exception as e:
+        st.error(f"Failed to load users: {e}")
+        users = []
 
+    if users:
+        # Flatten nested profile data if available
+        flat_users = []
         for user in users:
-            with st.expander(f"📧 {user.get('email', 'No Email')}"):
-                st.write(f"**ID:** {user.get('userid')}")
-                st.write(f"**Role:** {user.get('role')}")
-                st.write(f"**Must Change Password:** {user.get('must_change_password', '-')}")
-                st.write(f"**Profile Completed:** {user.get('profile_completed', '-')}")
-                st.write(f"**Created At:** {user.get('created_at', '-')}")
+            flat_users.append({
+                "User ID": user.get("userid"),
+                "Email": user.get("email"),
+                "Role": user.get("role"),
+                "Must Change Password": user.get("must_change_password"),
+                "Profile Completed": user.get("profile_completed"),
+                "Created At": user.get("created_at"),
+                "Bio": user.get("profile", {}).get("bio", "-") if user.get("profile") else "-",
+                "Skills": user.get("profile", {}).get("skills", "-") if user.get("profile") else "-"
+            })
 
-                confirm_key = f"confirm_delete_{user['userid']}"
-                delete_key = f"delete_{user['userid']}"
-
-                confirm = st.checkbox(f"✅ I understand that deleting {user['email']} is permanent", key=confirm_key)
-
-                if confirm:
-                    if st.button("❌ Confirm Delete User", key=delete_key):
-                        try:
-                            supabase.table("users").delete().eq("userid", user["userid"]).execute()
-                            st.success(f"User {user['email']} deleted.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Deletion failed: {e}")
-                else:
-                    st.info("Check the box to confirm deletion.")
-
+        df = pd.DataFrame(flat_users)
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("No users found.")
+        
     # 🔁 Requests Tab
     with tabs[2]:
         st.subheader("Mentorship Requests")
