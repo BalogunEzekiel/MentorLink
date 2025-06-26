@@ -31,25 +31,37 @@ def show():
     # 📝 Register Tab
     with tabs[0]:
         st.subheader("Register New User")
-
+    
+        # Initialize session state
         if "new_user_email" not in st.session_state:
             st.session_state.new_user_email = ""
         if "new_user_role" not in st.session_state:
-            st.session_state.new_user_role = "Mentor"
-
+            st.session_state.new_user_role = ""
+    
         with st.form("register_user"):
             st.session_state.new_user_email = st.text_input("User Email", value=st.session_state.new_user_email)
-            st.session_state.new_user_role = st.selectbox("Assign Role", ["Mentor", "Mentee"],
-                                                          index=["Mentor", "Mentee"].index(st.session_state.new_user_role))
+    
+            roles = ["", "Mentor", "Mentee"]
+            role_index = roles.index(st.session_state.new_user_role) if st.session_state.new_user_role in roles else 0
+            st.session_state.new_user_role = st.selectbox("Assign Role", roles, index=role_index)
+    
             submitted = st.form_submit_button("Create")
-
+    
             if submitted:
-                message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
-                st.success(f"✅ {message}")
-                st.session_state.new_user_email = ""
-                st.session_state.new_user_role = "Mentor"
-                st.rerun()
-
+                if not st.session_state.new_user_email or not st.session_state.new_user_role:
+                    st.warning("⚠️ Please fill in both email and role.")
+                else:
+                    message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
+                    placeholder = st.empty()
+                    placeholder.success(f"✅ {message}")
+                    time.sleep(1)
+                    placeholder.empty()
+    
+                    # Clear form fields
+                    st.session_state.new_user_email = ""
+                    st.session_state.new_user_role = ""
+                    st.rerun()
+ 
     # 👥 Users Tab
     with tabs[1]:
         st.subheader("All Users")
