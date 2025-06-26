@@ -24,7 +24,7 @@ def show():
         st.info("No accepted mentorship requests.")
         return
 
-    st.markdown("### ✅ Accepted Requests (Book a Session)")
+    st.markdown("##### ✅ Accepted Requests (Book a Session)")
     for req in accepted_requests:
         mentor_email = req["users"]["email"]
         st.markdown(f"#### Mentor: {mentor_email}")
