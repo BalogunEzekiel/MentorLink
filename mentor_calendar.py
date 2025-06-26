@@ -65,7 +65,7 @@ def show_calendar():
         - 💬 **Feedback**: {selected_row['Feedback'] or 'Not provided'}
         """)
 
-    # 🗓️ Set Availability Tab (unchanged)
+    # 🗓️ Set Availability Tab
     with tabs[1]:
         st.subheader("🗓️ Add Your Availability")
         with st.form("availability_form"):
@@ -81,8 +81,8 @@ def show_calendar():
                     st.error("❌ End time must be after start time.")
                 else:
                     try:
-                        supabase.table("mentoravailability").insert({
-                            "mentorid": mentor_id,
+                        supabase.table("availability").insert({
+                            "mentorid": mentorid,
                             "start_time": start_datetime.isoformat(),
                             "end_time": end_datetime.isoformat()
                         }).execute()
@@ -95,7 +95,7 @@ def show_calendar():
         # View existing availability
         st.markdown("### 📋 Your Availability")
         try:
-            result = supabase.table("mentoravailability") \
+            result = supabase.table("availability") \
                 .select("*") \
                 .eq("mentorid", mentorid) \
                 .order("start_time").execute()
