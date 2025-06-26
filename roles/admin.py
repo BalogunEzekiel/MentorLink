@@ -61,20 +61,20 @@ def show():
                 if not st.session_state.new_user_email or not st.session_state.new_user_role:
                     st.warning("⚠️ Please fill in both email and role.")
                 else:
-                    # Call your registration logic
-                    message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
-
-                    # Show temporary success message
+                    # Register the user without expecting a return message
+                    register_user(st.session_state.new_user_email, st.session_state.new_user_role)
+            
+                    # Show success message here directly
                     placeholder = st.empty()
-                    placeholder.success(f"✅ {message}")
+                    placeholder.success(f"✅ User '{st.session_state.new_user_email}' registered as {st.session_state.new_user_role}.")
                     time.sleep(1)
                     placeholder.empty()
-
-                    # Clear the form state
+            
+                    # Clear form fields
                     st.session_state.new_user_email = ""
                     st.session_state.new_user_role = ""
-
-                    # Trigger a rerun to reflect cleared values
+            
+                    # Refresh the form
                     st.rerun()
  
     # 👥 Users Tab
