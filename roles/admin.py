@@ -54,7 +54,7 @@ def show():
                     message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
                     placeholder = st.empty()
                     placeholder.success(f"✅ {message}")
-                    time.sleep(01)
+                    time.sleep(1)
                     placeholder.empty()
     
                     # Clear form fields
