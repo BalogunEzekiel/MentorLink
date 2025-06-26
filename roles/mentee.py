@@ -44,7 +44,7 @@ def show():
             st.info("You have not made any mentorship requests yet.")
 
     # 📆 My Sessions Tab
-    with tabs[2]:
+    with tabs[3]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
             .select("*, users!session_mentorid_fkey(email)") \
