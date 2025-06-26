@@ -204,7 +204,7 @@ def show():
                 st.markdown(f"""
                 - Mentor: **{s['mentor']['email']}**
                 - Mentee: **{s['mentee']['email']}**
-                - Date: {format_datetime(s['date'])}
+                - Date: {format_datetime(s['date']) if s.get('date') else 'Unknown'}
                 - Rating: {s.get('rating', '-') if s.get('rating') else '-'}
                 """)
         else:
