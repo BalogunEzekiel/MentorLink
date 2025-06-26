@@ -10,9 +10,9 @@ def show_calendar():
         return
 
     user = st.session_state["user"]
-    mentor_id = user.get("userid")
+    mentorid = user.get("userid")
 
-    if not mentor_id:
+    if not mentorid:
         st.error("Mentor ID not found.")
         return
 
@@ -22,10 +22,10 @@ def show_calendar():
     with tabs[0]:
         st.subheader("📅 Scheduled Sessions")
 
-        # Filter sessions by mentor_id and status 'accepted'
+        # Filter sessions by mentorid and status 'accepted'
         response = supabase.table("session") \
             .select("*, users!session_menteeid_fkey(email)") \
-            .eq("mentorid", mentor_id) \
+            .eq("mentorid", mentorid) \
             .eq("status", "accepted") \
             .execute()
 
@@ -97,7 +97,7 @@ def show_calendar():
         try:
             result = supabase.table("mentoravailability") \
                 .select("*") \
-                .eq("mentorid", mentor_id) \
+                .eq("mentorid", mentorid) \
                 .order("start_time").execute()
             availability = result.data
             if availability:
