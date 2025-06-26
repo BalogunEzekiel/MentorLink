@@ -72,3 +72,7 @@ def show():
             except Exception as e:
                 st.error("❌ Booking failed.")
                 st.exception(e)
+
+# 📌 Book a Session Tab
+with tabs[3]:
+    show_booking()
