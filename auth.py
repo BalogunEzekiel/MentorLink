@@ -49,19 +49,6 @@ def setup_admin_account():
 setup_admin_account()
 
 def login():
-    # Sidebar Greeting and Logout (if already logged in)
-    if st.session_state.get("authenticated"):
-        username = st.session_state.get("username", "User")
-        st.sidebar.markdown(f"👋 **Welcome, {username}**")
-
-        if st.sidebar.button("Logout"):
-            for key in ["authenticated", "user", "role", "username",
-                        "force_change_password", "force_profile_update"]:
-                st.session_state.pop(key, None)
-            st.rerun()
-        return  # Skip login form if already logged in
-
-    # Login Form
     st.title("Login")
 
     email = st.text_input("Email").strip().lower()
@@ -81,12 +68,12 @@ def login():
             return
 
         if not users:
-            st.error("You must be registered by the Admin before logging in.")
+            st.error("You must be registered by the Admin before log-in.")
             return
 
         user = users[0]
 
-        # ✅ Block login for Inactive or Deleted users
+        # ✅ Restrict users with status "Inactive" or "Delete"
         status = user.get("status", "Active")
         if status == "Inactive":
             st.error("Your account is inactive. Please contact the Admin.")
@@ -101,26 +88,20 @@ def login():
             return
 
         if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
-            # ✅ Set session state
             st.session_state.authenticated = True
             st.session_state.user = user
             st.session_state.role = user.get("role")
 
-            # Derive username from full_name or email
-            user_email = user.get("email", "user@example.com")
-            username = user.get("full_name") or user_email.split("@")[0].capitalize()
-            st.session_state.username = username
-
-            st.success(f"Welcome, {username}!")
-
             role = user.get("role", "")
-            if role != "Admin":
+            if role == "Admin":
+                st.success("Welcome Admin! Redirecting to dashboard...")
+                time.sleep(2)
+            else:
                 if user.get("must_change_password"):
                     st.session_state.force_change_password = True
                 elif not user.get("profile_completed"):
                     st.session_state.force_profile_update = True
 
-            time.sleep(2)
             st.rerun()
         else:
             st.error("Invalid password.")
