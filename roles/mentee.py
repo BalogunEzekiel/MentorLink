@@ -45,7 +45,7 @@ def show():
 
     # 📌 Book a Session Tab
     with tabs[2]:
-    show_booking()
+        show_booking()
 
     # 📆 My Sessions Tab
     with tabs[3]:
