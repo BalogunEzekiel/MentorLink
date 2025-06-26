@@ -4,15 +4,14 @@ import time
 from datetime import datetime
 import streamlit as st
 import pandas as pd
-import time
 
-# Add parent directory to path
+# Adjust path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth import register_user
 
-# Date formatter
+# Safe datetime formatter
 def format_datetime(dt):
     if not dt:
         return "Unknown"
@@ -35,27 +34,22 @@ def show():
         st.subheader("Register New User")
 
         with st.form("register_user", clear_on_submit=True):
-            # Email input
+            # Email input with placeholder
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
 
-            # Role selectbox with placeholder label
-            roles = ["", "Mentor", "Mentee"]
-            role = st.selectbox(
-                "Assign Role",
-                roles,
-                index=0,
-                format_func=lambda x: "Select a role" if x == "" else x
-            )
+            # Role dropdown with 'Select a role' as placeholder-style first item
+            roles = ["Select a role", "Mentor", "Mentee"]
+            role = st.selectbox("Assign Role", roles)
 
             submitted = st.form_submit_button("Create")
 
         if submitted:
-            if not user_email or not role:
+            if not user_email or role == "Select a role":
                 st.warning("⚠️ Please fill in both email and role.")
             else:
                 register_user(user_email, role)
 
-                # Display success message temporarily
+                # Show temporary success message
                 placeholder = st.empty()
                 placeholder.success(f"✅ User '{user_email}' registered as {role}.")
                 time.sleep(2)
