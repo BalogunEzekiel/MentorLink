@@ -57,6 +57,7 @@ def show():
                         .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
 
                     session_date = (datetime.now() + timedelta(days=1)).isoformat()
+                try:
                     supabase.table("session").insert({
                         "mentorid": req["mentorid"],
                         "menteeid": req["menteeid"],
@@ -64,6 +65,9 @@ def show():
                         "status": "accepted",
                         "mentorshiprequestid": req["mentorshiprequestid"]
                     }).execute()
+                except APIError as e:
+                    st.error("Failed to create session.")
+                    st.code(str(e), language="json")
 
                     st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
                     st.rerun()
