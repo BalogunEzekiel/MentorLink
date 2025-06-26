@@ -4,7 +4,7 @@ import pandas as pd
 from database import supabase
 
 def show():
-    st.title("📬 Mentorship Requests & Booking")
+    st.subheader("📬 Mentorship Requests & Booking")
 
     if "user" not in st.session_state:
         st.warning("Please log in first.")
