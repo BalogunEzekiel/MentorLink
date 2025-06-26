@@ -85,20 +85,37 @@ def show_calendar():
             if submitted:
                 start_datetime = datetime.combine(date, start_time)
                 end_datetime = datetime.combine(date, end_time)
+
                 if end_datetime <= start_datetime:
                     st.error("❌ End time must be after start time.")
                 else:
-                    try:
-                        supabase.table("availability").insert({
-                            "mentorid": mentorid,
-                            "start_time": start_datetime.isoformat(),
-                            "end_time": end_datetime.isoformat()
-                        }).execute()
-                        st.success("✅ Availability set successfully!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error("❌ Failed to set availability.")
-                        st.exception(e)
+                    # ✅ Check for overlap before inserting
+                    overlap_check = supabase.table("availability") \
+                        .select("*") \
+                        .eq("mentorid", mentorid) \
+                        .execute()
+
+                    existing_slots = overlap_check.data or []
+
+                    has_overlap = any(
+                        not (end_datetime <= pd.to_datetime(slot["start"]) or start_datetime >= pd.to_datetime(slot["end"]))
+                        for slot in existing_slots
+                    )
+
+                    if has_overlap:
+                        st.error("❌ This time slot overlaps with existing availability. Please choose a different time.")
+                    else:
+                        try:
+                            supabase.table("availability").insert({
+                                "mentorid": mentorid,
+                                "start": start_datetime.isoformat(),
+                                "end": end_datetime.isoformat()
+                            }).execute()
+                            st.success("✅ Availability set successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error("❌ Failed to set availability.")
+                            st.exception(e)
 
         # 📋 List Availability
         st.markdown("### 📋 Your Availability")
@@ -106,14 +123,14 @@ def show_calendar():
             result = supabase.table("availability") \
                 .select("*") \
                 .eq("mentorid", mentorid) \
-                .order("start_time") \
+                .order("start") \
                 .execute()
 
             availability = result.data
             if availability:
                 availability_df = pd.DataFrame([{
-                    "Start": pd.to_datetime(a["start_time"]),
-                    "End": pd.to_datetime(a["end_time"])
+                    "Start": pd.to_datetime(a["start"]),
+                    "End": pd.to_datetime(a["end"])
                 } for a in availability])
                 st.dataframe(availability_df, use_container_width=True)
             else:
