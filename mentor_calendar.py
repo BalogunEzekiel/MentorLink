@@ -22,48 +22,52 @@ def show_calendar():
     with tabs[0]:
         st.subheader("📅 Scheduled Sessions")
 
-        # Filter sessions by mentorid and status 'accepted'
-        response = supabase.table("session") \
-            .select("*, users!session_menteeid_fkey(email)") \
-            .eq("mentorid", mentorid) \
-            .eq("status", "accepted") \
-            .execute()
+        # ✅ Updated: Join mentorshiprequest to filter by status = 'accepted'
+        try:
+            response = supabase.table("session") \
+                .select("*, users!session_menteeid_fkey(email), mentorshiprequest(status)") \
+                .eq("mentorid", mentorid) \
+                .eq("mentorshiprequest.status", "accepted") \
+                .execute()
 
-        sessions = response.data
+            sessions = response.data
 
-        if not sessions:
-            st.info("No upcoming or past sessions yet.")
-            return
+            if not sessions:
+                st.info("No upcoming or past sessions yet.")
+                return
 
-        df = pd.DataFrame([{
-            "Session ID": s["sessionid"],
-            "Session With": s["users"]["email"],
-            "Start": pd.to_datetime(s["date"]),
-            "End": pd.to_datetime(s["date"]) + timedelta(hours=1),
-            "Feedback": s.get("feedback", ""),
-            "Rating": s.get("rating", "Pending")
-        } for s in sessions])
+            df = pd.DataFrame([{
+                "Session ID": s["sessionid"],
+                "Session With": s["users"]["email"],
+                "Start": pd.to_datetime(s["date"]),
+                "End": pd.to_datetime(s["date"]) + timedelta(hours=1),
+                "Feedback": s.get("feedback", ""),
+                "Rating": s.get("rating", "Pending")
+            } for s in sessions])
 
-        # Plot timeline
-        fig = px.timeline(df, x_start="Start", x_end="End", y="Session With", color="Rating",
-                          hover_data=["Feedback", "Rating"])
-        fig.update_yaxes(autorange="reversed")
-        fig.update_layout(title="Mentor Session Calendar", margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig, use_container_width=True)
+            # Plot timeline
+            fig = px.timeline(df, x_start="Start", x_end="End", y="Session With", color="Rating",
+                            hover_data=["Feedback", "Rating"])
+            fig.update_yaxes(autorange="reversed")
+            fig.update_layout(title="Mentor Session Calendar", margin=dict(l=20, r=20, t=40, b=20))
+            st.plotly_chart(fig, use_container_width=True)
 
-        # Session details dropdown
-        session_options = {f"{row['Session With']} @ {row['Start']}": row for _, row in df.iterrows()}
-        selected_label = st.selectbox("📂 View Session Details", list(session_options.keys()))
-        selected_row = session_options[selected_label]
+            # Session details dropdown
+            session_options = {f"{row['Session With']} @ {row['Start']}": row for _, row in df.iterrows()}
+            selected_label = st.selectbox("📂 View Session Details", list(session_options.keys()))
+            selected_row = session_options[selected_label]
 
-        st.markdown(f"""
-        ### 📝 Session Details
-        - 👤 **Mentee**: {selected_row['Session With']}
-        - 🗓️ **Start Time**: {selected_row['Start']}
-        - 🕒 **End Time**: {selected_row['End']}
-        - ⭐ **Rating**: {selected_row['Rating']}
-        - 💬 **Feedback**: {selected_row['Feedback'] or 'Not provided'}
-        """)
+            st.markdown(f"""
+            ### 📝 Session Details
+            - 👤 **Mentee**: {selected_row['Session With']}
+            - 🗓️ **Start Time**: {selected_row['Start']}
+            - 🕒 **End Time**: {selected_row['End']}
+            - ⭐ **Rating**: {selected_row['Rating']}
+            - 💬 **Feedback**: {selected_row['Feedback'] or 'Not provided'}
+            """)
+        except Exception as e:
+            st.error("🚫 Failed to load sessions.")
+            st.exception(e)
 
     # 🗓️ Set Availability Tab
     with tabs[1]:
@@ -98,7 +102,9 @@ def show_calendar():
             result = supabase.table("availability") \
                 .select("*") \
                 .eq("mentorid", mentorid) \
-                .order("start_time").execute()
+                .order("start_time") \
+                .execute()
+
             availability = result.data
             if availability:
                 availability_df = pd.DataFrame([{
