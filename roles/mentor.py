@@ -66,19 +66,35 @@ def show():
         else:
             st.info("No pending requests.")
 
-    # 📅 Scheduled Sessions Tab
+    # 📅 Scheduled Sessions Tab (manual join)
     with tabs[1]:
         st.subheader("Scheduled Sessions")
 
+        # 1. Fetch sessions for this mentor
         sessions = supabase.table("session") \
-            .select("*, mentee:users(email)") \
+            .select("*") \
             .eq("mentorid", mentor_id) \
-            .order("date", desc=False).execute().data
+            .order("date", desc=False) \
+            .execute().data
 
         if sessions:
+            # 2. Get unique mentee IDs
+            mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
+
+            # 3. Fetch mentee emails
+            mentees = supabase.table("users") \
+                .select("userid, email") \
+                .in_("userid", mentee_ids) \
+                .execute().data
+
+            # 4. Create mentee lookup dictionary
+            mentee_lookup = {m["userid"]: m["email"] for m in mentees}
+
+            # 5. Display each session with mentee email
             for s in sessions:
+                mentee_email = mentee_lookup.get(s["menteeid"], "Unknown")
                 st.markdown(f"""
-                #### Session with {s['mentee']['email']}
+                #### Session with {mentee_email}
                 - 🗓 **Date:** {format_datetime(s['date'])}
                 - ⭐ **Rating:** {s.get('rating', 'Pending')}
                 - 💬 **Feedback:** {s.get('feedback', 'Not submitted yet')}
