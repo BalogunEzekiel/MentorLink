@@ -118,10 +118,10 @@ def register_user(email, role):
         "profile_completed": False
     }).execute()
 
-    from emailer import send_welcome_email
-    send_welcome_email(email, default_password)
+#    from emailer import send_welcome_email
+#    send_welcome_email(email, default_password)
 
-    return f"User {email} registered and notified via email."
+#    return f"User {email} registered and notified via email."
 
 
 # COMPLETE PROFILE FORM
