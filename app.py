@@ -20,6 +20,7 @@ else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
+    # Force password change if required
     if role != "Admin":
         if user.get("must_change_password", False):
             change_password()
@@ -27,6 +28,7 @@ else:
             profile_form()
         else:
             st.sidebar.button("Logout", on_click=logout)
+
             if role == "Mentor":
                 mentor.show()
             elif role == "Mentee":
