@@ -82,6 +82,7 @@ def login():
             if role == "Admin":
                 # 🔐 Skip password change and profile setup
                 st.success("Welcome Admin! Redirecting to dashboard...")
+                time.sleep(2)
             else:
                 # 🔁 Enforce setup for mentors/mentees
                 if user.get("must_change_password"):
@@ -174,6 +175,7 @@ def profile_form():
                 del st.session_state["force_profile_update"]
 
             st.success("✅ Profile submitted successfully! Redirecting to your dashboard...")
+            time.sleep(2)
             st.rerun()
 
         except Exception as e:
@@ -216,6 +218,7 @@ def change_password():
             st.session_state.force_profile_update = True
 
             st.success("✅ Password updated successfully! Proceeding to profile setup...")
+            time.sleep(2)
             st.rerun()
 
         except Exception as e:
