@@ -27,13 +27,13 @@ def show():
     with tabs[0]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
-            .select("*, users!mentorshiprequest_menteeid_fkey(email)") \
+            .select("*, mentee:users(email)") \
             .eq("mentorid", mentor_id).eq("status", "PENDING") \
             .execute().data
 
         if requests:
             for req in requests:
-                mentee_email = req["users"]["email"]
+                mentee_email = req["mentee"]["email"]
                 st.markdown(f"**From:** {mentee_email}")
                 col1, col2 = st.columns(2)
 
@@ -71,14 +71,14 @@ def show():
         st.subheader("Scheduled Sessions")
 
         sessions = supabase.table("session") \
-            .select("*, users!session_menteeid_fkey(email)") \
+            .select("*, mentee:users(email)") \
             .eq("mentorid", mentor_id) \
             .order("date", desc=False).execute().data
 
         if sessions:
             for s in sessions:
                 st.markdown(f"""
-                #### Session with {s['users']['email']}
+                #### Session with {s['mentee']['email']}
                 - 🗓 **Date:** {format_datetime(s['date'])}
                 - ⭐ **Rating:** {s.get('rating', 'Pending')}
                 - 💬 **Feedback:** {s.get('feedback', 'Not submitted yet')}
