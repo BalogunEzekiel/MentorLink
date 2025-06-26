@@ -22,15 +22,17 @@ def show_calendar():
     with tabs[0]:
         st.subheader("📅 Scheduled Sessions")
 
-        # ✅ Updated: Join mentorshiprequest to filter by status = 'accepted'
         try:
             response = supabase.table("session") \
                 .select("*, users!session_menteeid_fkey(email), mentorshiprequest(status)") \
                 .eq("mentorid", mentorid) \
-                .eq("mentorshiprequest.status", "accepted") \
+                .order("date") \
                 .execute()
 
-            sessions = response.data
+            all_sessions = response.data
+
+            # ✅ Filter sessions where the mentorshiprequest was accepted
+            sessions = [s for s in all_sessions if s.get("mentorshiprequest", {}).get("status") == "ACCEPTED"]
 
             if not sessions:
                 st.info("No upcoming or past sessions yet.")
@@ -45,14 +47,14 @@ def show_calendar():
                 "Rating": s.get("rating", "Pending")
             } for s in sessions])
 
-            # Plot timeline
+            # 📊 Timeline Chart
             fig = px.timeline(df, x_start="Start", x_end="End", y="Session With", color="Rating",
-                            hover_data=["Feedback", "Rating"])
+                              hover_data=["Feedback", "Rating"])
             fig.update_yaxes(autorange="reversed")
             fig.update_layout(title="Mentor Session Calendar", margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig, use_container_width=True)
 
-            # Session details dropdown
+            # 🔍 Session details dropdown
             session_options = {f"{row['Session With']} @ {row['Start']}": row for _, row in df.iterrows()}
             selected_label = st.selectbox("📂 View Session Details", list(session_options.keys()))
             selected_row = session_options[selected_label]
@@ -96,7 +98,7 @@ def show_calendar():
                         st.error("❌ Failed to set availability.")
                         st.exception(e)
 
-        # View existing availability
+        # 📋 List Availability
         st.markdown("### 📋 Your Availability")
         try:
             result = supabase.table("availability") \
