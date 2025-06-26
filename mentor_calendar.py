@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from database import supabase
 
 def show_calendar():
-    st.title("🗓️ Mentor Calendar")
+    st.subheader("🗓️ Mentor Calendar")
 
     if "user" not in st.session_state:
         st.warning("Please log in to view your calendar.")
