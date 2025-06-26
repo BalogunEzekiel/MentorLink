@@ -2,6 +2,7 @@ import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime
 from emailer import send_email
+from mentee_requests import show as show_booking
 
 def show():
     st.title("Mentee Dashboard")
@@ -9,7 +10,7 @@ def show():
     user_id = st.session_state.user["userid"]
 
     # Create tabs
-    tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📆 My Sessions"])
+    tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
     # 🧑‍🏫 Browse Mentors Tab
     with tabs[0]:
