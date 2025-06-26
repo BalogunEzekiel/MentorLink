@@ -5,13 +5,13 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
-# Adjust Python path for parent directory imports
+# Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth import register_user
 
-# ✅ Safe datetime formatter
+# Date formatter
 def format_datetime(dt):
     if not dt:
         return "Unknown"
@@ -33,49 +33,34 @@ def show():
     with tabs[0]:
         st.subheader("Register New User")
 
-        # Initialize session state
-        st.session_state.setdefault("new_user_email", "")
-        st.session_state.setdefault("new_user_role", "")
+        with st.form("register_user", clear_on_submit=True):
+            # Email input
+            user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
 
-        with st.form("register_user"):
-            # Email input with placeholder
-            st.session_state.new_user_email = st.text_input(
-                "User Email",
-                value=st.session_state.new_user_email,
-                placeholder="e.g. user@example.com"
-            )
-
-            # Role dropdown with placeholder as first option
+            # Role selectbox with placeholder label
             roles = ["", "Mentor", "Mentee"]
-            role_index = roles.index(st.session_state.new_user_role) if st.session_state.new_user_role in roles else 0
-            st.session_state.new_user_role = st.selectbox(
+            role = st.selectbox(
                 "Assign Role",
                 roles,
-                index=role_index,
+                index=0,
                 format_func=lambda x: "Select a role" if x == "" else x
             )
 
             submitted = st.form_submit_button("Create")
 
-            if submitted:
-                if not st.session_state.new_user_email or not st.session_state.new_user_role:
-                    st.warning("⚠️ Please fill in both email and role.")
-                else:
-                    # Register the user without expecting a return message
-                    register_user(st.session_state.new_user_email, st.session_state.new_user_role)
-            
-                    # Show success message here directly
-                    placeholder = st.empty()
-                    placeholder.success(f"✅ User '{st.session_state.new_user_email}' registered as {st.session_state.new_user_role}.")
-                    time.sleep(1)
-                    placeholder.empty()
-            
-                    # Clear form fields
-                    st.session_state.new_user_email = ""
-                    st.session_state.new_user_role = ""
-            
-                    # Refresh the form
-                    st.rerun()
+        if submitted:
+            if not user_email or not role:
+                st.warning("⚠️ Please fill in both email and role.")
+            else:
+                register_user(user_email, role)
+
+                # Display success message temporarily
+                placeholder = st.empty()
+                placeholder.success(f"✅ User '{user_email}' registered as {role}.")
+                time.sleep(2)
+                placeholder.empty()
+
+                st.rerun()
  
     # 👥 Users Tab
     with tabs[1]:
