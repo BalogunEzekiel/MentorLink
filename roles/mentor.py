@@ -67,12 +67,11 @@ def show():
                         # Schedule session 1 day later
                         session_date = (datetime.now() + timedelta(days=1)).isoformat()
 
-                        # Insert new session
+                        # Insert new session (without status field)
                         supabase.table("session").insert({
                             "mentorid": req["mentorid"],
                             "menteeid": req["menteeid"],
                             "date": session_date,
-                            "status": "accepted",
                             "mentorshiprequestid": req["mentorshiprequestid"]
                         }).execute()
 
