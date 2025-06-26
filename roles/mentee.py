@@ -43,6 +43,10 @@ def show():
         else:
             st.info("You have not made any mentorship requests yet.")
 
+    # 📌 Book a Session Tab
+    with tabs[2]:
+    show_booking()
+
     # 📆 My Sessions Tab
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
