@@ -71,20 +71,20 @@ def show_calendar():
     # ------------------------------
     with tabs[1]:
         st.subheader("🗓️ Add Your Availability")
-
+    
         with st.form("availability_form"):
             date = st.date_input("Select a date")
             start_time = st.time_input("Start time")
             end_time = st.time_input("End time")
-
+    
             submitted = st.form_submit_button("Submit Availability")
-
+    
             if submitted:
                 start_datetime = datetime.combine(date, start_time)
                 end_datetime = datetime.combine(date, end_time)
-
+    
                 if end_datetime <= start_datetime:
-                    st.error("End time must be after start time.")
+                    st.error("❌ End time must be after start time.")
                 else:
                     try:
                         supabase.table("mentoravailability").insert({
@@ -93,28 +93,31 @@ def show_calendar():
                             "end_time": end_datetime.isoformat()
                         }).execute()
                         st.success("✅ Availability set successfully!")
+                        st.experimental_rerun()
                     except Exception as e:
                         st.error("❌ Failed to set availability.")
                         st.exception(e)
-
+    
         # View existing availability
         st.markdown("### 📋 Your Availability")
+    
         try:
-            availability = supabase.table("mentoravailability") \
+            result = supabase.table("mentoravailability") \
                 .select("*") \
                 .eq("mentorid", mentor_id) \
-                .order("start_time").execute().data
-
+                .order("start_time").execute()
+            availability = result.data
+    
             if availability:
                 availability_df = pd.DataFrame([{
                     "Start": pd.to_datetime(a["start_time"]),
                     "End": pd.to_datetime(a["end_time"])
                 } for a in availability])
-
-                st.dataframe(availability_df)
+    
+                st.dataframe(availability_df, use_container_width=True)
             else:
-                st.info("You haven’t set any availability yet.")
-
+                st.info("ℹ️ You haven’t set any availability yet.")
+    
         except Exception as e:
-            st.error("Error fetching availability.")
+            st.error("🚫 Error fetching availability.")
             st.exception(e)
