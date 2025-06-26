@@ -23,29 +23,40 @@ def show():
     # Create tabs for navigation
     tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Calendar"])
 
-    # 📥 Incoming Mentorship Requests Tab
+    # 📥 Incoming Mentorship Requests Tab (manual join)
     with tabs[0]:
         st.subheader("Incoming Mentorship Requests")
+
+        # 1. Get requests
         requests = supabase.table("mentorshiprequest") \
-            .select("*, mentee:users(email)") \
+            .select("*") \
             .eq("mentorid", mentor_id).eq("status", "PENDING") \
             .execute().data
 
         if requests:
+            # 2. Extract mentee IDs
+            mentee_ids = list({r["menteeid"] for r in requests if r.get("menteeid")})
+
+            # 3. Fetch mentees' emails
+            mentees = supabase.table("users") \
+                .select("userid, email") \
+                .in_("userid", mentee_ids) \
+                .execute().data
+
+            # 4. Build lookup dictionary
+            mentee_lookup = {m["userid"]: m["email"] for m in mentees}
+
+            # 5. Render requests
             for req in requests:
-                mentee_email = req["mentee"]["email"]
+                mentee_email = mentee_lookup.get(req["menteeid"], "Unknown")
                 st.markdown(f"**From:** {mentee_email}")
                 col1, col2 = st.columns(2)
 
-                # Accept button
                 if col1.button("Accept", key=f"accept_{req['mentorshiprequestid']}"):
-                    # 1. Update request status
                     supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
                         .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
 
-                    # 2. Create session (schedule for 1 day ahead by default)
                     session_date = (datetime.now() + timedelta(days=1)).isoformat()
-
                     supabase.table("session").insert({
                         "mentorid": req["mentorid"],
                         "menteeid": req["menteeid"],
@@ -57,7 +68,6 @@ def show():
                     st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
                     st.rerun()
 
-                # Reject button
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                     supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
                         .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
