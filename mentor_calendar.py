@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from database import supabase
 
 def show_calendar():
+    st.title("🗓️ Mentor Calendar")
+
     if "user" not in st.session_state:
         st.warning("Please log in to view your calendar.")
         return
@@ -31,7 +33,7 @@ def show_calendar():
 
             all_sessions = response.data
 
-            # ✅ Filter sessions where the mentorshiprequest was accepted
+            # ✅ Filter sessions where mentorship request is ACCEPTED
             sessions = [s for s in all_sessions if s.get("mentorshiprequest", {}).get("status") == "ACCEPTED"]
 
             if not sessions:
@@ -54,7 +56,7 @@ def show_calendar():
             fig.update_layout(title="Mentor Session Calendar", margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig, use_container_width=True)
 
-            # 🔍 Session details dropdown
+            # 🔍 Session Details Dropdown
             session_options = {f"{row['Session With']} @ {row['Start']}": row for _, row in df.iterrows()}
             selected_label = st.selectbox("📂 View Session Details", list(session_options.keys()))
             selected_row = session_options[selected_label]
