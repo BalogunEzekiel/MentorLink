@@ -91,7 +91,7 @@ def show_calendar():
                             "end_time": end_datetime.isoformat()
                         }).execute()
                         st.success("✅ Availability set successfully!")
-                        st.experimental_rerun()
+                        st.rerun()
                     except Exception as e:
                         st.error("❌ Failed to set availability.")
                         st.exception(e)
