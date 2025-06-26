@@ -31,7 +31,8 @@ def show():
         try:
             requests = supabase.table("mentorshiprequest") \
                 .select("*") \
-                .eq("mentorid", mentor_id).eq("status", "PENDING") \
+                .eq("mentorid", mentor_id) \
+                .eq("status", "PENDING") \
                 .execute().data
         except APIError as e:
             st.error("Failed to fetch mentorship requests.")
@@ -62,7 +63,8 @@ def show():
                     try:
                         # Accept the mentorship request
                         supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                            .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
+                            .execute()
 
                         # Schedule session 1 day later
                         session_date = (datetime.now() + timedelta(days=1)).isoformat()
@@ -73,7 +75,6 @@ def show():
                             "menteeid": req["menteeid"],
                             "date": session_date,
                             "mentorshiprequestid": req["mentorshiprequestid"]
-                            # feedback and rating are now nullable — no need to insert
                         }).execute()
 
                         st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
@@ -85,7 +86,8 @@ def show():
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                     try:
                         supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                            .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
+                            .execute()
                         st.warning(f"❌ Rejected request from {mentee_email}")
                         st.rerun()
                     except APIError as e:
@@ -111,11 +113,13 @@ def show():
 
         if sessions:
             mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
+
             try:
                 mentees = supabase.table("users") \
                     .select("userid, email") \
                     .in_("userid", mentee_ids) \
                     .execute().data
+
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
