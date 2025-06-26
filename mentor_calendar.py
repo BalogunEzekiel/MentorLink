@@ -26,7 +26,7 @@ def show_calendar():
 
         try:
             response = supabase.table("session") \
-                .select("*, users!session_menteeid_fkey(email), mentorshiprequest(status)") \
+                .select("*, users!session_menteeid_fkey(email), mentorshiprequest!session_mentorshiprequestid_fkey(status)") \
                 .eq("mentorid", mentorid) \
                 .order("date") \
                 .execute()
