@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from database import supabase
 from utils.helpers import format_datetime
 from mentor_calendar import show_calendar
+from postgrest.exceptions import APIError
 
 def show():
     st.title("Mentor Dashboard")
