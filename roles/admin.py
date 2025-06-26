@@ -2,11 +2,25 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils import format_datetime
+from datetime import datetime
 import streamlit as st
 from database import supabase
 from auth import register_user
 import pandas as pd
+
+# ✅ Safe datetime formatter
+def format_datetime(dt):
+    if not dt:
+        return "Unknown"
+
+    if isinstance(dt, datetime):
+        return dt.strftime("%A, %d %B %Y at %I:%M %p")
+
+    try:
+        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        return parsed.strftime("%A, %d %B %Y at %I:%M %p")
+    except Exception:
+        return str(dt)
 
 def show():
     st.title("Admin Dashboard")
@@ -17,23 +31,21 @@ def show():
     # 📝 Register Tab
     with tabs[0]:
         st.subheader("Register New User")
-    
-        # 🔧 Use session state to store form inputs
+
         if "new_user_email" not in st.session_state:
             st.session_state.new_user_email = ""
         if "new_user_role" not in st.session_state:
             st.session_state.new_user_role = "Mentor"
-    
+
         with st.form("register_user"):
             st.session_state.new_user_email = st.text_input("User Email", value=st.session_state.new_user_email)
             st.session_state.new_user_role = st.selectbox("Assign Role", ["Mentor", "Mentee"],
                                                           index=["Mentor", "Mentee"].index(st.session_state.new_user_role))
             submitted = st.form_submit_button("Create")
-    
+
             if submitted:
                 message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
                 st.success(f"✅ {message}")
-                # 🔧 Clear fields
                 st.session_state.new_user_email = ""
                 st.session_state.new_user_role = "Mentor"
                 st.rerun()
@@ -41,7 +53,7 @@ def show():
     # 👥 Users Tab
     with tabs[1]:
         st.subheader("All Users")
-    
+
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -49,11 +61,11 @@ def show():
         except Exception as e:
             st.error(f"Failed to load users: {e}")
             users = []
-    
+
         if users:
             email_search = st.text_input("Search by Email").lower()
             status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
-    
+
             display_users = []
             for i, user in enumerate(users, 1):
                 email = user.get("email", "").lower()
@@ -62,9 +74,9 @@ def show():
                     continue
                 if status_filter != "All" and status != status_filter:
                     continue
-    
+
                 is_admin_email = email == "admin@theincubatorhub.com"
-    
+
                 display_users.append({
                     "index": i,
                     "userid": user.get("userid"),
@@ -73,12 +85,11 @@ def show():
                     "status": status,
                     "must_change_password": "N/A" if is_admin_email else user.get("must_change_password"),
                     "profile_completed": "N/A" if is_admin_email else user.get("profile_completed"),
-                    "created_at": user.get("created_at") or "-"
+                    "created_at": format_datetime(user.get("created_at")) if user.get("created_at") else "-"
                 })
-    
+
             st.markdown("#### User Table")
-    
-            # Custom CSS for scrollable, bordered, aligned table
+
             st.markdown("""
             <style>
             .scrollable-table-container {
@@ -105,11 +116,8 @@ def show():
             }
             </style>
             """, unsafe_allow_html=True)
-    
-            # HTML Table container open
+
             st.markdown('<div class="scrollable-table-container">', unsafe_allow_html=True)
-    
-            # HTML header row
             st.markdown("""
             <table class="user-table">
                 <tr>
@@ -123,17 +131,16 @@ def show():
                     <th>Action</th>
                 </tr>
             """, unsafe_allow_html=True)
-    
+
             for user in display_users:
                 cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
-    
                 cols[0].markdown(f"{user['index']}")
                 cols[1].markdown(user["email"])
                 cols[2].markdown(user["role"])
                 cols[3].markdown(str(user["must_change_password"]))
                 cols[4].markdown(str(user["profile_completed"]))
-                cols[5].markdown(user["created_at"])  # Display single line
-    
+                cols[5].markdown(user["created_at"])
+
                 if user["role"] == "Admin":
                     cols[6].markdown("N/A")
                     cols[7].markdown("🚫")
@@ -154,13 +161,11 @@ def show():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update user: {e}")
-    
-            # Close table and scroll container
+
             st.markdown("</table></div>", unsafe_allow_html=True)
-    
         else:
             st.info("No users found.")
-        
+
     # 🔁 Requests Tab
     with tabs[2]:
         st.subheader("Mentorship Requests")
