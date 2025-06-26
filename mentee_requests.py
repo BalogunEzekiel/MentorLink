@@ -74,5 +74,5 @@ def show():
                 st.exception(e)
 
 # 📌 Book a Session Tab
-with tabs[3]:
+with tabs[2]:
     show_booking()
