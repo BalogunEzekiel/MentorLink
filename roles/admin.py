@@ -1,21 +1,22 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+import time
 from datetime import datetime
 import streamlit as st
+import pandas as pd
+
+# Adjust Python path for parent directory imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from database import supabase
 from auth import register_user
-import pandas as pd
 
 # ✅ Safe datetime formatter
 def format_datetime(dt):
     if not dt:
         return "Unknown"
-
     if isinstance(dt, datetime):
         return dt.strftime("%A, %d %B %Y at %I:%M %p")
-
     try:
         parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
         return parsed.strftime("%A, %d %B %Y at %I:%M %p")
@@ -28,38 +29,52 @@ def show():
 
     tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Requests", "📆 Sessions"])
 
-    # 📝 Register Tab
+    # --------------------- 📝 Register Tab --------------------- #
     with tabs[0]:
         st.subheader("Register New User")
-    
+
         # Initialize session state
-        if "new_user_email" not in st.session_state:
-            st.session_state.new_user_email = ""
-        if "new_user_role" not in st.session_state:
-            st.session_state.new_user_role = ""
-    
+        st.session_state.setdefault("new_user_email", "")
+        st.session_state.setdefault("new_user_role", "")
+
         with st.form("register_user"):
-            st.session_state.new_user_email = st.text_input("User Email", value=st.session_state.new_user_email)
-    
+            # Email input with placeholder
+            st.session_state.new_user_email = st.text_input(
+                "User Email",
+                value=st.session_state.new_user_email,
+                placeholder="e.g. user@example.com"
+            )
+
+            # Role dropdown with placeholder as first option
             roles = ["", "Mentor", "Mentee"]
             role_index = roles.index(st.session_state.new_user_role) if st.session_state.new_user_role in roles else 0
-            st.session_state.new_user_role = st.selectbox("Assign Role", roles, index=role_index)
-    
+            st.session_state.new_user_role = st.selectbox(
+                "Assign Role",
+                roles,
+                index=role_index,
+                format_func=lambda x: "Select a role" if x == "" else x
+            )
+
             submitted = st.form_submit_button("Create")
-    
+
             if submitted:
                 if not st.session_state.new_user_email or not st.session_state.new_user_role:
                     st.warning("⚠️ Please fill in both email and role.")
                 else:
+                    # Call your registration logic
                     message = register_user(st.session_state.new_user_email, st.session_state.new_user_role)
+
+                    # Show temporary success message
                     placeholder = st.empty()
                     placeholder.success(f"✅ {message}")
                     time.sleep(1)
                     placeholder.empty()
-    
-                    # Clear form fields
+
+                    # Clear the form state
                     st.session_state.new_user_email = ""
                     st.session_state.new_user_role = ""
+
+                    # Trigger a rerun to reflect cleared values
                     st.rerun()
  
     # 👥 Users Tab
