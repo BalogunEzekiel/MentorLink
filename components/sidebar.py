@@ -1,5 +1,5 @@
 import streamlit as st
-from auth.auth_handler import logout  # Ensure this import is present
+from auth.auth_handler import logout  # Ensure this is imported
 
 def sidebar():
     if "logged_in" not in st.session_state:
@@ -11,10 +11,10 @@ def sidebar():
             full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
             st.success(f"👋 Welcome, {full_name}!")
 
-            # 🔓 Logout button
+            # 🔓 Logout button sets a rerun trigger
             if st.button("Logout", key="logout_sidebar"):
                 logout()
-                st.experimental_rerun()
+                st.session_state["do_rerun"] = True  # just set a flag
 
         st.markdown("---")
 
