@@ -13,12 +13,12 @@ def sidebar():
 
         st.sidebar.title("About MentorLink")
         st.info("**MentorLink**\n\n"
-                "_.....bridging ambition with guidiance for a better tomorrow._")
+                "_...unlocking success through purposeful mentorship connections._")
 
         st.markdown("**📞 Contact Us:**")
         st.markdown("- [💬 Chat with the Support Team](https://wa.me/2348062529172)")
         st.markdown("---")
-        st.markdown("### 👨‍💻 App Developer")
+        st.markdown("## 👨‍💻 App Developer")
         st.markdown(
             """
 **Ezekiel BALOGUN**  
