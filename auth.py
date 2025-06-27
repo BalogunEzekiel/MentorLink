@@ -60,7 +60,8 @@ def login():
             return
 
         try:
-            result = supabase.table("users").select("*").eq("email", email).execute()
+            # ✅ Use ilike() for case-insensitive email match
+            result = supabase.table("users").select("*").ilike("email", email).execute()
             users = result.data
         except Exception as e:
             st.error("An error occurred while connecting to the database.")
@@ -73,7 +74,7 @@ def login():
 
         user = users[0]
 
-        # ✅ Restrict users with status "Inactive" or "Delete"
+        # ✅ Block Inactive or Deleted users
         status = user.get("status", "Active")
         if status == "Inactive":
             st.error("Your account is inactive. Please contact the Admin.")
