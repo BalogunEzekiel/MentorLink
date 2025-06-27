@@ -56,7 +56,7 @@ def login():
             elif not user.get("profile_completed"):
                 st.session_state.force_profile_update = True
 
-            time.sleep(2)
+            time.sleep(1)
             st.rerun()
         else:
             st.error("Invalid password.")
