@@ -237,3 +237,43 @@ def change_password():
         except Exception as e:
             st.error("❌ Error updating password.")
             st.exception(e)
+
+# ------------------- SIDEBARE -----------------------------
+def sidebar():
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    
+    # --- SIDEBAR ---
+    with st.sidebar:
+        # Logged-in user greeting
+        if st.session_state.get("logged_in") and "user" in st.session_state:
+            user = st.session_state["user"]
+            full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
+            st.success(f"👋 Welcome, {full_name}!")
+
+    st.info(
+        "***.....learning from the best, becoming the best!***\n\n"
+        "MentorLink ....your sure path to a better tomorrow."
+    )
+
+    st.markdown("**📞 Contact Us:**")
+    st.markdown(
+        "- [💬 Chat with the Support Team](https://wa.me/2348062529172)"
+    )
+
+    # Developer Info
+    st.markdown("---")
+    st.markdown("### 👨‍💻 App Developer")
+    st.markdown(
+        ]    """
+**Ezekiel BALOGUN**  
+_ Full-Stack Developer_  
+_ Data Scientist / Analyst_  
+_ AI / Machine Learning Engineer_  
+_ Automation / BI Expert_
+
+📧 [ezekiel4true@yahoo.com](mailto:ezekiel4true@yahoo.com)  
+🔗 [LinkedIn](https://www.linkedin.com/in/ezekiel-balogun-39a14438)  
+📞 +2348062529172
+        """
+    )
