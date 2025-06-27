@@ -35,15 +35,11 @@ else:
             change_password()
         elif not user.get("profile_completed", False):
             profile_form()
-        else:
-            st.sidebar.button("Logout", on_click=logout)
-
+        
             if role == "Mentor":
                 mentor.show()
             elif role == "Mentee":
                 mentee.show()
             else:
                 st.warning("⚠️ Unknown role.")
-    else:
-        st.sidebar.button("Logout", on_click=logout)
-        admin.show()
+                admin.show()
