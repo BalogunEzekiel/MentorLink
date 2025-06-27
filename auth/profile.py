@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 import bcrypt
-from supabase.client import supabase
+from database import supabase
 
 def profile_form():
     st.title("🧑‍💼 Complete Your Profile")
