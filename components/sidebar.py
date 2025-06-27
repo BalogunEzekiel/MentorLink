@@ -8,8 +8,13 @@ def sidebar():
     with st.sidebar:
         if st.session_state.get("logged_in") and "user" in st.session_state:
             user = st.session_state["user"]
-            full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
-            st.success(f"👋 Welcome, {full_name}!")
+
+            # ✅ Get name from profile first, then fallback
+            full_name = st.session_state.get("user_display_name")
+            if not full_name:
+                full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
+
+            st.success(f"👋 Welcome, {full_name.strip()}!")
 
             # Logout button
             if st.button("Logout", key="logout_sidebar"):
