@@ -1,5 +1,6 @@
 # Connect to Supabase and define all DB interaction functions
-from supabase import create_client
+#from supabase import create_client
+from database import supabase  # ✅ Replace this with the correct import path
 import os
 from dotenv import load_dotenv
 
