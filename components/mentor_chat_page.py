@@ -2,29 +2,35 @@ import streamlit as st
 from utils.mentorchat import mentorchat
 
 def show_mentor_chat():
-    st.title("💬 MentorChat - Your Personal Assistant")
+    st.title("💬 MentorChat - Your Mentorship Assistant")
 
-    role = st.session_state.get("role", "Mentee")  # Default to Mentee if not logged in
-
+    # Initialize chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    user_input = st.text_input("Type your message here:")
+    # Role from session
+    role = st.session_state.get("role", "Guest")
+
+    # Display previous chat
+    for entry in st.session_state.chat_history:
+        if entry["sender"] == "user":
+            st.markdown(f"🧑‍💻 **You:** {entry['message']}")
+        else:
+            st.markdown(f"🤖 **MentorChat:** {entry['message']}")
+
+    # User input
+    user_input = st.text_input("Type your message and press Enter", key="mentor_input")
 
     if user_input:
-        response = mentorchat(user_input, role)
-        st.session_state.chat_history.append(("You", user_input))
-        st.session_state.chat_history.append(("MentorChat", response))
-        st.rerun()
+        # Append user message
+        st.session_state.chat_history.append({"sender": "user", "message": user_input})
 
-    # Display chat history
-    for sender, msg in st.session_state.chat_history:
-        if sender == "You":
-            st.markdown(f"**🧑‍💬 {sender}:** {msg}")
-        else:
-            st.markdown(f"**🤖 {sender}:** {msg}")
+        # Get chatbot response
+        response = mentorchat(user_input, user_role=role)
 
-    # Optional: Clear Chat button
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = []
-        st.rerun()
+        # Append bot response
+        st.session_state.chat_history.append({"sender": "bot", "message": response})
+
+        # Clear input for next message
+        st.session_state["mentor_input"] = ""
+        st.rerun()  # Safe here, only triggers one clean rerun
