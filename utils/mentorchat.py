@@ -47,13 +47,13 @@ Would you like help with booking, finding a mentor, or editing your profile?"""
         if user_role == "Mentor":
             return "📆 To set your availability, go to your Mentor Dashboard and click on 'Manage Availability'. You can add specific time slots, set recurring availability, or block off dates."
         elif user_role == "Mentee":
-            return "📅 You can check mentor availability from your Mentee Dashboard under 'Find Mentor'. Filter by expertise or time to find a suitable mentor."
+            return "📅 You can check mentor availability from your Mentee Dashboard under 'Browse Mentor'. Filter by expertise or time to find a suitable mentor."
         else:
             return "🔍 Availability details are specific to mentor schedules. You can review them from the admin panel under 'Mentor Schedules'."
 
     elif "book" in user_input or "schedule" in user_input or "request" in user_input:
         if user_role == "Mentee":
-            return "🗓️ To schedule a session, open your dashboard, go to 'Find Mentor', select a mentor, and click 'Request Mentorship'. You'll receive a confirmation once the mentor responds."
+            return "🗓️ To schedule a session, open your dashboard, go to 'Browse Mentor', select a mentor, and click 'Request Mentorship'. You'll receive a confirmation once the mentor responds."
         elif user_role == "Mentor":
             return "🗂️ You can respond to mentorship requests from your dashboard under 'Pending Requests'. Accept or decline, and confirm the session time with the mentee."
         else:
@@ -98,9 +98,9 @@ I help you navigate the platform, understand your role, and perform tasks more e
     elif any(word in user_input for word in gratitude):
         return "🙏 You're welcome! Let me know if there’s anything else I can assist you with."
 
-    elif "mentor expertise" in user_input or "find mentor" in user_input:
+    elif "mentor expertise" in user_input or "browse mentor" in user_input:
         if user_role == "Mentee":
-            return "🔎 To find a mentor, go to 'Find Mentor' on your dashboard. Filter by expertise (e.g., Python, Data Science, UX Design), availability, or ratings. Send a request to connect!"
+            return "🔎 To find a mentor, go to 'Browse Mentor' on your dashboard. Filter by expertise (e.g., Python, Data Science, UX Design), availability, or ratings. Send a request to connect!"
         elif user_role == "Mentor":
             return "📚 As a mentor, you can showcase your expertise by updating your profile with skills and certifications. This helps mentees find you in their search."
         else:
@@ -133,7 +133,7 @@ I help you navigate the platform, understand your role, and perform tasks more e
 
     elif "mentor matching" in user_input or "match" in user_input:
         if user_role == "Mentee":
-            return "🤝 Mentor matching is based on your goals and mentor expertise. Update your profile with clear objectives and use 'Find Mentor' to explore matches."
+            return "🤝 Mentor matching is based on your goals and mentor expertise. Update your profile with clear objectives and use 'Browse Mentor' to explore matches."
         elif user_role == "Mentor":
             return "🤝 Ensure your profile reflects your expertise and availability to improve mentor-mentee matching. Check pending requests in your dashboard."
         else:
@@ -141,7 +141,7 @@ I help you navigate the platform, understand your role, and perform tasks more e
 
     elif "faq" in user_input or "frequently asked questions" in user_input:
         return """❓ **MentorLink FAQ**:
-- **How do I find a mentor?** Go to 'Find Mentor' on your dashboard, filter by expertise or availability, and send a request.
+- **How do I find a mentor?** Go to 'Browse Mentor' on your dashboard, filter by expertise or availability, and send a request.
 - **How do I set up my profile?** Click your name (top-right), select 'Edit Profile', and add skills, goals, and contact info.
 - **Can I cancel a session?** Yes, in 'My Sessions', select the session and choose 'Cancel' or 'Reschedule'.
 - **How do I contact support?** Use the 'Contact Us' link or email [support@mentorlink.com](mailto:support@mentorlink.com).
