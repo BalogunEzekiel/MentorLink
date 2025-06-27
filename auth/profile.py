@@ -32,10 +32,16 @@ def profile_form():
         supabase.table("users").update({"profile_completed": True}).eq("userid", userid).execute()
         st.session_state.user["profile_completed"] = True
         st.session_state.pop("force_profile_update", None)
+        
+        # ✅ Store name for greeting
+        profile = supabase.table("profile").select("name").eq("userid", userid).single().execute().data
+        if profile:
+            st.session_state["user_display_name"] = profile.get("name")
+    
         st.success("✅ Profile completed!")
         time.sleep(2)
         st.rerun()
-
+        
 def change_password():
     st.title("🔐 Change Password")
 
