@@ -32,7 +32,7 @@ def sidebar():
         st.markdown("---")
         st.markdown("## 👨‍💻 App Developer")
         st.markdown(
-            \"\"\"\n
+            """
 **Ezekiel BALOGUN**  
 * _Full-Stack Developer_  
 * _Data Scientist / Analyst_  
@@ -42,5 +42,5 @@ def sidebar():
 📧 [ezekiel4true@yahoo.com](mailto:ezekiel4true@yahoo.com)  
 🔗 [LinkedIn](https://www.linkedin.com/in/ezekiel-balogun-39a14438)  
 📞 +2348062529172
-            \"\"\"
+            """
         )
