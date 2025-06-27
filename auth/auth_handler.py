@@ -29,11 +29,18 @@ def login():
 
         stored_hashed = user.get("password")
         if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
+            # ✅ Auth success: Set session values
             st.session_state.authenticated = True
             st.session_state.logged_in = True
             st.session_state.user = user
             st.session_state.role = user.get("role")
 
+            # ✅ Load user's display name from profile
+            profile = supabase.table("profile").select("name").eq("userid", user["userid"]).single().execute().data
+            if profile:
+                st.session_state["user_display_name"] = profile.get("name")
+
+            # ✅ Post-login routing logic
             if user.get("role") == "Admin":
                 st.success("Welcome Admin! Redirecting...")
             elif user.get("must_change_password"):
@@ -45,7 +52,6 @@ def login():
             st.rerun()
         else:
             st.error("Invalid password.")
-
 def logout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
