@@ -6,3 +6,4 @@ email-validator
 plotly
 pandas
 supabase
+python-dotenv
