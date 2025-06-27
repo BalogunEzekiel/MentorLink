@@ -1,36 +1,46 @@
 import streamlit as st
-from utils.mentorchat import mentorchat
-
-def handle_input():
-    user_input = st.session_state.get("mentor_input", "").strip()
-    role = st.session_state.get("role", "Guest")
-
-    if user_input:
-        # Store user input
-        st.session_state.chat_history.append({"sender": "user", "message": user_input})
-
-        # Generate bot response
-        response = mentorchat(user_input, user_role=role)
-
-        # Store bot response
-        st.session_state.chat_history.append({"sender": "bot", "message": response})
-
-        # Clear the input field
-        st.session_state["mentor_input"] = ""
+import time
+from utils.mentorchat import mentorchat  # Ensure this is the updated chatbot logic
 
 def show_mentor_chat():
-    st.subheader("### 💬 MentorChat - Your Mentorship Assistant")
+    st.markdown("## 🤖 MentorChat Assistant")
 
-    # Initialize chat history if not present
+    # Initialize chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Display existing chat history
-    for entry in st.session_state.chat_history:
-        if entry["sender"] == "user":
-            st.markdown(f"🧑‍💻 **You:** {entry['message']}")
-        else:
-            st.markdown(f"🤖 **MentorChat:** {entry['message']}")
+    # Get user input
+    user_input = st.chat_input("Ask MentorChat anything...")
 
-    # Input box with callback handler
-    st.text_input("Type your message and press Enter", key="mentor_input", on_change=handle_input)
+    # Get user role
+    role = st.session_state.get("role", "Public")
+
+    # If input submitted
+    if user_input:
+        st.session_state.chat_history.append(("user", user_input))
+
+        # Get bot response
+        bot_response = mentorchat(user_input, user_role=role)
+        st.session_state.chat_history.append(("bot", bot_response))
+
+    # Display chat history
+    for sender, message in st.session_state.chat_history:
+        if sender == "user":
+            with st.chat_message("user"):
+                st.write(message)
+        else:
+            with st.chat_message("assistant"):
+                simulate_typing(message)
+
+# 🔄 Typing Simulation
+def simulate_typing(response: str, delay: float = 0.02):
+    """Displays the bot response with a typing simulation."""
+    displayed = ""
+    message_placeholder = st.empty()
+
+    for char in response:
+        displayed += char
+        message_placeholder.markdown(displayed + "▌")  # Simulated cursor
+        time.sleep(delay)
+
+    message_placeholder.markdown(displayed)  # Final output
