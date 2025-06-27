@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import utility functions and role views
 from roles.utils import format_datetime
-from auth import login, logout, register_user, get_user_role, change_password, profile_form
+from auth import login, logout, register_user, get_user_role, change_password, profile_form, sidebar
 from roles import admin, mentor, mentee
 
 # Set app configuration
