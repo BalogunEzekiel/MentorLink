@@ -11,10 +11,10 @@ def sidebar():
             full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
             st.success(f"👋 Welcome, {full_name}!")
 
-            # 🔓 Add logout button right after the greeting
+            # 🔓 Logout
             if st.button("Logout", key="logout_sidebar"):
                 logout()
-                st.experimental_rerun()
+                st.rerun()
 
         st.markdown("---")
 
