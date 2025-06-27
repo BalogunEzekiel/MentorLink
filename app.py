@@ -16,17 +16,23 @@ setup_admin_account()
 from auth.auth_handler import login, logout
 from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
+from components.mentorchat_widget import show_mentorchat_widget  # ✅ Chat widget
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
-from components.mentorchat_widget import show_mentorchat_widget  # ✅ Floating chat widget
+
+# ✅ Ensure required session states exist
+st.session_state.setdefault("chat_history", [])
+st.session_state.setdefault("mentor_input", "")
+st.session_state.setdefault("show_chat", False)
+st.session_state.setdefault("do_rerun", False)
 
 # ✅ Always show sidebar
 sidebar()
 
-# ✅ Show MentorChat widget (independent of route)
+# ✅ Show floating chatbot widget
 show_mentorchat_widget()
 
-# 🔐 Auth + Routing
+# 🔐 Authentication & Routing Logic
 if not st.session_state.get("authenticated", False):
     login()
 else:
@@ -48,11 +54,11 @@ else:
     else:
         admin.show()
 
-# ✅ Show footer only if not authenticated
+# ✅ Show footer on public page only
 if not st.session_state.get("authenticated", False):
     app_footer()
 
-# 🔁 Handle rerun flag
+# 🔁 Handle rerun flag safely
 if st.session_state.get("do_rerun"):
     st.session_state["do_rerun"] = False
     st.rerun()
