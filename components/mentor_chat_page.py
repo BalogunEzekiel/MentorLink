@@ -27,4 +27,4 @@ def show_mentor_chat():
     # Optional: Clear Chat button
     if st.button("Clear Chat"):
         st.session_state.chat_history = []
-        st.experimental_rerun()
+        st.rerun()
