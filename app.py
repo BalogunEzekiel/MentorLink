@@ -47,9 +47,6 @@ else:
     else:
         admin.show()
 
-app_footer()
+if not st.session_state.get("authenticated", False):
+    app_footer()
 
-# ✅ Safe rerun trigger (if logout or state change)
-if st.session_state.get("do_rerun"):
-    st.session_state["do_rerun"] = False
-    st.experimental_rerun()
