@@ -15,7 +15,7 @@ def show_mentor_chat():
         response = mentorchat(user_input, role)
         st.session_state.chat_history.append(("You", user_input))
         st.session_state.chat_history.append(("MentorChat", response))
-        st.experimental_rerun()
+        st.rerun()
 
     # Display chat history
     for sender, msg in st.session_state.chat_history:
