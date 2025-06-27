@@ -1,6 +1,8 @@
 import uuid
 import bcrypt
-from supabase.client import supabase
+#from supabase.client import supabase
+from database import supabase  # ✅ Replace this with the correct import path
+
 
 def setup_admin_account():
     admin_email = "admin@theincubatorhub.com"
