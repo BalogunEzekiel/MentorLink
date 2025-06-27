@@ -11,7 +11,7 @@ def sidebar():
             st.success(f"👋 Welcome, {full_name}!")
         st.markdown("---")
 
-        st.sidebar.title("About MentorLink 👗")
+        st.sidebar.title("About MentorLink")
         st.info("**MentorLink**\n\n"
                 "_.....bridging ambition with guidiance for a better tomorrow._")
 
