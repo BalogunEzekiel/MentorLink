@@ -19,7 +19,7 @@ def handle_input():
         st.session_state["mentor_input"] = ""
 
 def show_mentor_chat():
-    st.title("💬 MentorChat - Your Mentorship Assistant")
+    st.subheader("### 💬 MentorChat - Your Mentorship Assistant")
 
     # Initialize chat history if not present
     if "chat_history" not in st.session_state:
