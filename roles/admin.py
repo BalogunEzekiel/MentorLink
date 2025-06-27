@@ -9,7 +9,7 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
-from auth import register_user
+from auth.auth_handler import register_user
 
 # Safe datetime formatter
 def format_datetime(dt):
