@@ -15,6 +15,7 @@ from auth.auth_handler import register_user  # optional
 from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
 from roles import admin, mentor, mentee  # Your existing role-based views
+from utils.footer import app_footer
 
 # Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
@@ -45,3 +46,10 @@ else:
                 st.warning("⚠️ Unknown role.")
     else:
         admin.show()
+
+app_footer()
+
+# ✅ Safe rerun trigger (if logout or state change)
+if st.session_state.get("do_rerun"):
+    st.session_state["do_rerun"] = False
+    st.experimental_rerun()
