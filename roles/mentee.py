@@ -19,13 +19,25 @@ def show():
 
         for mentor in mentors:
             st.markdown(f"**{mentor['email']}**")
-            if st.button("Request Mentorship", key=mentor["userid"]):
-                supabase.table("mentorshiprequest").insert({
-                    "mentorid": mentor["userid"],
-                    "menteeid": user_id,
-                    "status": "PENDING"
-                }).execute()
-                st.success("Mentorship request sent!")
+
+            if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
+                # ✅ Check for existing pending or accepted request
+                existing = supabase.table("mentorshiprequest") \
+                    .select("id", "status") \
+                    .eq("menteeid", user_id) \
+                    .eq("mentorid", mentor["userid"]) \
+                    .in_("status", ["PENDING", "ACCEPTED"]) \
+                    .execute().data
+
+                if existing:
+                    st.warning("❗ You already have a pending or active request with this mentor.")
+                else:
+                    supabase.table("mentorshiprequest").insert({
+                        "mentorid": mentor["userid"],
+                        "menteeid": user_id,
+                        "status": "PENDING"
+                    }).execute()
+                    st.success(f"✅ Mentorship request sent to {mentor['email']}!")
 
     # 📄 My Requests Tab
     with tabs[1]:
