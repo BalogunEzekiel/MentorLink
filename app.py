@@ -15,7 +15,7 @@ from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
-from components.mentor_chat_page import show_mentor_chat  # ✅ Import chatbot page
+from components.mentorchat_widget import mentorchat_widget  # ✅ floating chat widget
 
 # Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
@@ -23,12 +23,10 @@ st.set_page_config(page_title="MentorLink", layout="wide")
 # Always show sidebar
 sidebar()
 
-# ✅ If user clicked "Chat with MentorChat", show chatbot interface
-if st.session_state.get("show_mentor_chat"):
-    show_mentor_chat()
-    st.stop()  # prevent loading other dashboards
+# ✅ Show floating chat on every page if toggled
+mentorchat_widget()
 
-# Main logic
+# 🔐 Auth + Routing
 if not st.session_state.get("authenticated", False):
     login()
 else:
@@ -50,11 +48,11 @@ else:
     else:
         admin.show()
 
-# ✅ Show footer only if user is NOT authenticated
+# 🧾 Show footer only if not logged in
 if not st.session_state.get("authenticated", False):
     app_footer()
 
-# ✅ Optional rerun handling
+# 🔁 Handle rerun flags
 if st.session_state.get("do_rerun"):
     st.session_state["do_rerun"] = False
     st.rerun()
