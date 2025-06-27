@@ -62,7 +62,6 @@ Aspiring developers often face difficulties in finding accessible, experienced m
 ## 🚀 Scalable Enhancements (What's Next)
 
 - 🤖 AI-based mentor suggestions.  
-- ⭐ Session feedback and rating system.  
 - 🏅 Gamification features (e.g., badges, milestones).  
 - 🔔 Email/SMS reminders for mentorship sessions.
 
