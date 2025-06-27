@@ -1,7 +1,7 @@
 import streamlit as st
 import bcrypt
 import time
-from supabase.client import supabase
+from database import supabase
 
 def login():
     st.title("Login")
