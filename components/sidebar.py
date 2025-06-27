@@ -30,7 +30,7 @@ def sidebar():
         st.markdown("**📞 Contact Us:**")
         st.markdown("- [💬 Chat with the Support Team](https://wa.me/2348062529172)")
         st.markdown("---")
-        st.markdown("## 👨‍💻 App Developer")
+        st.markdown("# 👨‍💻 App Developer")
         st.markdown(
             """
 **Ezekiel BALOGUN**  
