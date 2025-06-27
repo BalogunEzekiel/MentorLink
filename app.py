@@ -29,17 +29,19 @@ else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
-    # Force password change and profile setup
+    # Force password change and profile setup for non-admins
     if role != "Admin":
         if user.get("must_change_password", False):
             change_password()
         elif not user.get("profile_completed", False):
             profile_form()
-        
+        else:
+            # Show respective dashboard
             if role == "Mentor":
                 mentor.show()
             elif role == "Mentee":
                 mentee.show()
             else:
                 st.warning("⚠️ Unknown role.")
-admin.show()
+    else:
+        admin.show()
