@@ -17,11 +17,37 @@ def show_mentor_chat():
 
     # If input submitted
     if user_input:
+        # Save user message
         st.session_state.chat_history.append(("user", user_input))
 
-        # Get bot response
+        # Add placeholder for bot response (will be replaced during typing)
+        st.session_state.chat_history.append(("bot", "...typing..."))
+
+        # Rerun to show user message first, then simulate bot response
+        st.session_state["pending_response"] = {
+            "input": user_input,
+            "role": role
+        }
+        st.rerun()
+
+    # Check if bot response needs to be generated
+    if "pending_response" in st.session_state:
+        user_input = st.session_state["pending_response"]["input"]
+        role = st.session_state["pending_response"]["role"]
+
+        # Remove the "...typing..." placeholder
+        if st.session_state.chat_history and st.session_state.chat_history[-1][1] == "...typing...":
+            st.session_state.chat_history.pop()
+
+        # Generate response
         bot_response = mentorchat(user_input, user_role=role)
         st.session_state.chat_history.append(("bot", bot_response))
+
+        # Clean up
+        del st.session_state["pending_response"]
+
+        # Rerun again to display animated typing
+        st.rerun()
 
     # Display chat history
     for sender, message in st.session_state.chat_history:
@@ -30,17 +56,19 @@ def show_mentor_chat():
                 st.write(message)
         else:
             with st.chat_message("assistant"):
-                simulate_typing(message)
+                if message == st.session_state.chat_history[-1][1]:
+                    simulate_typing(message)  # Typing simulation only for latest
+                else:
+                    st.write(message)
 
 # 🔄 Typing Simulation
 def simulate_typing(response: str, delay: float = 0.02):
-    """Displays the bot response with a typing simulation."""
     displayed = ""
     message_placeholder = st.empty()
 
     for char in response:
         displayed += char
-        message_placeholder.markdown(displayed + "▌")  # Simulated cursor
+        message_placeholder.markdown(displayed + "▌")
         time.sleep(delay)
 
-    message_placeholder.markdown(displayed)  # Final output
+    message_placeholder.markdown(displayed)  # Final text
