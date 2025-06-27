@@ -19,7 +19,12 @@ def sidebar():
 
         # ✅ 🔹 Add MentorChat Button
         if st.button("💬 Chat with MentorChat"):
-            st.session_state["show_mentor_chat"] = True  # trigger chatbot page
+            st.session_state["show_mentor_chat"] = True
+
+        # 💬 Chat toggle
+        chat_visible = st.sidebar.toggle("💬 Toggle MentorChat", key="toggle_mentor_chat")
+        st.session_state["show_mentor_chat"] = chat_visible
+
 
         st.markdown("---")
 
