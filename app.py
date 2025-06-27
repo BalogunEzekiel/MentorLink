@@ -15,12 +15,18 @@ from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
+from components.mentor_chat_page import show_mentor_chat  # ✅ Import chatbot page
 
 # Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
 
 # Always show sidebar
 sidebar()
+
+# ✅ If user clicked "Chat with MentorChat", show chatbot interface
+if st.session_state.get("show_mentor_chat"):
+    show_mentor_chat()
+    st.stop()  # prevent loading other dashboards
 
 # Main logic
 if not st.session_state.get("authenticated", False):
