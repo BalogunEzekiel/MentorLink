@@ -9,9 +9,11 @@ def sidebar():
             user = st.session_state["user"]
             full_name = user.get("fullname") or user.get("email", "User").split("@")[0].capitalize()
             st.success(f"👋 Welcome, {full_name}!")
+        st.markdown("---")
 
-        st.info("**.....learning from the best, becoming the best!**\n\n"
-                "MentorLink ....your sure path to a better tomorrow.")
+        st.sidebar.title("About MentorLink 👗")
+        st.info("**MentorLink**\n\n"
+                "_.....bridging ambition with guidiance for a better tomorrow._")
 
         st.markdown("**📞 Contact Us:**")
         st.markdown("- [💬 Chat with the Support Team](https://wa.me/2348062529172)")
@@ -20,10 +22,10 @@ def sidebar():
         st.markdown(
             """
 **Ezekiel BALOGUN**  
-_Full-Stack Developer_  
-_Data Scientist / Analyst_  
-_AI / Machine Learning Engineer_  
-_Automation / BI Expert_
+* _Full-Stack Developer_  
+* _Data Scientist / Analyst_  
+* _AI / Machine Learning Engineer_  
+* _Automation / BI Expert_
 
 📧 [ezekiel4true@yahoo.com](mailto:ezekiel4true@yahoo.com)  
 🔗 [LinkedIn](https://www.linkedin.com/in/ezekiel-balogun-39a14438)  
