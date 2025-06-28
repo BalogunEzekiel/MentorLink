@@ -174,7 +174,7 @@ def show():
         show_calendar()
     
         st.divider()
-        st.subheader("📅 Set Your Availability")
+        st.subheader("📅 Add Your Availability")  # Updated this line to be clearer and avoid duplication
     
         with st.form("set_availability_form", clear_on_submit=True):
             start_date = st.date_input("Start Date", value=datetime.now().date())
@@ -201,6 +201,7 @@ def show():
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to save availability: {e}")
+
 
     # 🖼️ Profile Picture Tab
     with tabs[3]:
