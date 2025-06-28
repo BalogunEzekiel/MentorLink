@@ -169,31 +169,31 @@ def show():
 
     # 🗓 Calendar View
     with tabs[2]:
-    st.subheader("Visual Schedule")
-    show_calendar()
-
-    st.divider()
-    st.subheader("📅 Set Your Availability")
-
-    with st.form("set_availability_form", clear_on_submit=True):
-        start = st.datetime_input("Start Time", value=datetime.now() + timedelta(hours=1))
-        end = st.datetime_input("End Time", value=datetime.now() + timedelta(hours=2))
-
-        submitted = st.form_submit_button("➕ Add Availability")
-        if submitted:
-            if end <= start:
-                st.error("❌ End time must be after start time.")
-            else:
-                try:
-                    supabase.table("availability").insert({
-                        "mentorid": mentor_id,
-                        "start": start.isoformat(),
-                        "end": end.isoformat()
-                    }).execute()
-                    st.success("✅ Availability added successfully.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to save availability: {e}")
+        st.subheader("Visual Schedule")
+        show_calendar()
+    
+        st.divider()
+        st.subheader("📅 Set Your Availability")
+    
+        with st.form("set_availability_form", clear_on_submit=True):
+            start = st.datetime_input("Start Time", value=datetime.now() + timedelta(hours=1))
+            end = st.datetime_input("End Time", value=datetime.now() + timedelta(hours=2))
+    
+            submitted = st.form_submit_button("➕ Add Availability")
+            if submitted:
+                if end <= start:
+                    st.error("❌ End time must be after start time.")
+                else:
+                    try:
+                        supabase.table("availability").insert({
+                            "mentorid": mentor_id,
+                            "start": start.isoformat(),
+                            "end": end.isoformat()
+                        }).execute()
+                        st.success("✅ Availability added successfully.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to save availability: {e}")
 
     # 🖼️ Profile Picture Tab
     with tabs[3]:
