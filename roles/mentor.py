@@ -22,20 +22,24 @@ def show():
         return
 
     # --- Upload profile image helper ---
-     def upload_profile_picture(file):
+    def upload_profile_picture(file):
         if file is None:
             return None
-    
+
         file_path = f"{mentor_id}/{file.name}"
-    
+
         try:
             # ✅ Convert memoryview to bytes before upload
-            res = supabase.storage.from_("profilepics").upload(file_path, bytes(file.getbuffer()), {"upsert": True})
+            res = supabase.storage.from_("profilepics").upload(
+                file_path, bytes(file.getbuffer()), {"upsert": True}
+            )
             if res.get("error"):
                 st.error(f"❌ Upload failed: {res['error']['message']}")
                 return None
-    
-            public_url = f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
+
+            public_url = (
+                f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
+            )
             return public_url
         except Exception as e:
             st.error(f"❌ Upload error: {e}")
@@ -48,7 +52,14 @@ def show():
     with tabs[0]:
         st.subheader("Incoming Mentorship Requests")
         try:
-            requests = supabase.table("mentorshiprequest").select("*").eq("mentorid", mentor_id).eq("status", "PENDING").execute().data
+            requests = (
+                supabase.table("mentorshiprequest")
+                .select("*")
+                .eq("mentorid", mentor_id)
+                .eq("status", "PENDING")
+                .execute()
+                .data
+            )
         except APIError as e:
             st.error("Failed to fetch mentorship requests.")
             st.code(str(e), language="json")
@@ -58,7 +69,13 @@ def show():
             mentee_ids = list({r["menteeid"] for r in requests if r.get("menteeid")})
 
             try:
-                mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data
+                mentees = (
+                    supabase.table("users")
+                    .select("userid, email")
+                    .in_("userid", mentee_ids)
+                    .execute()
+                    .data
+                )
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
@@ -72,14 +89,19 @@ def show():
 
                 if col1.button("Accept", key=f"accept_{req['mentorshiprequestid']}"):
                     try:
-                        supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                        supabase.table("mentorshiprequest").update(
+                            {"status": "ACCEPTED"}
+                        ).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+
                         session_date = (datetime.now() + timedelta(days=1)).isoformat()
+
                         supabase.table("session").insert({
                             "mentorid": req["mentorid"],
                             "menteeid": req["menteeid"],
                             "date": session_date,
                             "mentorshiprequestid": req["mentorshiprequestid"]
                         }).execute()
+
                         st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
                         st.rerun()
                     except APIError as e:
@@ -88,7 +110,9 @@ def show():
 
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                     try:
-                        supabase.table("mentorshiprequest").update({"status": "REJECTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                        supabase.table("mentorshiprequest").update(
+                            {"status": "REJECTED"}
+                        ).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                         st.warning(f"❌ Rejected request from {mentee_email}")
                         st.rerun()
                     except APIError as e:
@@ -101,7 +125,14 @@ def show():
     with tabs[1]:
         st.subheader("Scheduled Sessions")
         try:
-            sessions = supabase.table("session").select("*").eq("mentorid", mentor_id).order("date", desc=False).execute().data
+            sessions = (
+                supabase.table("session")
+                .select("*")
+                .eq("mentorid", mentor_id)
+                .order("date", desc=False)
+                .execute()
+                .data
+            )
         except APIError as e:
             st.error("Failed to fetch sessions.")
             st.code(str(e), language="json")
@@ -110,7 +141,13 @@ def show():
         if sessions:
             mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
             try:
-                mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data
+                mentees = (
+                    supabase.table("users")
+                    .select("userid, email")
+                    .in_("userid", mentee_ids)
+                    .execute()
+                    .data
+                )
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
