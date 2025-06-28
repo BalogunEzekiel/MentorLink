@@ -42,6 +42,8 @@ def show():
                             "status": "PENDING"
                         }).execute()
                         st.success(f"✅ Mentorship request sent to {mentor['email']}!")
+                        time.sleep(1)
+                        st.rerun()        
                 except Exception as e:
                     st.error(f"❌ Failed to send request: {e}")
 
