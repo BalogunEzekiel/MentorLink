@@ -29,7 +29,8 @@ def show():
         file_path = f"{mentor_id}/{file.name}"
 
         try:
-            res = supabase.storage.from_("profilepics").upload(file_path, file, {"upsert": True})
+            # ✅ Fix: use getbuffer() for byte-compatible upload
+            res = supabase.storage.from_("profilepics").upload(file_path, file.getbuffer(), {"upsert": True})
             if res.get("error"):
                 st.error(f"❌ Upload failed: {res['error']['message']}")
                 return None
