@@ -22,14 +22,14 @@ from database import supabase
 def cancel_expired_requests():
     try:
         response = supabase.table("mentorshiprequest") \
-            .select("mentorshiprequestid, created_at, status") \
+            .select("mentorshiprequestid, createdat, status") \
             .eq("status", "PENDING") \
             .execute()
 
         now = datetime.now(timezone.utc)
         for req in response.data:
-            created_at = datetime.fromisoformat(req["created_at"])
-            if now - created_at > timedelta(hours=48):
+            createdat = datetime.fromisoformat(req["createdat"])
+            if now - createdat > timedelta(hours=48):
                 supabase.table("mentorshiprequest") \
                     .update({"status": "CANCELLED_AUTO"}) \
                     .eq("id", req["mentorshiprequestid"]).execute()
