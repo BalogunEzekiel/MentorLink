@@ -15,65 +15,65 @@ def show():
 
 # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
-    st.subheader("Browse Available Mentors")
-    try:
-        mentors = supabase.table("users") \
-            .select("*, profile(name, bio, skills, goals, profile_image_url)") \
-            .eq("role", "Mentor") \
-            .execute().data
-    except Exception as e:
-        st.error(f"❌ Failed to load mentors: {e}")
-        mentors = []
-
-    if not mentors:
-        st.info("No mentors found.")
-    else:
-        cols = st.columns(2)  # Two-column layout
-        for i, mentor in enumerate(mentors):
-            col = cols[i % 2]
-            with col:
-                profile = mentor.get("profile", {})
-                name = profile.get("name", "Unnamed Mentor")
-                bio = profile.get("bio", "No bio provided.")
-                skills = profile.get("skills", "Not specified")
-                goals = profile.get("goals", "No goals set")
-                image_url = profile.get("profile_image_url")
-
-                # 👤 Profile Picture or Placeholder
-                if image_url:
-                    st.image(image_url, width=100)
-                else:
-                    st.markdown("🧑‍🏫", unsafe_allow_html=True)
-
-                # 💬 Profile Details
-                st.markdown(f"**{name}**")
-                st.markdown(f"_{bio}_")
-                st.markdown(f"**Skills:** {skills}")
-                st.markdown(f"**Goals:** {goals}")
-
-                # 🟢 Request Button with duplicate check
-                if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                    try:
-                        existing = supabase.table("mentorshiprequest") \
-                            .select("mentorshiprequestid", "status") \
-                            .eq("menteeid", user_id) \
-                            .eq("mentorid", mentor["userid"]) \
-                            .in_("status", ["PENDING", "ACCEPTED"]) \
-                            .execute().data
-
-                        if existing:
-                            st.warning("❗ You already have a pending or accepted request with this mentor.")
-                        else:
-                            supabase.table("mentorshiprequest").insert({
-                                "mentorid": mentor["userid"],
-                                "menteeid": user_id,
-                                "status": "PENDING"
-                            }).execute()
-                            st.success(f"✅ Mentorship request sent to {mentor['email']}!")
-                            time.sleep(1)
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Failed to send request: {e}")
+        st.subheader("Browse Available Mentors")
+        try:
+            mentors = supabase.table("users") \
+                .select("*, profile(name, bio, skills, goals, profile_image_url)") \
+                .eq("role", "Mentor") \
+                .execute().data
+        except Exception as e:
+            st.error(f"❌ Failed to load mentors: {e}")
+            mentors = []
+    
+        if not mentors:
+            st.info("No mentors found.")
+        else:
+            cols = st.columns(2)  # Two-column layout
+            for i, mentor in enumerate(mentors):
+                col = cols[i % 2]
+                with col:
+                    profile = mentor.get("profile", {})
+                    name = profile.get("name", "Unnamed Mentor")
+                    bio = profile.get("bio", "No bio provided.")
+                    skills = profile.get("skills", "Not specified")
+                    goals = profile.get("goals", "No goals set")
+                    image_url = profile.get("profile_image_url")
+    
+                    # 👤 Profile Picture or Placeholder
+                    if image_url:
+                        st.image(image_url, width=100)
+                    else:
+                        st.markdown("🧑‍🏫", unsafe_allow_html=True)
+    
+                    # 💬 Profile Details
+                    st.markdown(f"**{name}**")
+                    st.markdown(f"_{bio}_")
+                    st.markdown(f"**Skills:** {skills}")
+                    st.markdown(f"**Goals:** {goals}")
+    
+                    # 🟢 Request Button with duplicate check
+                    if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
+                        try:
+                            existing = supabase.table("mentorshiprequest") \
+                                .select("mentorshiprequestid", "status") \
+                                .eq("menteeid", user_id) \
+                                .eq("mentorid", mentor["userid"]) \
+                                .in_("status", ["PENDING", "ACCEPTED"]) \
+                                .execute().data
+    
+                            if existing:
+                                st.warning("❗ You already have a pending or accepted request with this mentor.")
+                            else:
+                                supabase.table("mentorshiprequest").insert({
+                                    "mentorid": mentor["userid"],
+                                    "menteeid": user_id,
+                                    "status": "PENDING"
+                                }).execute()
+                                st.success(f"✅ Mentorship request sent to {mentor['email']}!")
+                                time.sleep(1)
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to send request: {e}")
     
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
