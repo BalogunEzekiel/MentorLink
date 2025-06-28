@@ -1,10 +1,9 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from database import supabase
-import streamlit as st  # Optional: only if you want to display errors in Streamlit
+import streamlit as st  # Optional: display errors nicely
 
 def cancel_expired_requests():
     try:
-        # ✅ Get all pending requests
         response = supabase.table("mentorshiprequest") \
             .select("mentorshiprequestid, createdat, status") \
             .eq("status", "PENDING") \
@@ -13,15 +12,18 @@ def cancel_expired_requests():
         now = datetime.now(timezone.utc)
 
         for req in response.data:
-            createdat = datetime.fromisoformat(req["createdat"])
-            request_id = req["mentorshiprequestid"]
+            created_str = req["createdat"]
 
-            # ✅ Cancel if older than 48 hours
-            if now - createdat > timedelta(hours=48):
+            # Ensure datetime is parsed as offset-aware
+            created_at = datetime.fromisoformat(created_str)
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+
+            if now - created_at > timedelta(hours=48):
                 supabase.table("mentorshiprequest") \
                     .update({"status": "CANCELLED_AUTO"}) \
-                    .eq("mentorshiprequestid", request_id) \
+                    .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
                     .execute()
 
     except Exception as e:
-        st.error(f"⚠️ Failed to auto-cancel expired requests: {e}")
+        st.warning(f"⚠️ Failed to auto-cancel expired requests: {e}")
