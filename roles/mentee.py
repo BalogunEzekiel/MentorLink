@@ -6,6 +6,14 @@ from mentee_requests import show as show_booking
 import time
 
 def show():
+    # ✅ Handle post-request success before any UI rendering
+    if st.session_state.get("mentor_request_success"):
+        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
+        time.sleep(1.5)
+        del st.session_state["mentor_request_success"]
+        st.rerun()
+        return
+
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, and track bookings.")
     user_id = st.session_state.user["userid"]
@@ -65,7 +73,7 @@ def show():
                                     "status": "PENDING"
                                 }).execute()
                                 st.session_state["mentor_request_success"] = mentor["email"]
-                                st.experimental_rerun()
+                                st.rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
 
@@ -130,10 +138,3 @@ def show():
                         st.error("❌ Failed to send email.")
         else:
             st.info("You don’t have any sessions yet.")
-
-    # ✅ Show success message after rerun
-    if st.session_state.get("mentor_request_success"):
-        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
-        time.sleep(1)
-        del st.session_state["mentor_request_success"]
-        st.rerun()
