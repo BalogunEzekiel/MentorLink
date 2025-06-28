@@ -13,7 +13,7 @@ def show():
     # Create tabs
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
-# ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
         try:
@@ -24,7 +24,7 @@ def show():
         except Exception as e:
             st.error(f"❌ Failed to load mentors: {e}")
             mentors = []
-    
+
         if not mentors:
             st.info("No mentors found.")
         else:
@@ -38,20 +38,23 @@ def show():
                     skills = profile.get("skills", "Not specified")
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
-    
-                    # 📸 Avatar or Placeholder
+
+                    # 📸 Avatar or Placeholder (passport-sized)
                     if image_url:
                         st.image(image_url, width=120, caption=name)
                     else:
-                        # Use a simple built-in avatar placeholder
-                        st.image("https://ui-avatars.com/api/?name=" + name.replace(" ", "+") + "&size=128&background=ddd&color=555", width=120, caption=name)
-    
-                    # 💼 Details
+                        st.image(
+                            f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555",
+                            width=120,
+                            caption=name
+                        )
+
+                    # 💼 Mentor Details
                     st.markdown(f"**Bio:** {bio}")
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
-    
-                    # 🚀 Request Button
+
+                    # 🚀 Mentorship Request Button
                     if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                         try:
                             existing = supabase.table("mentorshiprequest") \
@@ -60,7 +63,7 @@ def show():
                                 .eq("mentorid", mentor["userid"]) \
                                 .in_("status", ["PENDING", "ACCEPTED"]) \
                                 .execute().data
-    
+
                             if existing:
                                 st.warning("❗ You already have a pending or accepted request with this mentor.")
                             else:
@@ -70,11 +73,11 @@ def show():
                                     "status": "PENDING"
                                 }).execute()
                                 st.success(f"✅ Mentorship request sent to {mentor['email']}!")
-                                time.sleep(1)
+                                time.sleep(2)  # ✅ Pause for visibility
                                 st.rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
-    
+
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
         st.subheader("Your Mentorship Requests")
