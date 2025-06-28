@@ -10,8 +10,14 @@ def show():
     st.info("Browse mentors, request sessions, and track bookings.")
     user_id = st.session_state.user["userid"]
 
-    # Create tabs
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
+
+    # ✅ Show success message after rerun
+    if st.session_state.get("mentor_request_success"):
+        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
+        time.sleep(2)
+        del st.session_state["mentor_request_success"]
+        st.experimental_rerun()
 
     # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
@@ -39,22 +45,15 @@ def show():
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
 
-                    # 📸 Avatar or Placeholder (passport-sized)
-                    if image_url:
-                        st.image(image_url, width=120, caption=name)
-                    else:
-                        st.image(
-                            f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555",
-                            width=120,
-                            caption=name
-                        )
+                    # 📸 Profile picture or placeholder (passport size)
+                    avatar_url = image_url if image_url else \
+                        f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
+                    st.image(avatar_url, width=120, caption=name)
 
-                    # 💼 Mentor Details
                     st.markdown(f"**Bio:** {bio}")
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
 
-                    # 🚀 Mentorship Request Button
                     if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                         try:
                             existing = supabase.table("mentorshiprequest") \
@@ -72,9 +71,8 @@ def show():
                                     "menteeid": user_id,
                                     "status": "PENDING"
                                 }).execute()
-                                st.success(f"✅ Mentorship request sent to {mentor['email']}!")
-                                time.sleep(2)  # ✅ Pause for visibility
-                                st.rerun()
+                                st.session_state["mentor_request_success"] = mentor["email"]
+                                st.experimental_rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
 
