@@ -2,17 +2,16 @@ import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime
 from emailer import send_email
-from mentee_requests import show as show_booking
-import time
+from mentee_requests import show as show_booking # Assuming this is correct
 
 def show():
-    # Check for success message at the beginning of the script execution
-    if st.session_state.get("mentor_request_success"):
-        mentor_email = st.session_state["mentor_request_success"]
-        st.success(f"✅ Mentorship request sent to {mentor_email}!")
-        # IMPORTANT: Clear the state *after* displaying, so it doesn't show on subsequent unrelated reruns
-        # No need for time.sleep() here, as the message will persist until the next interaction.
-        del st.session_state["mentor_request_success"]
+    # --- Handling post-request success messages ---
+    # Check if a success message is queued for display
+    if "mentor_request_success_message" in st.session_state:
+        st.success(st.session_state["mentor_request_success_message"])
+        # Important: Delete the message from session state after displaying it
+        # This ensures it only shows up for one rerun.
+        del st.session_state["mentor_request_success_message"]
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, and track bookings.")
@@ -72,9 +71,10 @@ def show():
                                     "menteeid": user_id,
                                     "status": "PENDING"
                                 }).execute()
-                                # Set the success state and rerun immediately
-                                st.session_state["mentor_request_success"] = mentor["email"]
-                                st.rerun() # This will cause the script to re-execute from the top
+                                # Store the message itself, not just a flag
+                                st.session_state["mentor_request_success_message"] = \
+                                    f"✅ Mentorship request sent to {mentor['email']}!"
+                                st.rerun() # Trigger a rerun to display the message
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
 
