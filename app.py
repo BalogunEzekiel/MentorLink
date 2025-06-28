@@ -1,7 +1,6 @@
 import streamlit as st
 import sys
 import os
-from datetime import datetime, timedelta, timezone
 
 # Ensure local module imports work
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,29 +12,8 @@ st.set_page_config(page_title="MentorLink", layout="wide")
 from utils.setup_admin import setup_admin_account
 setup_admin_account()
 
+# ✅ Auto-cancel expired mentorship requests (run before user routing)
 from utils.auto_cancel import cancel_expired_requests
-cancel_expired_requests()
-
-# ✅ Auto-cancel stale mentorship requests after 48 hours
-from database import supabase
-
-def cancel_expired_requests():
-    try:
-        response = supabase.table("mentorshiprequest") \
-            .select("mentorshiprequestid, createdat, status") \
-            .eq("status", "PENDING") \
-            .execute()
-
-        now = datetime.now(timezone.utc)
-        for req in response.data:
-            createdat = datetime.fromisoformat(req["createdat"])
-            if now - createdat > timedelta(hours=48):
-                supabase.table("mentorshiprequest") \
-                    .update({"status": "CANCELLED_AUTO"}) \
-                    .eq("id", req["mentorshiprequestid"]).execute()
-    except Exception as e:
-        st.error(f"⚠️ Failed to auto-cancel expired requests: {e}")
-
 cancel_expired_requests()
 
 # ✅ Import views and handlers
