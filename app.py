@@ -13,7 +13,7 @@ st.set_page_config(page_title="MentorLink", layout="wide")
 from utils.setup_admin import setup_admin_account
 setup_admin_account()
 
-from utils.auto_cancel import cancel_expired_requests  # if in separate file
+from utils.auto_cancel import cancel_expired_requests
 cancel_expired_requests()
 
 # ✅ Auto-cancel stale mentorship requests after 48 hours
