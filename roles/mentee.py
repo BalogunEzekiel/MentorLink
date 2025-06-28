@@ -6,13 +6,13 @@ from mentee_requests import show as show_booking
 import time
 
 def show():
-    # ✅ Handle post-request success before any UI rendering
+    # Check for success message at the beginning of the script execution
     if st.session_state.get("mentor_request_success"):
-        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
-        time.sleep(1.5)
+        mentor_email = st.session_state["mentor_request_success"]
+        st.success(f"✅ Mentorship request sent to {mentor_email}!")
+        # IMPORTANT: Clear the state *after* displaying, so it doesn't show on subsequent unrelated reruns
+        # No need for time.sleep() here, as the message will persist until the next interaction.
         del st.session_state["mentor_request_success"]
-        st.rerun()
-        return
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, and track bookings.")
@@ -72,8 +72,9 @@ def show():
                                     "menteeid": user_id,
                                     "status": "PENDING"
                                 }).execute()
+                                # Set the success state and rerun immediately
                                 st.session_state["mentor_request_success"] = mentor["email"]
-                                st.rerun()
+                                st.rerun() # This will cause the script to re-execute from the top
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
 
