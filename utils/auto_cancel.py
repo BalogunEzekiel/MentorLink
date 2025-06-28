@@ -9,20 +9,22 @@ def cancel_expired_requests():
             .eq("status", "PENDING") \
             .execute()
 
-        now = datetime.now(timezone.utc)  # ✅ This is timezone-aware
+        now = datetime.now(timezone.utc)  # Aware datetime
 
         for req in response.data:
             created_str = req["createdat"]
 
-            # ✅ Ensure the datetime string is parsed as timezone-aware
+            # Convert to datetime object
             try:
                 created_at = datetime.fromisoformat(created_str)
-            except ValueError:
-                created_at = datetime.strptime(created_str, "%Y-%m-%dT%H:%M:%S.%f%z")
+            except Exception:
+                created_at = datetime.strptime(created_str, "%Y-%m-%dT%H:%M:%S.%fZ")
 
-            if created_at.tzinfo is None:
-                created_at = created_at.replace(tzinfo=timezone.utc)  # Fallback
+            # 🛠 Ensure created_at is timezone-aware
+            if created_at.tzinfo is None or created_at.tzinfo.utcoffset(created_at) is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
 
+            # ✅ Compare with current UTC time
             if now - created_at > timedelta(hours=48):
                 supabase.table("mentorshiprequest") \
                     .update({"status": "CANCELLED_AUTO"}) \
