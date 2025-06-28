@@ -22,24 +22,24 @@ def show():
         return
 
     # --- Upload profile image helper ---
- def upload_profile_picture(file):
-    if file is None:
-        return None
-
-    file_path = f"{mentor_id}/{file.name}"
-
-    try:
-        # ✅ Convert memoryview to bytes before upload
-        res = supabase.storage.from_("profilepics").upload(file_path, bytes(file.getbuffer()), {"upsert": True})
-        if res.get("error"):
-            st.error(f"❌ Upload failed: {res['error']['message']}")
+     def upload_profile_picture(file):
+        if file is None:
             return None
-
-        public_url = f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
-        return public_url
-    except Exception as e:
-        st.error(f"❌ Upload error: {e}")
-        return None
+    
+        file_path = f"{mentor_id}/{file.name}"
+    
+        try:
+            # ✅ Convert memoryview to bytes before upload
+            res = supabase.storage.from_("profilepics").upload(file_path, bytes(file.getbuffer()), {"upsert": True})
+            if res.get("error"):
+                st.error(f"❌ Upload failed: {res['error']['message']}")
+                return None
+    
+            public_url = f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
+            return public_url
+        except Exception as e:
+            st.error(f"❌ Upload error: {e}")
+            return None
 
     # Tabs
     tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Calendar", "🖼️ Profile Picture"])
