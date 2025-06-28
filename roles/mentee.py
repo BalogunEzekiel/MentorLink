@@ -13,40 +13,55 @@ def show():
     # Create tabs
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
-    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+# ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
+    
         try:
             mentors = supabase.table("users").select("*").eq("role", "Mentor").execute().data
         except Exception as e:
             st.error(f"❌ Failed to load mentors: {e}")
             mentors = []
-
-        for mentor in mentors:
-            st.markdown(f"**{mentor.get('email', 'Unknown')}**")
-
-            if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                try:
-                    existing = supabase.table("mentorshiprequest") \
-                        .select("mentorshiprequestid", "status") \
-                        .eq("menteeid", user_id) \
-                        .eq("mentorid", mentor["userid"]) \
-                        .in_("status", ["PENDING", "ACCEPTED"]) \
-                        .execute().data
-
-                    if existing:
-                        st.warning("❗ You already have a pending or accepted request with this mentor.")
-                    else:
-                        supabase.table("mentorshiprequest").insert({
-                            "mentorid": mentor["userid"],
-                            "menteeid": user_id,
-                            "status": "PENDING"
-                        }).execute()
-                        st.success(f"✅ Mentorship request sent to {mentor['email']}!")
-                        time.sleep(1)
-                        st.rerun()        
-                except Exception as e:
-                    st.error(f"❌ Failed to send request: {e}")
+    
+        if mentors:
+            cols = st.columns(2)  # Two mentors per row
+            for i, mentor in enumerate(mentors):
+                with cols[i % 2]:
+                    with st.container():
+                        st.markdown("---")
+                        profile_pic = mentor.get("profile_image_url") or "https://via.placeholder.com/150"
+                        st.image(profile_pic, width=150, caption=mentor.get("fullname", "Mentor"))
+    
+                        st.markdown(f"### {mentor.get('fullname', 'Unknown')}")
+                        st.markdown(f"📧 **Email:** {mentor.get('email', 'N/A')}")
+                        st.markdown(f"💼 **Expertise:** {mentor.get('expertise', 'Not specified')}")
+                        st.markdown(f"📝 **Bio:** {mentor.get('bio', 'No bio provided.')}")
+                        st.markdown(f"🌍 **Location:** {mentor.get('location', 'Unknown')}")
+    
+                        if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
+                            try:
+                                existing = supabase.table("mentorshiprequest") \
+                                    .select("mentorshiprequestid", "status") \
+                                    .eq("menteeid", user_id) \
+                                    .eq("mentorid", mentor["userid"]) \
+                                    .in_("status", ["PENDING", "ACCEPTED"]) \
+                                    .execute().data
+    
+                                if existing:
+                                    st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                else:
+                                    supabase.table("mentorshiprequest").insert({
+                                        "mentorid": mentor["userid"],
+                                        "menteeid": user_id,
+                                        "status": "PENDING"
+                                    }).execute()
+                                    st.success(f"✅ Mentorship request sent to {mentor['email']}!")
+                                    time.sleep(1)
+                                    st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Failed to send request: {e}")
+        else:
+            st.info("No mentors found at this time.")
 
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
