@@ -2,15 +2,12 @@ import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime
 from emailer import send_email
-from mentee_requests import show as show_booking # Assuming this is correct
+from mentee_requests import show as show_booking  # Assumed to be a separate component
 
 def show():
-    # --- Handling post-request success messages ---
-    # Check if a success message is queued for display
+    # --- Show one-time mentorship request success message ---
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state["mentor_request_success_message"])
-        # Important: Delete the message from session state after displaying it
-        # This ensures it only shows up for one rerun.
         del st.session_state["mentor_request_success_message"]
 
     st.title("Mentee Dashboard")
@@ -22,6 +19,7 @@ def show():
     # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
+
         try:
             mentors = supabase.table("users") \
                 .select("*, profile(name, bio, skills, goals, profile_image_url)") \
@@ -45,11 +43,10 @@ def show():
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
 
-                    # 📸 Avatar or Placeholder
                     avatar_url = image_url if image_url else \
                         f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
-                    st.image(avatar_url, width=120, caption=name)
 
+                    st.image(avatar_url, width=120, caption=name)
                     st.markdown(f"**Bio:** {bio}")
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
@@ -71,16 +68,16 @@ def show():
                                     "menteeid": user_id,
                                     "status": "PENDING"
                                 }).execute()
-                                # Store the message itself, not just a flag
                                 st.session_state["mentor_request_success_message"] = \
                                     f"✅ Mentorship request sent to {mentor['email']}!"
-                                st.rerun() # Trigger a rerun to display the message
+                                st.rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to send request: {e}")
 
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
         st.subheader("Your Mentorship Requests")
+
         try:
             requests_result = supabase.table("mentorshiprequest") \
                 .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
@@ -105,6 +102,7 @@ def show():
     # ---------------------- 📆 My Sessions Tab ----------------------
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
+
         try:
             sessions = supabase.table("session") \
                 .select("*, users!session_mentorid_fkey(email)") \
