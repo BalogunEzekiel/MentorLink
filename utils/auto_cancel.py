@@ -6,18 +6,18 @@ def cancel_expired_requests():
     try:
         # ✅ Get all pending requests
         response = supabase.table("mentorshiprequest") \
-            .select("mentorshiprequestid, created_at, status") \
+            .select("mentorshiprequestid, createdat, status") \
             .eq("status", "PENDING") \
             .execute()
 
         now = datetime.now(timezone.utc)
 
         for req in response.data:
-            created_at = datetime.fromisoformat(req["created_at"])
+            createdat = datetime.fromisoformat(req["createdat"])
             request_id = req["mentorshiprequestid"]
 
             # ✅ Cancel if older than 48 hours
-            if now - created_at > timedelta(hours=48):
+            if now - createdat > timedelta(hours=48):
                 supabase.table("mentorshiprequest") \
                     .update({"status": "CANCELLED_AUTO"}) \
                     .eq("mentorshiprequestid", request_id) \
