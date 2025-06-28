@@ -29,19 +29,22 @@ def show():
         file_path = f"{mentor_id}/{file.name}"
 
         try:
-            # ✅ Use query param to upsert, and convert memoryview to bytes
+            # ✅ Upload using upsert=true and proper byte conversion
             res = supabase.storage.from_("profilepics").upload(
                 f"{file_path}?upsert=true",
                 bytes(file.getbuffer())
             )
-            if res.get("error"):
-                st.error(f"❌ Upload failed: {res['error']['message']}")
+
+            # ✅ Correctly check for error object
+            if res.error:
+                st.error(f"❌ Upload failed: {res.error.message}")
                 return None
 
             public_url = (
                 f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
             )
             return public_url
+
         except Exception as e:
             st.error(f"❌ Upload error: {e}")
             return None
@@ -68,7 +71,6 @@ def show():
 
         if requests:
             mentee_ids = list({r["menteeid"] for r in requests if r.get("menteeid")})
-
             try:
                 mentees = (
                     supabase.table("users")
