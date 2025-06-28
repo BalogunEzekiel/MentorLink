@@ -51,28 +51,42 @@ def show():
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
 
-                    if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                        try:
-                            existing = supabase.table("mentorshiprequest") \
-                                .select("mentorshiprequestid", "status") \
-                                .eq("menteeid", user_id) \
-                                .eq("mentorid", mentor["userid"]) \
-                                .in_("status", ["PENDING", "ACCEPTED"]) \
-                                .execute().data
+                    # Check mentor availability
+                    try:
+                        availability = supabase.table("availability") \
+                            .select("availabilityid") \
+                            .eq("mentorid", mentor["userid"]) \
+                            .execute().data
+                    except Exception as e:
+                        st.error(f"❌ Could not check availability: {e}")
+                        availability = []
 
-                            if existing:
-                                st.warning("❗ You already have a pending or accepted request with this mentor.")
-                            else:
-                                supabase.table("mentorshiprequest").insert({
-                                    "mentorid": mentor["userid"],
-                                    "menteeid": user_id,
-                                    "status": "PENDING"
-                                }).execute()
-                                st.session_state["mentor_request_success_message"] = \
-                                    f"✅ Mentorship request sent to {mentor['email']}!"
-                                st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Failed to send request: {e}")
+                    # Allow request only if availability exists
+                    if availability:
+                        if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
+                            try:
+                                existing = supabase.table("mentorshiprequest") \
+                                    .select("mentorshiprequestid", "status") \
+                                    .eq("menteeid", user_id) \
+                                    .eq("mentorid", mentor["userid"]) \
+                                    .in_("status", ["PENDING", "ACCEPTED"]) \
+                                    .execute().data
+
+                                if existing:
+                                    st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                else:
+                                    supabase.table("mentorshiprequest").insert({
+                                        "mentorid": mentor["userid"],
+                                        "menteeid": user_id,
+                                        "status": "PENDING"
+                                    }).execute()
+                                    st.session_state["mentor_request_success_message"] = \
+                                        f"✅ Mentorship request sent to {mentor['email']}!"
+                                    st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Failed to send request: {e}")
+                    else:
+                        st.warning("This mentor has no availability yet. Please check back later.")
 
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
