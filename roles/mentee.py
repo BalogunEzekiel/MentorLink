@@ -15,9 +15,9 @@ def show():
     # ✅ Show success message after rerun
     if st.session_state.get("mentor_request_success"):
         st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
-        time.sleep(2)
+        time.sleep(1)
         del st.session_state["mentor_request_success"]
-        st.experimental_rerun()
+        st.rerun()
 
     # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
