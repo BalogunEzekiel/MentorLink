@@ -18,26 +18,37 @@ def show():
         st.subheader("Browse Available Mentors")
     
         try:
-            mentors = supabase.table("users").select("*").eq("role", "Mentor").execute().data
+            mentors = supabase.table("users") \
+                .select("*, profile(fullname, bio, skills, goals, profile_image_url)") \
+                .eq("role", "Mentor").execute().data
         except Exception as e:
             st.error(f"❌ Failed to load mentors: {e}")
             mentors = []
     
         if mentors:
-            cols = st.columns(2)  # Two mentors per row
+            cols = st.columns(2)  # Display two mentor cards per row
             for i, mentor in enumerate(mentors):
+                profile = mentor.get("profile", {})
+    
                 with cols[i % 2]:
                     with st.container():
                         st.markdown("---")
-                        profile_pic = mentor.get("profile_image_url") or "https://via.placeholder.com/150"
-                        st.image(profile_pic, width=150, caption=mentor.get("fullname", "Mentor"))
+                        
+                        # 👤 Profile Image or Placeholder
+                        profile_img = profile.get("profile_image_url")
+                        if profile_img:
+                            st.image(profile_img, width=120, caption=profile.get("fullname", "Mentor"))
+                        else:
+                            st.markdown("🧑‍💼", unsafe_allow_html=True)
+                            st.markdown(f"**{profile.get('fullname', 'Mentor')}**")
     
-                        st.markdown(f"### {mentor.get('fullname', 'Unknown')}")
-                        st.markdown(f"📧 **Email:** {mentor.get('email', 'N/A')}")
-                        st.markdown(f"💼 **Expertise:** {mentor.get('expertise', 'Not specified')}")
-                        st.markdown(f"📝 **Bio:** {mentor.get('bio', 'No bio provided.')}")
-                        st.markdown(f"🌍 **Location:** {mentor.get('location', 'Unknown')}")
+                        # 📋 Mentor Details
+                        st.markdown(f"**📧 Email:** {mentor.get('email', 'N/A')}")
+                        st.markdown(f"**📝 Bio:** {profile.get('bio', 'No bio provided.')}")
+                        st.markdown(f"**🧠 Skills:** {profile.get('skills', 'Not specified')}")
+                        st.markdown(f"**🎯 Goals:** {profile.get('goals', 'Not specified')}")
     
+                        # 📬 Request Mentorship Button
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             try:
                                 existing = supabase.table("mentorshiprequest") \
@@ -62,7 +73,7 @@ def show():
                                 st.error(f"❌ Failed to send request: {e}")
         else:
             st.info("No mentors found at this time.")
-
+    
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
         st.subheader("Your Mentorship Requests")
