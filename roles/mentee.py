@@ -16,39 +16,44 @@ def show():
 # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
-    
         try:
             mentors = supabase.table("users") \
-                .select("*, profile(fullname, bio, skills, goals, profile_image_url)") \
-                .eq("role", "Mentor").execute().data
+                .select("*, profile(name, bio, skills, goals, profile_image_url)") \
+                .eq("role", "Mentor") \
+                .execute().data
         except Exception as e:
             st.error(f"❌ Failed to load mentors: {e}")
             mentors = []
     
-        if mentors:
-            cols = st.columns(2)  # Display two mentor cards per row
-            for i, mentor in enumerate(mentors):
+        if not mentors:
+            st.info("No mentors available at the moment.")
+        else:
+            for mentor in mentors:
                 profile = mentor.get("profile", {})
+                name = profile.get("name", "Unnamed Mentor")
+                email = mentor.get("email", "No email")
+                bio = profile.get("bio", "No bio provided.")
+                skills = profile.get("skills", "No skills listed.")
+                goals = profile.get("goals", "No goals stated.")
+                image_url = profile.get("profile_image_url")
     
-                with cols[i % 2]:
-                    with st.container():
-                        st.markdown("---")
-                        
-                        # 👤 Profile Image or Placeholder
-                        profile_img = profile.get("profile_image_url")
-                        if profile_img:
-                            st.image(profile_img, width=120, caption=profile.get("fullname", "Mentor"))
+                # Create a profile card
+                with st.container():
+                    cols = st.columns([1, 4])
+    
+                    with cols[0]:
+                        if image_url:
+                            st.image(image_url, width=100)
                         else:
-                            st.markdown("🧑‍💼", unsafe_allow_html=True)
-                            st.markdown(f"**{profile.get('fullname', 'Mentor')}**")
+                            st.markdown("🧑‍🏫", unsafe_allow_html=True)  # Emoji placeholder
     
-                        # 📋 Mentor Details
-                        st.markdown(f"**📧 Email:** {mentor.get('email', 'N/A')}")
-                        st.markdown(f"**📝 Bio:** {profile.get('bio', 'No bio provided.')}")
-                        st.markdown(f"**🧠 Skills:** {profile.get('skills', 'Not specified')}")
-                        st.markdown(f"**🎯 Goals:** {profile.get('goals', 'Not specified')}")
+                    with cols[1]:
+                        st.markdown(f"### {name}")
+                        st.markdown(f"📧 **Email:** {email}")
+                        st.markdown(f"🧠 **Skills:** {skills}")
+                        st.markdown(f"🎯 **Goals:** {goals}")
+                        st.markdown(f"📝 **Bio:** {bio}")
     
-                        # 📬 Request Mentorship Button
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             try:
                                 existing = supabase.table("mentorshiprequest") \
@@ -66,13 +71,11 @@ def show():
                                         "menteeid": user_id,
                                         "status": "PENDING"
                                     }).execute()
-                                    st.success(f"✅ Mentorship request sent to {mentor['email']}!")
+                                    st.success(f"✅ Mentorship request sent to {email}!")
                                     time.sleep(1)
                                     st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Failed to send request: {e}")
-        else:
-            st.info("No mentors found at this time.")
     
     # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
