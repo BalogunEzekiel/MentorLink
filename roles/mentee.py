@@ -12,13 +12,6 @@ def show():
 
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
-    # ✅ Show success message after rerun
-    if st.session_state.get("mentor_request_success"):
-        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
-        time.sleep(1)
-        del st.session_state["mentor_request_success"]
-        st.rerun()
-
     # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
@@ -45,7 +38,7 @@ def show():
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
 
-                    # 📸 Profile picture or placeholder (passport size)
+                    # 📸 Avatar or Placeholder
                     avatar_url = image_url if image_url else \
                         f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
                     st.image(avatar_url, width=120, caption=name)
@@ -137,3 +130,10 @@ def show():
                         st.error("❌ Failed to send email.")
         else:
             st.info("You don’t have any sessions yet.")
+
+    # ✅ Show success message after rerun
+    if st.session_state.get("mentor_request_success"):
+        st.success(f"✅ Mentorship request sent to {st.session_state['mentor_request_success']}!")
+        time.sleep(1)
+        del st.session_state["mentor_request_success"]
+        st.rerun()
