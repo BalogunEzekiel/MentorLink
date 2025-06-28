@@ -25,24 +25,27 @@ def show():
     def upload_profile_picture(file):
         if file is None:
             return None
-
+    
         file_path = f"{mentor_id}/{file.name}"
-
+    
         try:
+            # ✅ Use correct keyword argument for upsert
             res = supabase.storage.from_("profilepics").upload(
-                f"{file_path}?upsert=true",  # upsert replaces existing file
-                bytes(file.getbuffer())
+                path=file_path,
+                file=bytes(file.getbuffer()),
+                file_options={"content-type": file.type},
+                upsert=True  # ✅ use upsert correctly
             )
-
-            if res.error:  # check for upload error
+    
+            if hasattr(res, "error") and res.error:
                 st.error(f"❌ Upload failed: {res.error.message}")
                 return None
-
+    
             public_url = (
                 f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
             )
             return public_url
-
+    
         except Exception as e:
             st.error(f"❌ Upload error: {e}")
             return None
