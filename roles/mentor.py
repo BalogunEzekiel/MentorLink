@@ -4,10 +4,11 @@ from database import supabase
 from utils.helpers import format_datetime
 from mentor_calendar import show_calendar
 from postgrest.exceptions import APIError
+import os
 
 def show():
     st.title("Mentor Dashboard")
-    st.info("View mentorship requests, manage availability, upload your profile photo, and see upcoming sessions.")
+    st.info("View mentorship requests, manage availability, and see upcoming sessions.")
 
     if "user" not in st.session_state:
         st.error("Please log in first.")
@@ -20,49 +21,34 @@ def show():
         st.error("Mentor ID not found.")
         return
 
-    # ✅ Profile Picture Section
-    st.subheader("👤 Profile Picture")
+    # --- Upload profile image helper ---
+    def upload_profile_picture(file):
+        if file is None:
+            return None
 
-    # Fetch profile data
-    profile = supabase.table("profile").select("profile_image_url").eq("userid", mentor_id).single().execute().data
-    current_image = profile.get("profile_image_url") if profile and profile.get("profile_image_url") else None
+        file_path = f"{mentor_id}/{file.name}"
 
-    if current_image:
-        st.image(current_image, width=150, caption="Your Profile Picture")
-    else:
-        st.image("https://ui-avatars.com/api/?name=Mentor&background=cccccc&color=333333", width=150, caption="Default")
-
-    uploaded_file = st.file_uploader("Upload new profile picture", type=["png", "jpg", "jpeg"])
-    if uploaded_file:
         try:
-            # Upload to Supabase Storage
-            path = f"profile_images/{mentor_id}_{uploaded_file.name}"
-            supabase.storage.from_("avatars").upload(path, uploaded_file, {"upsert": True})
-            public_url = supabase.storage.from_("avatars").get_public_url(path)
+            res = supabase.storage.from_("profilepics").upload(file_path, file, {"upsert": True})
+            if res.get("error"):
+                st.error(f"❌ Upload failed: {res['error']['message']}")
+                return None
 
-            # Update or insert into profile table
-            supabase.table("profile").upsert({
-                "userid": mentor_id,
-                "profile_image_url": public_url
-            }).execute()
-
-            st.success("✅ Profile picture uploaded successfully!")
-            st.rerun()
+            # Manually construct public URL
+            public_url = f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
+            return public_url
         except Exception as e:
-            st.error(f"❌ Upload failed: {e}")
+            st.error(f"❌ Upload error: {e}")
+            return None
 
-    # ✅ Tabs for Requests, Sessions, Calendar
-    tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Calendar"])
+    # Tabs
+    tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Calendar", "🖼️ Profile Picture"])
 
-    # 📥 Mentorship Requests
+    # 📥 Incoming Requests
     with tabs[0]:
         st.subheader("Incoming Mentorship Requests")
         try:
-            requests = supabase.table("mentorshiprequest") \
-                .select("*") \
-                .eq("mentorid", mentor_id) \
-                .eq("status", "PENDING") \
-                .execute().data
+            requests = supabase.table("mentorshiprequest").select("*").eq("mentorid", mentor_id).eq("status", "PENDING").execute().data
         except APIError as e:
             st.error("Failed to fetch mentorship requests.")
             st.code(str(e), language="json")
@@ -72,10 +58,7 @@ def show():
             mentee_ids = list({r["menteeid"] for r in requests if r.get("menteeid")})
 
             try:
-                mentees = supabase.table("users") \
-                    .select("userid, email") \
-                    .in_("userid", mentee_ids) \
-                    .execute().data
+                mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
@@ -89,9 +72,7 @@ def show():
 
                 if col1.button("Accept", key=f"accept_{req['mentorshiprequestid']}"):
                     try:
-                        supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
-
+                        supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                         session_date = (datetime.now() + timedelta(days=1)).isoformat()
                         supabase.table("session").insert({
                             "mentorid": req["mentorid"],
@@ -99,17 +80,15 @@ def show():
                             "date": session_date,
                             "mentorshiprequestid": req["mentorshiprequestid"]
                         }).execute()
-
                         st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
                         st.rerun()
                     except APIError as e:
-                        st.error("Failed to accept request.")
+                        st.error("Failed to accept and schedule session.")
                         st.code(str(e), language="json")
 
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                     try:
-                        supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
+                        supabase.table("mentorshiprequest").update({"status": "REJECTED"}).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                         st.warning(f"❌ Rejected request from {mentee_email}")
                         st.rerun()
                     except APIError as e:
@@ -118,13 +97,11 @@ def show():
         else:
             st.info("No pending requests.")
 
-    # 📅 Sessions
+    # 📅 Scheduled Sessions
     with tabs[1]:
         st.subheader("Scheduled Sessions")
         try:
-            sessions = supabase.table("session").select("*") \
-                .eq("mentorid", mentor_id) \
-                .order("date", desc=False).execute().data
+            sessions = supabase.table("session").select("*").eq("mentorid", mentor_id).order("date", desc=False).execute().data
         except APIError as e:
             st.error("Failed to fetch sessions.")
             st.code(str(e), language="json")
@@ -133,8 +110,7 @@ def show():
         if sessions:
             mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
             try:
-                mentees = supabase.table("users").select("userid, email") \
-                    .in_("userid", mentee_ids).execute().data
+                mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
@@ -152,7 +128,25 @@ def show():
         else:
             st.info("No upcoming or past sessions yet.")
 
-    # 🗓 Calendar
+    # 🗓 Calendar View
     with tabs[2]:
         st.subheader("Visual Schedule")
         show_calendar()
+
+    # 🖼️ Profile Picture Tab
+    with tabs[3]:
+        st.subheader("Upload or Update Your Profile Picture")
+
+        uploaded_file = st.file_uploader("Choose a profile picture", type=["png", "jpg", "jpeg"])
+
+        if uploaded_file:
+            image_url = upload_profile_picture(uploaded_file)
+            if image_url:
+                try:
+                    supabase.table("profile").update({
+                        "profile_image_url": image_url
+                    }).eq("userid", mentor_id).execute()
+                    st.success("✅ Profile picture updated!")
+                    st.image(image_url, width=150)
+                except Exception as e:
+                    st.error(f"❌ Failed to update profile: {e}")
