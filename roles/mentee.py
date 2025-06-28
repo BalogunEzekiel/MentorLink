@@ -28,7 +28,7 @@ def show():
         if not mentors:
             st.info("No mentors found.")
         else:
-            cols = st.columns(2)  # Two-column layout
+            cols = st.columns(2)
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
                 with col:
@@ -39,19 +39,19 @@ def show():
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
     
-                    # 👤 Profile Picture or Placeholder
+                    # 📸 Avatar or Placeholder
                     if image_url:
-                        st.image(image_url, width=100)
+                        st.image(image_url, width=120, caption=name)
                     else:
-                        st.markdown("🧑‍🏫", unsafe_allow_html=True)
+                        # Use a simple built-in avatar placeholder
+                        st.image("https://ui-avatars.com/api/?name=" + name.replace(" ", "+") + "&size=128&background=ddd&color=555", width=120, caption=name)
     
-                    # 💬 Profile Details
-                    st.markdown(f"**{name}**")
-                    st.markdown(f"_{bio}_")
+                    # 💼 Details
+                    st.markdown(f"**Bio:** {bio}")
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
     
-                    # 🟢 Request Button with duplicate check
+                    # 🚀 Request Button
                     if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                         try:
                             existing = supabase.table("mentorshiprequest") \
