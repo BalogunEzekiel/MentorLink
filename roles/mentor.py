@@ -7,9 +7,8 @@ from postgrest.exceptions import APIError
 
 def show():
     st.title("Mentor Dashboard")
-    st.info("View mentorship requests, manage availability, and see upcoming sessions.")
+    st.info("View mentorship requests, manage availability, upload your profile photo, and see upcoming sessions.")
 
-    # Ensure user is logged in
     if "user" not in st.session_state:
         st.error("Please log in first.")
         return
@@ -21,13 +20,43 @@ def show():
         st.error("Mentor ID not found.")
         return
 
-    # Create tabs for navigation
+    # ✅ Profile Picture Section
+    st.subheader("👤 Profile Picture")
+
+    # Fetch profile data
+    profile = supabase.table("profile").select("profile_image_url").eq("userid", mentor_id).single().execute().data
+    current_image = profile.get("profile_image_url") if profile and profile.get("profile_image_url") else None
+
+    if current_image:
+        st.image(current_image, width=150, caption="Your Profile Picture")
+    else:
+        st.image("https://ui-avatars.com/api/?name=Mentor&background=cccccc&color=333333", width=150, caption="Default")
+
+    uploaded_file = st.file_uploader("Upload new profile picture", type=["png", "jpg", "jpeg"])
+    if uploaded_file:
+        try:
+            # Upload to Supabase Storage
+            path = f"profile_images/{mentor_id}_{uploaded_file.name}"
+            supabase.storage.from_("avatars").upload(path, uploaded_file, {"upsert": True})
+            public_url = supabase.storage.from_("avatars").get_public_url(path)
+
+            # Update or insert into profile table
+            supabase.table("profile").upsert({
+                "userid": mentor_id,
+                "profile_image_url": public_url
+            }).execute()
+
+            st.success("✅ Profile picture uploaded successfully!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"❌ Upload failed: {e}")
+
+    # ✅ Tabs for Requests, Sessions, Calendar
     tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Calendar"])
 
-    # 📥 Incoming Mentorship Requests Tab
+    # 📥 Mentorship Requests
     with tabs[0]:
         st.subheader("Incoming Mentorship Requests")
-
         try:
             requests = supabase.table("mentorshiprequest") \
                 .select("*") \
@@ -47,12 +76,11 @@ def show():
                     .select("userid, email") \
                     .in_("userid", mentee_ids) \
                     .execute().data
+                mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
                 st.code(str(e), language="json")
                 return
-
-            mentee_lookup = {m["userid"]: m["email"] for m in mentees}
 
             for req in requests:
                 mentee_email = mentee_lookup.get(req["menteeid"], "Unknown")
@@ -61,15 +89,10 @@ def show():
 
                 if col1.button("Accept", key=f"accept_{req['mentorshiprequestid']}"):
                     try:
-                        # Accept the mentorship request
                         supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
-                            .execute()
+                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
 
-                        # Schedule session 1 day later
                         session_date = (datetime.now() + timedelta(days=1)).isoformat()
-
-                        # Insert new session
                         supabase.table("session").insert({
                             "mentorid": req["mentorid"],
                             "menteeid": req["menteeid"],
@@ -80,14 +103,13 @@ def show():
                         st.success(f"✅ Accepted request from {mentee_email} and scheduled session.")
                         st.rerun()
                     except APIError as e:
-                        st.error("Failed to accept and schedule session.")
+                        st.error("Failed to accept request.")
                         st.code(str(e), language="json")
 
                 if col2.button("Reject", key=f"reject_{req['mentorshiprequestid']}"):
                     try:
                         supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
-                            .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
-                            .execute()
+                            .eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
                         st.warning(f"❌ Rejected request from {mentee_email}")
                         st.rerun()
                     except APIError as e:
@@ -96,16 +118,13 @@ def show():
         else:
             st.info("No pending requests.")
 
-    # 📅 Scheduled Sessions Tab
+    # 📅 Sessions
     with tabs[1]:
         st.subheader("Scheduled Sessions")
-
         try:
-            sessions = supabase.table("session") \
-                .select("*") \
+            sessions = supabase.table("session").select("*") \
                 .eq("mentorid", mentor_id) \
-                .order("date", desc=False) \
-                .execute().data
+                .order("date", desc=False).execute().data
         except APIError as e:
             st.error("Failed to fetch sessions.")
             st.code(str(e), language="json")
@@ -113,13 +132,9 @@ def show():
 
         if sessions:
             mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
-
             try:
-                mentees = supabase.table("users") \
-                    .select("userid, email") \
-                    .in_("userid", mentee_ids) \
-                    .execute().data
-
+                mentees = supabase.table("users").select("userid, email") \
+                    .in_("userid", mentee_ids).execute().data
                 mentee_lookup = {m["userid"]: m["email"] for m in mentees}
             except APIError as e:
                 st.error("Failed to fetch mentee details.")
@@ -137,7 +152,7 @@ def show():
         else:
             st.info("No upcoming or past sessions yet.")
 
-    # 🗓 Calendar View Tab
+    # 🗓 Calendar
     with tabs[2]:
         st.subheader("Visual Schedule")
         show_calendar()
