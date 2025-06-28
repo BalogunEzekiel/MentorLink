@@ -19,7 +19,7 @@ from database import supabase
 def cancel_expired_requests():
     try:
         response = supabase.table("mentorshiprequest") \
-            .select("id, created_at, status") \
+            .select("mentorshiprequestid, created_at, status") \
             .eq("status", "PENDING") \
             .execute()
 
@@ -29,7 +29,7 @@ def cancel_expired_requests():
             if now - created_at > timedelta(hours=48):
                 supabase.table("mentorshiprequest") \
                     .update({"status": "CANCELLED_AUTO"}) \
-                    .eq("id", req["id"]).execute()
+                    .eq("id", req["mentorshiprequestid"]).execute()
     except Exception as e:
         st.error(f"⚠️ Failed to auto-cancel expired requests: {e}")
 
