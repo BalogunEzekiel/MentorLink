@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from database import supabase
-import streamlit as st  # Optional: display errors nicely
+import streamlit as st
 
 def cancel_expired_requests():
     try:
@@ -9,12 +9,12 @@ def cancel_expired_requests():
             .eq("status", "PENDING") \
             .execute()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)  # ✅ Aware datetime
 
         for req in response.data:
             created_str = req["createdat"]
 
-            # Ensure datetime is parsed as offset-aware
+            # ✅ Make sure this is also timezone-aware
             created_at = datetime.fromisoformat(created_str)
             if created_at.tzinfo is None:
                 created_at = created_at.replace(tzinfo=timezone.utc)
