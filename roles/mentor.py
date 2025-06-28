@@ -29,14 +29,12 @@ def show():
         file_path = f"{mentor_id}/{file.name}"
 
         try:
-            # ✅ Upload using upsert=true and proper byte conversion
             res = supabase.storage.from_("profilepics").upload(
-                f"{file_path}?upsert=true",
+                f"{file_path}?upsert=true",  # upsert replaces existing file
                 bytes(file.getbuffer())
             )
 
-            # ✅ Correctly check for error object
-            if res.error:
+            if res.error:  # check for upload error
                 st.error(f"❌ Upload failed: {res.error.message}")
                 return None
 
