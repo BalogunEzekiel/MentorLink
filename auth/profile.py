@@ -39,7 +39,7 @@ def profile_form():
             st.session_state["user_display_name"] = profile.get("name")
     
         st.success("✅ Profile completed!")
-        time.sleep(2)
+        time.sleep(1)
         st.rerun()
         
 def change_password():
@@ -66,5 +66,5 @@ def change_password():
         st.session_state.user["must_change_password"] = False
         st.session_state.force_profile_update = True
         st.success("✅ Password updated!")
-        time.sleep(2)
+        time.sleep(1)
         st.rerun()
