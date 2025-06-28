@@ -10,28 +10,20 @@ def cancel_expired_requests():
             .eq("status", "PENDING") \
             .execute()
 
-        now = datetime.now(timezone.utc)  # Timezone-aware
+        now = datetime.now(timezone.utc)
 
         for req in response.data:
-            created_raw = req["createdat"]
-
             try:
-                # Robustly parse any datetime string and force to UTC
-                created_at = parser.isoparse(created_raw)
-
+                created_at = parser.isoparse(req["createdat"])
                 if created_at.tzinfo is None:
                     created_at = created_at.replace(tzinfo=timezone.utc)
-                else:
-                    created_at = created_at.astimezone(timezone.utc)
 
                 if now - created_at > timedelta(hours=48):
                     supabase.table("mentorshiprequest") \
                         .update({"status": "CANCELLED_AUTO"}) \
                         .eq("mentorshiprequestid", req["mentorshiprequestid"]) \
                         .execute()
-
             except Exception as inner_err:
-                st.warning(f"⚠️ Error processing request ID {req['mentorshiprequestid']}: {inner_err}")
-
+                st.warning(f"Could not process request {req['mentorshiprequestid']}: {inner_err}")
     except Exception as e:
-        st.warning(f"⚠️ Failed to auto-cancel expired requests: {e}")
+        st.error(f"⚠️ Failed to auto-cancel expired requests: {e}")
