@@ -29,9 +29,10 @@ def show():
         file_path = f"{mentor_id}/{file.name}"
 
         try:
-            # ✅ Convert memoryview to bytes before upload
+            # ✅ Use query param to upsert, and convert memoryview to bytes
             res = supabase.storage.from_("profilepics").upload(
-                file_path, bytes(file.getbuffer()), {"upsert": True}
+                f"{file_path}?upsert=true",
+                bytes(file.getbuffer())
             )
             if res.get("error"):
                 st.error(f"❌ Upload failed: {res['error']['message']}")
