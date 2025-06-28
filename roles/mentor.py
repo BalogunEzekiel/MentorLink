@@ -168,6 +168,7 @@ def show():
             st.info("No upcoming or past sessions yet.")
 
     # 🗓 Calendar View
+    # 🗓 Calendar View
     with tabs[2]:
         st.subheader("Visual Schedule")
         show_calendar()
@@ -176,8 +177,14 @@ def show():
         st.subheader("📅 Set Your Availability")
     
         with st.form("set_availability_form", clear_on_submit=True):
-            start = st.datetime_input("Start Time", value=datetime.now() + timedelta(hours=1))
-            end = st.datetime_input("End Time", value=datetime.now() + timedelta(hours=2))
+            start_date = st.date_input("Start Date", value=datetime.now().date())
+            start_time = st.time_input("Start Time", value=(datetime.now() + timedelta(hours=1)).time())
+    
+            end_date = st.date_input("End Date", value=datetime.now().date())
+            end_time = st.time_input("End Time", value=(datetime.now() + timedelta(hours=2)).time())
+    
+            start = datetime.combine(start_date, start_time)
+            end = datetime.combine(end_date, end_time)
     
             submitted = st.form_submit_button("➕ Add Availability")
             if submitted:
