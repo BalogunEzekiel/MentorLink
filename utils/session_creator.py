@@ -1,6 +1,6 @@
 # utils/session_creator.py
 
-from .google_calendar import create_meet_event
+from utils.google_calendar import create_meet_event
 from emailer import send_email
 
 def create_session_with_meet_and_email(supabase, mentorid, menteeid, start, end):
