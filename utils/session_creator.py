@@ -3,7 +3,7 @@ from emailer import send_email
 from datetime import datetime
 
 # Add at bottom of session_creator.py
-#create_session_if_available = create_session_with_meet_and_email
+create_session_if_available = create_session_with_meet_and_email
 
 def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, end):
     # ✅ Optional: Check if session already exists for the time slot
