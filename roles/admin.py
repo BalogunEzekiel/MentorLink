@@ -66,7 +66,7 @@ def show():
             st.error(f"Failed to load users: {e}")
             users = []
 
-g        if users:
+        if users:
             email_search = st.text_input("Search by Email").lower()
             status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
 
