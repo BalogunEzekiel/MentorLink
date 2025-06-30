@@ -6,6 +6,7 @@ from mentor_calendar import show_calendar
 from postgrest.exceptions import APIError
 import os
 
+
 def show():
     st.title("Mentor Dashboard")
     st.info("View mentorship requests, manage availability, and see upcoming sessions.")
@@ -21,29 +22,23 @@ def show():
         st.error("Mentor ID not found.")
         return
 
-    # --- Upload profile image helper ---
     def upload_profile_picture(file):
         if file is None:
             return None
-    
+
         file_path = f"{mentor_id}/{file.name}"
-    
+
         try:
-            # Step 1: Delete the file first if it already exists
             supabase.storage.from_("profilepics").remove([file_path])
-    
-            # Step 2: Upload the file (converted to bytes)
             res = supabase.storage.from_("profilepics").upload(
                 file_path,
                 bytes(file.getbuffer())
             )
-    
-            # Step 3: Build public URL manually
+
             public_url = (
                 f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{file_path}"
             )
             return public_url
-    
         except Exception as e:
             st.error(f"❌ Upload error: {e}")
             return None
@@ -129,7 +124,10 @@ def show():
         try:
             sessions = (
                 supabase.table("session")
-                .select("*")
+                .select("""
+                    *,
+                    mentee:users!session_menteeid_fkey(email)
+                """)
                 .eq("mentorid", mentor_id)
                 .order("date", desc=False)
                 .execute()
@@ -141,23 +139,8 @@ def show():
             return
 
         if sessions:
-            mentee_ids = list({s["menteeid"] for s in sessions if s.get("menteeid")})
-            try:
-                mentees = (
-                    supabase.table("users")
-                    .select("userid, email")
-                    .in_("userid", mentee_ids)
-                    .execute()
-                    .data
-                )
-                mentee_lookup = {m["userid"]: m["email"] for m in mentees}
-            except APIError as e:
-                st.error("Failed to fetch mentee details.")
-                st.code(str(e), language="json")
-                return
-
             for s in sessions:
-                mentee_email = mentee_lookup.get(s["menteeid"], "Unknown")
+                mentee_email = s.get("mentee", {}).get("email", "Unknown")
                 st.markdown(f"""
                 #### Session with {mentee_email}
                 - 🗓 **Date:** {format_datetime(s['date'])}
@@ -168,24 +151,23 @@ def show():
             st.info("No upcoming or past sessions yet.")
 
     # 🗓 Calendar View
-    # 🗓 Calendar View
     with tabs[2]:
         st.subheader("Visual Schedule")
         show_calendar()
-    
+
         st.divider()
-        st.subheader("📅 Add Your Availability")  # Updated this line to be clearer and avoid duplication
-    
+        st.subheader("📅 Add Your Availability")
+
         with st.form("set_availability_form", clear_on_submit=True):
             start_date = st.date_input("Start Date", value=datetime.now().date())
             start_time = st.time_input("Start Time", value=(datetime.now() + timedelta(hours=1)).time())
-    
+
             end_date = st.date_input("End Date", value=datetime.now().date())
             end_time = st.time_input("End Time", value=(datetime.now() + timedelta(hours=2)).time())
-    
+
             start = datetime.combine(start_date, start_time)
             end = datetime.combine(end_date, end_time)
-    
+
             submitted = st.form_submit_button("➕ Add Availability")
             if submitted:
                 if end <= start:
@@ -201,7 +183,6 @@ def show():
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to save availability: {e}")
-
 
     # 🖼️ Profile Picture Tab
     with tabs[3]:
