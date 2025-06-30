@@ -4,7 +4,7 @@ import streamlit as st
 from database import supabase
 from datetime import datetime, timedelta
 from utils.helpers import format_datetime_safe
-from utils.session_creator import create_session_if_available
+from utils.session_creator import create_session_with_meet_and_email
 from emailer import send_email
 
 
