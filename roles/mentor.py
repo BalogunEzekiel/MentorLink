@@ -1,151 +1,69 @@
 # mentor.py
 
 import streamlit as st
-from datetime import datetime, timedelta
-import os
-
 from database import supabase
+from datetime import datetime, timedelta
 from utils.helpers import format_datetime_safe
 from utils.session_creator import create_session_if_available
-from postgrest.exceptions import APIError
-from mentor_calendar import show_calendar
-from utils.helpers import format_datetime, format_datetime_safe
+from emailer import send_email
 
 
 def show():
     st.title("Mentor Dashboard")
-    st.info("Manage requests, set your availability, and track sessions.")
+    st.info("Manage your sessions, availability, and mentee interactions.")
+    mentor_id = st.session_state.user["userid"]
 
-    if "user" not in st.session_state:
-        st.error("Please log in to access the dashboard.")
-        return
+    tabs = st.tabs(["📅 My Sessions", "📌 Add Availability", "✅ Session Feedback"])
 
-    mentor = st.session_state.user
-    mentor_id = mentor.get("userid")
-
-    def upload_profile_picture(file):
-        if not file:
-            return None
-
-        path = f"{mentor_id}/{file.name}"
-        try:
-            supabase.storage.from_("profilepics").remove([path])  # Overwrite existing
-            supabase.storage.from_("profilepics").upload(path, bytes(file.getbuffer()))
-            return f"https://{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co/storage/v1/object/public/profilepics/{path}"
-        except Exception as e:
-            st.error(f"Upload error: {e}")
-            return None
-
-    tabs = st.tabs(["📥 Requests", "📅 Sessions", "🗓 Availability", "🖼️ Profile Picture"])
-
-    # ---------------------- 📥 Requests Tab ----------------------
+    # ---------------------- 📅 My Sessions Tab ----------------------
     with tabs[0]:
-        st.subheader("Incoming Mentorship Requests")
+        st.subheader("Your Mentorship Sessions")
 
-        try:
-            requests = supabase.table("mentorshiprequest") \
-                .select("*") \
-                .eq("mentorid", mentor_id) \
-                .eq("status", "PENDING") \
-                .execute().data or []
-        except APIError as e:
-            st.error("Error fetching requests.")
-            st.code(str(e))
-            return
-
-        if requests:
-            mentee_ids = list({r["menteeid"] for r in requests})
-            mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data or []
-            mentee_lookup = {m["userid"]: m["email"] for m in mentees}
-
-            for req in requests:
-                mentee_email = mentee_lookup.get(req["menteeid"], "Unknown")
-                st.markdown(f"📨 **From:** {mentee_email}")
-                col1, col2 = st.columns(2)
-
-                if col1.button("✅ Accept", key=f"accept_{req['mentorshiprequestid']}"):
-                    try:
-                        supabase.table("mentorshiprequest").update(
-                            {"status": "ACCEPTED"}
-                        ).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
-
-                        session_date = (datetime.now() + timedelta(days=1)).isoformat()
-                        supabase.table("session").insert({
-                            "mentorid": mentor_id,
-                            "menteeid": req["menteeid"],
-                            "date": session_date,
-                            "mentorshiprequestid": req["mentorshiprequestid"]
-                        }).execute()
-
-                        st.success(f"Accepted request from {mentee_email} and scheduled session.")
-                        st.rerun()
-                    except APIError as e:
-                        st.error("Failed to accept request.")
-                        st.code(str(e))
-
-                if col2.button("❌ Reject", key=f"reject_{req['mentorshiprequestid']}"):
-                    try:
-                        supabase.table("mentorshiprequest").update(
-                            {"status": "REJECTED"}
-                        ).eq("mentorshiprequestid", req["mentorshiprequestid"]).execute()
-
-                        st.warning(f"Rejected request from {mentee_email}")
-                        st.rerun()
-                    except APIError as e:
-                        st.error("Failed to reject request.")
-                        st.code(str(e))
-        else:
-            st.info("No new mentorship requests.")
-
-    # ---------------------- 📅 Sessions Tab ----------------------
-    with tabs[1]:
-        st.subheader("Your Scheduled Sessions")
-
-        try:
-            sessions = supabase.table("session") \
-                .select("*") \
-                .eq("mentorid", mentor_id) \
-                .order("date", desc=False) \
-                .execute().data or []
-        except APIError as e:
-            st.error("Error fetching sessions.")
-            st.code(str(e))
-            return
+        sessions = supabase.table("session") \
+            .select("*, users!session_menteeid_fkey(email)") \
+            .eq("mentorid", mentor_id).execute().data or []
 
         if sessions:
-            mentee_ids = list({s["menteeid"] for s in sessions})
-            mentees = supabase.table("users").select("userid, email").in_("userid", mentee_ids).execute().data or []
-            mentee_lookup = {m["userid"]: m["email"] for m in mentees}
-
             for s in sessions:
-                mentee_email = mentee_lookup.get(s["menteeid"], "Unknown")
+                mentee_email = s.get("users", {}).get("email", "Unknown")
+                session_date = format_datetime_safe(s.get("date"))
+                rating = s.get("rating", "Not rated")
+                feedback = s.get("feedback", "No feedback")
+
                 st.markdown(f"""
                 #### With: {mentee_email}
-                - 🗓 Date: {format_datetime_safe(s['date'])}
-                - ⭐ Rating: {s.get('rating', 'Pending')}
-                - 💬 Feedback: {s.get('feedback', 'Not submitted')}
+                - 📅 Date: {session_date}
+                - ⭐ Rating: {rating}
+                - 💬 Feedback: {feedback}
                 """)
+
+                if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
+                    if send_email(
+                        to_email=mentee_email,
+                        subject="📅 Mentorship Session Reminder",
+                        body=f"This is a reminder for your session scheduled on {session_date}."
+                    ):
+                        st.success("Reminder email sent!")
+                    else:
+                        st.error("Failed to send reminder.")
         else:
-            st.info("You don't have any sessions yet.")
+            st.info("No sessions yet.")
 
-    # ---------------------- 🗓 Availability Tab ----------------------
-    with tabs[2]:
-        st.subheader("Visual Availability Calendar")
-        show_calendar()
+    # ---------------------- 📌 Add Availability Tab ----------------------
+    with tabs[1]:
+        st.subheader("Add Availability Slot")
 
-        st.divider()
-        st.subheader("📅 Add Availability")
-
-        with st.form("availability_form", clear_on_submit=True):
-            start_date = st.date_input("Start Date", value=datetime.now().date())
-            start_time = st.time_input("Start Time", value=datetime.now().time())
-            end_date = st.date_input("End Date", value=start_date)
-            end_time = st.time_input("End Time", value=(datetime.now() + timedelta(hours=1)).time())
+        # 👇 Use unique key for the form to prevent duplication error
+        with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
+            date = st.date_input("Date", value=datetime.now().date())
+            start_time = st.time_input("Start Time", value=(datetime.now() + timedelta(hours=1)).time())
+            end_time = st.time_input("End Time", value=(datetime.now() + timedelta(hours=2)).time())
 
             submitted = st.form_submit_button("➕ Add Slot")
+
             if submitted:
-                start = datetime.combine(start_date, start_time)
-                end = datetime.combine(end_date, end_time)
+                start = datetime.combine(date, start_time)
+                end = datetime.combine(date, end_time)
 
                 if end <= start:
                     st.warning("End time must be after start time.")
@@ -156,24 +74,57 @@ def show():
                             "start": start.isoformat(),
                             "end": end.isoformat()
                         }).execute()
-                        st.success("Availability added!")
+                        st.success(f"Availability added: {format_datetime_safe(start)} - {format_datetime_safe(end)}")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Failed to save availability: {e}")
+                        st.error(f"Failed to add availability: {e}")
 
-    # ---------------------- 🖼️ Profile Picture Tab ----------------------
-    with tabs[3]:
-        st.subheader("Update Profile Picture")
-        uploaded_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+        # 🗓️ Display existing slots
+        st.markdown("### Existing Availability")
+        slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
 
-        if uploaded_file:
-            url = upload_profile_picture(uploaded_file)
-            if url:
-                try:
-                    supabase.table("profile").update({
-                        "profile_image_url": url
-                    }).eq("userid", mentor_id).execute()
-                    st.success("Profile picture updated!")
-                    st.image(url, width=150)
-                except Exception as e:
-                    st.error(f"Failed to update profile: {e}")
+        if slots:
+            for slot in slots:
+                start = format_datetime_safe(slot["start"])
+                end = format_datetime_safe(slot["end"])
+                col1, col2 = st.columns([6, 1])
+                col1.markdown(f"- 🕒 {start} ➡ {end}")
+                if col2.button("❌", key=f"delete_slot_{slot['availabilityid']}"):
+                    try:
+                        supabase.table("availability").delete().eq("availabilityid", slot["availabilityid"]).execute()
+                        st.success("Availability removed.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to remove slot: {e}")
+        else:
+            st.info("No availability slots added yet.")
+
+    # ---------------------- ✅ Session Feedback Tab ----------------------
+    with tabs[2]:
+        st.subheader("Rate Mentees & Provide Feedback")
+
+        sessions = supabase.table("session") \
+            .select("sessionid, users!session_menteeid_fkey(email), date, rating, feedback") \
+            .eq("mentorid", mentor_id).execute().data or []
+
+        for session in sessions:
+            if session.get("rating") and session.get("feedback"):
+                continue  # Skip already rated sessions
+
+            mentee_email = session.get("users", {}).get("email", "Unknown")
+            date_str = format_datetime_safe(session.get("date"))
+
+            with st.expander(f"Session with {mentee_email} on {date_str}"):
+                rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
+                feedback = st.text_area("Feedback", key=f"feedback_{session['sessionid']}")
+
+                if st.button("Submit Feedback", key=f"submit_feedback_{session['sessionid']}"):
+                    try:
+                        supabase.table("session").update({
+                            "rating": rating,
+                            "feedback": feedback
+                        }).eq("sessionid", session["sessionid"]).execute()
+                        st.success("Feedback submitted.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error submitting feedback: {e}")
