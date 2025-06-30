@@ -9,6 +9,7 @@ from utils.helpers import format_datetime_safe
 from utils.session_creator import create_session_if_available
 from postgrest.exceptions import APIError
 from mentor_calendar import show_calendar
+from utils.helpers import format_datetime, format_datetime_safe
 
 
 def show():
