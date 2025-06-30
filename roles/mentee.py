@@ -1,42 +1,31 @@
+# mentee.py
+
 import streamlit as st
 from database import supabase
-from utils.helpers import format_datetime
+from utils.helpers import format_datetime_safe
+from utils.session_creator import create_session_if_available
 from emailer import send_email
-from mentee_requests import show as show_booking  # Handles booking logic UI
+from datetime import datetime, timedelta
+
 
 def show():
-    # Show success message for mentorship request once
     if "mentor_request_success_message" in st.session_state:
-        st.success(st.session_state["mentor_request_success_message"])
-        del st.session_state["mentor_request_success_message"]
+        st.success(st.session_state.pop("mentor_request_success_message"))
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, and track bookings.")
-    
-    if "user" not in st.session_state:
-        st.error("Please log in first.")
-        return
-
     user_id = st.session_state.user["userid"]
 
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
-    # ---------------------- 🧑‍🏫 Browse Mentors ----------------------
+    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
-
-        try:
-            mentors = supabase.table("users") \
-                .select("*, profile(name, bio, skills, goals, profile_image_url)") \
-                .eq("role", "Mentor") \
-                .neq("status", "Delete") \
-                .execute().data
-        except Exception as e:
-            st.error(f"❌ Failed to load mentors: {e}")
-            mentors = []
+        mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
+            .eq("role", "Mentor").execute().data or []
 
         if not mentors:
-            st.info("No mentors found.")
+            st.info("No mentors available.")
         else:
             cols = st.columns(2)
             for i, mentor in enumerate(mentors):
@@ -44,112 +33,99 @@ def show():
                 with col:
                     profile = mentor.get("profile", {})
                     name = profile.get("name", "Unnamed Mentor")
-                    bio = profile.get("bio", "No bio provided.")
-                    skills = profile.get("skills", "Not specified")
-                    goals = profile.get("goals", "No goals set")
-                    image_url = profile.get("profile_image_url")
-
-                    avatar_url = image_url or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
+                    avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128"
 
                     st.image(avatar_url, width=120, caption=name)
-                    st.markdown(f"**Bio:** {bio}")
-                    st.markdown(f"**Skills:** {skills}")
-                    st.markdown(f"**Goals:** {goals}")
+                    st.markdown(f"**Bio:** {profile.get('bio', 'No bio')}  \n**Skills:** {profile.get('skills', 'Not listed')}  \n**Goals:** {profile.get('goals', 'Not set')}")
 
-                    try:
-                        availability = supabase.table("availability") \
-                            .select("availabilityid") \
-                            .eq("mentorid", mentor["userid"]) \
-                            .execute().data
-                    except Exception as e:
-                        st.error(f"❌ Could not check availability: {e}")
-                        availability = []
+                    availability = supabase.table("availability") \
+                        .select("availabilityid") \
+                        .eq("mentorid", mentor["userid"]) \
+                        .execute().data or []
 
                     if availability:
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                            try:
-                                existing = supabase.table("mentorshiprequest") \
-                                    .select("mentorshiprequestid", "status") \
-                                    .eq("menteeid", user_id) \
-                                    .eq("mentorid", mentor["userid"]) \
-                                    .in_("status", ["PENDING", "ACCEPTED"]) \
-                                    .execute().data
+                            existing = supabase.table("mentorshiprequest") \
+                                .select("mentorshiprequestid", "status") \
+                                .eq("menteeid", user_id) \
+                                .eq("mentorid", mentor["userid"]) \
+                                .in_("status", ["PENDING", "ACCEPTED"]) \
+                                .execute().data
 
-                                if existing:
-                                    st.warning("❗ You already have a pending or accepted request with this mentor.")
-                                else:
-                                    supabase.table("mentorshiprequest").insert({
-                                        "mentorid": mentor["userid"],
-                                        "menteeid": user_id,
-                                        "status": "PENDING"
-                                    }).execute()
-                                    st.session_state["mentor_request_success_message"] = \
-                                        f"✅ Mentorship request sent to {mentor['email']}!"
-                                    st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Failed to send request: {e}")
+                            if existing:
+                                st.warning("❗ You already have a pending or accepted request with this mentor.")
+                            else:
+                                supabase.table("mentorshiprequest").insert({
+                                    "mentorid": mentor["userid"],
+                                    "menteeid": user_id,
+                                    "status": "PENDING"
+                                }).execute()
+                                st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
+                                st.rerun()
                     else:
-                        st.warning("This mentor has no availability yet. Please check back later.")
+                        st.warning("This mentor has no availability yet.")
 
-    # ---------------------- 📄 My Requests ----------------------
+    # ---------------------- 📄 My Requests Tab ----------------------
     with tabs[1]:
         st.subheader("Your Mentorship Requests")
-        try:
-            requests_result = supabase.table("mentorshiprequest") \
-                .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
-                .eq("menteeid", user_id).execute()
-            requests = requests_result.data
-        except Exception as e:
-            st.error(f"❌ Failed to fetch mentorship requests: {e}")
-            requests = []
+        requests = supabase.table("mentorshiprequest") \
+            .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
+            .eq("menteeid", user_id).execute().data or []
 
         if requests:
             for req in requests:
                 mentor_email = req.get("users", {}).get("email", "Unknown")
-                status = req.get("status", "Unknown")
-                st.markdown(f"- 🧑 Mentor: **{mentor_email}**\n- Status: **{status}**")
+                st.markdown(f"- 🧑 Mentor: **{mentor_email}**\n- Status: **{req.get('status', 'Unknown')}**")
         else:
             st.info("You have not made any mentorship requests yet.")
 
-    # ---------------------- 📌 Book Session ----------------------
+    # ---------------------- 📌 Book Session Tab ----------------------
     with tabs[2]:
-        show_booking()
+        st.subheader("Book a Session")
+        mentors = supabase.table("users").select("userid, email").eq("role", "Mentor").execute().data or []
+        mentor_email_list = [m["email"] for m in mentors]
 
-    # ---------------------- 📆 My Sessions ----------------------
+        mentor_email = st.selectbox("Select a Mentor", mentor_email_list)
+        start = st.datetime_input("Select Start Time", value=datetime.now() + timedelta(hours=1))
+        end = st.datetime_input("Select End Time", value=datetime.now() + timedelta(hours=2))
+
+        if st.button("📌 Book Session"):
+            if end <= start:
+                st.warning("End time must be after start time.")
+            else:
+                mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
+                success, message = create_session_if_available(supabase, mentor_id, user_id, start, end)
+                st.success(message) if success else st.error(message)
+
+    # ---------------------- 📆 My Sessions Tab ----------------------
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
-
-        try:
-            sessions = supabase.table("session") \
-                .select("*, users!session_mentorid_fkey(email)") \
-                .eq("menteeid", user_id).execute().data
-        except Exception as e:
-            st.error(f"❌ Failed to fetch your sessions: {e}")
-            sessions = []
+        sessions = supabase.table("session") \
+            .select("*, users!session_mentorid_fkey(email)") \
+            .eq("menteeid", user_id).execute().data or []
 
         if sessions:
             for s in sessions:
                 mentor_email = s.get("users", {}).get("email", "Unknown")
-                session_date = format_datetime(s.get("date"))
+                session_date = format_datetime_safe(s.get("date"))
                 rating = s.get("rating", "Pending")
                 feedback = s.get("feedback", "Not submitted")
 
                 st.markdown(f"""
                 #### With: {mentor_email}
-                - 🗓 Date: {session_date}
+                - 📅 Date: {session_date}
                 - ⭐ Rating: {rating}
                 - 💬 Feedback: {feedback}
                 """)
 
-                if st.button("Send Reminder Email", key=f"reminder_{s['sessionid']}"):
-                    email_sent = send_email(
+                if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
+                    if send_email(
                         to_email=mentor_email,
-                        subject="Session Reminder",
-                        body=f"This is a reminder for your mentorship session on {session_date}."
-                    )
-                    if email_sent:
-                        st.success("📧 Email sent successfully!")
+                        subject="📅 Session Reminder",
+                        body=f"Reminder for your session on {session_date}."
+                    ):
+                        st.success("Reminder email sent!")
                     else:
-                        st.error("❌ Failed to send email.")
+                        st.error("Failed to send email.")
         else:
             st.info("You don’t have any sessions yet.")
