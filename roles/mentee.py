@@ -2,12 +2,10 @@
 
 import streamlit as st
 from database import supabase
-from utils.helpers import format_datetime_safe
+from utils.helpers import format_datetime, format_datetime_safe
 from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
-from utils.helpers import format_datetime, format_datetime_safe
-
 
 def show():
     if "mentor_request_success_message" in st.session_state:
@@ -88,9 +86,11 @@ def show():
 
         mentor_email = st.selectbox("Select a Mentor", mentor_email_list)
         selected_date = st.date_input("Select Date", value=datetime.now().date())
-        selected_time = st.time_input("Select Time", value=(datetime.now() + timedelta(hours=1)).time())
+        selected_time = st.time_input("Select Start Time", value=(datetime.now() + timedelta(hours=1)).time())
         start = datetime.combine(selected_date, selected_time)
-        end = st.datetime_input("Select End Time", value=datetime.now() + timedelta(hours=2))
+
+        end_time = st.time_input("Select End Time", value=(start + timedelta(hours=1)).time())
+        end = datetime.combine(selected_date, end_time)
 
         if st.button("📌 Book Session"):
             if end <= start:
