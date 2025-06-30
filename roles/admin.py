@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth.auth_handler import register_user
+from utils.session_creator import create_session
 
 # Safe datetime formatter
 def format_datetime(dt):
@@ -27,7 +28,7 @@ def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard features: manage users, matches, and sessions.")
 
-    tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Requests", "📆 Sessions"])
+    tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Requests", "🗖 Sessions"])
 
     # --------------------- 📝 Register Tab --------------------- #
     with tabs[0]:
@@ -90,48 +91,6 @@ def show():
 
             st.markdown("#### User Table")
 
-            st.markdown("""
-            <style>
-            .scrollable-table-container {
-                overflow-x: auto;
-                width: 100%;
-            }
-            .user-table {
-                min-width: 900px;
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
-            }
-            .user-table th, .user-table td {
-                border: 1px solid #ccc;
-                padding: 8px 6px;
-                text-align: left;
-                vertical-align: middle;
-                word-wrap: break-word;
-                white-space: nowrap;
-                font-size: 0.9rem;
-            }
-            .user-table th {
-                background-color: #f5f5f5;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-            st.markdown('<div class="scrollable-table-container">', unsafe_allow_html=True)
-            st.markdown("""
-            <table class="user-table">
-                <tr>
-                    <th>#</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Must Change</th>
-                    <th>Profile Done</th>
-                    <th>Created At</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            """, unsafe_allow_html=True)
-
             for user in display_users:
                 cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
                 cols[0].markdown(f"{user['index']}")
@@ -161,8 +120,6 @@ def show():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update user: {e}")
-
-            st.markdown("</table></div>", unsafe_allow_html=True)
         else:
             st.info("No users found.")
 
@@ -191,7 +148,6 @@ def show():
         else:
             st.info("No mentorship requests found.")
 
-        # Match Mentee to Mentor Section
         st.markdown("---")
         with st.expander("🔗 Match Mentee to Mentor"):
             try:
@@ -218,7 +174,7 @@ def show():
 
                         if mentee_id and mentor_id:
                             existing_match = supabase.table("mentorshiprequest")\
-                                .select("id")\
+                                .select("mentorshiprequestid")\
                                 .eq("menteeid", mentee_id)\
                                 .eq("mentorid", mentor_id)\
                                 .execute()
@@ -227,19 +183,22 @@ def show():
                                 st.warning(f"A match between {mentee_email} and {mentor_email} already exists.")
                             else:
                                 try:
-                                    supabase.table("mentorshiprequest").insert({
+                                    result = supabase.table("mentorshiprequest").insert({
                                         "menteeid": mentee_id,
                                         "mentorid": mentor_id,
-                                        "status": "Pending"
+                                        "status": "ACCEPTED"
                                     }).execute()
-                                    st.success(f"Match request created: {mentee_email} ➡ {mentor_email}")
+                                    request_id = result.data[0]["mentorshiprequestid"]
+
+                                    create_session(mentor_id, mentee_id, request_id)
+                                    st.success(f"✅ Match created and session scheduled: {mentee_email} ➞ {mentor_email}")
                                     st.rerun()
                                 except Exception as e:
-                                    st.error(f"Error creating match: {str(e)}")
+                                    st.error(f"❌ Error creating match and session: {str(e)}")
                         else:
                             st.error("Could not find valid mentee or mentor ID.")
 
-    # --------------------- 📆 Sessions Tab --------------------- #
+    # --------------------- 🗖 Sessions Tab --------------------- #
     with tabs[3]:
         st.subheader("All Sessions")
         try:
@@ -260,6 +219,7 @@ def show():
                 - Mentee: **{s['mentee']['email']}**
                 - Date: {format_datetime(s['date']) if s.get('date') else 'Unknown'}
                 - Rating: {s.get('rating', '-') if s.get('rating') else '-'}
+                - Link: [Join Meet]({s.get('meet_link', '#')})
                 """)
         else:
             st.info("No sessions found.")
