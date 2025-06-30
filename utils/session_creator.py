@@ -3,18 +3,6 @@
 from datetime import datetime
 from typing import List, Optional
 
-# --- Format datetime safely for display
-def format_datetime_safe(dt: Optional[str or datetime]) -> str:
-    if not dt:
-        return "Unknown"
-    if isinstance(dt, datetime):
-        return dt.strftime("%A, %d %B %Y at %I:%M %p")
-    try:
-        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-        return parsed.strftime("%A, %d %B %Y at %I:%M %p")
-    except Exception:
-        return str(dt)
-
 # --- Check for time slot conflict with existing sessions
 def is_time_slot_conflicting(new_start: datetime, new_end: datetime, existing_sessions: List[dict]) -> bool:
     for session in existing_sessions:
