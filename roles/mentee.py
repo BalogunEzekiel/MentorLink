@@ -87,7 +87,9 @@ def show():
         mentor_email_list = [m["email"] for m in mentors]
 
         mentor_email = st.selectbox("Select a Mentor", mentor_email_list)
-        start = st.datetime_input("Select Start Time", value=datetime.now() + timedelta(hours=1))
+        selected_date = st.date_input("Select Date", value=datetime.now().date())
+        selected_time = st.time_input("Select Time", value=(datetime.now() + timedelta(hours=1)).time())
+        start = datetime.combine(selected_date, selected_time)
         end = st.datetime_input("Select End Time", value=datetime.now() + timedelta(hours=2))
 
         if st.button("📌 Book Session"):
