@@ -24,6 +24,13 @@ def format_datetime(dt):
     except Exception:
         return str(dt)
 
+# Placeholder for session creation (ensure your actual logic handles timing properly)
+def create_session(mentorid, menteeid, request_id):
+    now = datetime.utcnow()
+    end = now + pd.Timedelta(minutes=30)
+    success, msg = create_session_if_available(supabase, mentorid, menteeid, now, end)
+    return success, msg
+
 def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard features: manage users, matches, and sessions.")
@@ -33,7 +40,6 @@ def show():
     # --------------------- 📝 Register Tab --------------------- #
     with tabs[0]:
         st.subheader("Register New User")
-
         with st.form("register_user", clear_on_submit=True):
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
             roles = ["Select a role", "Mentor", "Mentee"]
@@ -45,16 +51,13 @@ def show():
                 st.warning("⚠️ Please fill in both email and role.")
             else:
                 register_user(user_email, role)
-                placeholder = st.empty()
-                placeholder.success(f"✅ User '{user_email}' registered as {role}.")
+                st.success(f"✅ User '{user_email}' registered as {role}.")
                 time.sleep(2)
-                placeholder.empty()
                 st.rerun()
 
     # --------------------- 👥 Users Tab --------------------- #
     with tabs[1]:
         st.subheader("All Users")
-
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -67,7 +70,7 @@ def show():
             email_search = st.text_input("Search by Email").lower()
             status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
 
-            display_users = []
+            st.markdown("#### User Table")
             for i, user in enumerate(users, 1):
                 email = user.get("email", "").lower()
                 status = user.get("status", "Active")
@@ -76,50 +79,44 @@ def show():
                 if status_filter != "All" and status != status_filter:
                     continue
 
-                is_admin_email = email == "admin@theincubatorhub.com"
+                is_admin = email == "admin@theincubatorhub.com"
+                user_id = user.get("userid")
 
-                display_users.append({
-                    "index": i,
-                    "userid": user.get("userid"),
-                    "email": user.get("email"),
-                    "role": user.get("role"),
-                    "status": status,
-                    "must_change_password": "N/A" if is_admin_email else user.get("must_change_password"),
-                    "profile_completed": "N/A" if is_admin_email else user.get("profile_completed"),
-                    "created_at": format_datetime(user.get("created_at")) if user.get("created_at") else "-"
-                })
-
-            st.markdown("#### User Table")
-
-            for user in display_users:
                 cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
-                cols[0].markdown(f"{user['index']}")
+                cols[0].markdown(f"{i}")
                 cols[1].markdown(user["email"])
                 cols[2].markdown(user["role"])
-                cols[3].markdown(str(user["must_change_password"]))
-                cols[4].markdown(str(user["profile_completed"]))
-                cols[5].markdown(user["created_at"])
+                cols[3].markdown("N/A" if is_admin else str(user["must_change_password"]))
+                cols[4].markdown("N/A" if is_admin else str(user["profile_completed"]))
+                cols[5].markdown(format_datetime(user.get("created_at")) if user.get("created_at") else "-")
 
-                if user["role"] == "Admin":
+                if is_admin:
                     cols[6].markdown("N/A")
                     cols[7].markdown("🚫")
-                else:
-                    new_status = cols[6].selectbox(
-                        "", ["Active", "Inactive", "Delete"],
-                        index=["Active", "Inactive", "Delete"].index(user["status"]),
-                        key=f"status_{user['userid']}"
-                    )
-                    if cols[7].button("Update", key=f"update_{user['userid']}"):
-                        try:
-                            if new_status == "Delete":
-                                supabase.table("users").delete().eq("userid", user["userid"]).execute()
-                                st.success(f"Deleted user: {user['email']}")
+                    continue
+
+                new_status = cols[6].selectbox(
+                    "", ["Active", "Inactive", "Delete"],
+                    index=["Active", "Inactive", "Delete"].index(user["status"]),
+                    key=f"status_{user_id}"
+                )
+                confirm_key = f"confirm_delete_{user_id}"
+                confirm_delete = cols[6].checkbox("⚠️ Confirm", key=confirm_key) if new_status == "Delete" else False
+
+                if cols[7].button("Update", key=f"update_{user_id}"):
+                    try:
+                        if new_status == "Delete":
+                            if confirm_delete:
+                                supabase.table("users").delete().eq("userid", user_id).execute()
+                                st.success(f"✅ Deleted user: {user['email']}")
                             else:
-                                supabase.table("users").update({"status": new_status}).eq("userid", user["userid"]).execute()
-                                st.success(f"Updated {user['email']} to {new_status}")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Failed to update user: {e}")
+                                st.warning("☑️ Please confirm deletion.")
+                        else:
+                            supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
+                            st.success(f"Updated {user['email']} to {new_status}")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to update user: {e}")
         else:
             st.info("No users found.")
 
@@ -128,12 +125,10 @@ def show():
         st.subheader("Mentorship Requests")
 
         try:
-            requests = supabase.table("mentorshiprequest") \
-                .select("""
-                    *,
-                    mentee:users!mentorshiprequest_menteeid_fkey(email),
-                    mentor:users!mentorshiprequest_mentorid_fkey(email)
-                """).execute().data
+            requests = supabase.table("mentorshiprequest").select("""
+                *, mentee:users!mentorshiprequest_menteeid_fkey(email),
+                   mentor:users!mentorshiprequest_mentorid_fkey(email)
+            """).execute().data
         except Exception as e:
             st.error(f"Could not fetch mentorship requests: {e}")
             requests = []
@@ -145,69 +140,53 @@ def show():
                 - Mentor: **{req['mentor']['email']}**
                 - Status: **{req.get('status', 'Unknown')}**
                 """)
-        else:
-            st.info("No mentorship requests found.")
 
         st.markdown("---")
         with st.expander("🔗 Match Mentee to Mentor"):
-            try:
-                users = supabase.table("users").select("userid, email, role, status").neq("status", "Delete").execute().data
-            except Exception as e:
-                st.error(f"Failed to fetch users for matching: {e}")
-                users = []
-
-            mentees = [u for u in users if u['role'] == 'Mentee']
-            mentors = [u for u in users if u['role'] == 'Mentor']
+            users = supabase.table("users").select("userid, email, role, status") \
+                .neq("status", "Delete").execute().data
+            mentees = [u for u in users if u["role"] == "Mentee"]
+            mentors = [u for u in users if u["role"] == "Mentor"]
 
             if not mentees or not mentors:
-                st.warning("Ensure there are available mentees and mentors to create a match.")
+                st.warning("No available mentees or mentors.")
             else:
                 mentee_email = st.selectbox("Select Mentee", [m["email"] for m in mentees])
                 mentor_email = st.selectbox("Select Mentor", [m["email"] for m in mentors])
 
                 if st.button("Create Match"):
                     if mentee_email == mentor_email:
-                        st.warning("Mentee and Mentor cannot be the same person.")
+                        st.warning("Mentee and Mentor cannot be the same.")
                     else:
                         mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
                         mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
 
-                        if mentee_id and mentor_id:
-                            existing_match = supabase.table("mentorshiprequest")\
-                                .select("mentorshiprequestid")\
-                                .eq("menteeid", mentee_id)\
-                                .eq("mentorid", mentor_id)\
-                                .execute()
+                        existing = supabase.table("mentorshiprequest") \
+                            .select("mentorshiprequestid") \
+                            .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
+                            .execute().data
 
-                            if existing_match.data:
-                                st.warning(f"A match between {mentee_email} and {mentor_email} already exists.")
-                            else:
-                                try:
-                                    result = supabase.table("mentorshiprequest").insert({
-                                        "menteeid": mentee_id,
-                                        "mentorid": mentor_id,
-                                        "status": "ACCEPTED"
-                                    }).execute()
-                                    request_id = result.data[0]["mentorshiprequestid"]
-
-                                    create_session(mentor_id, mentee_id, request_id)
-                                    st.success(f"✅ Match created and session scheduled: {mentee_email} ➞ {mentor_email}")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"❌ Error creating match and session: {str(e)}")
+                        if existing:
+                            st.warning("This mentorship request already exists.")
                         else:
-                            st.error("Could not find valid mentee or mentor ID.")
+                            result = supabase.table("mentorshiprequest").insert({
+                                "menteeid": mentee_id,
+                                "mentorid": mentor_id,
+                                "status": "ACCEPTED"
+                            }).execute()
+                            request_id = result.data[0]["mentorshiprequestid"]
+                            success, msg = create_session(mentor_id, mentee_id, request_id)
+                            st.success("✅ Match created and session booked!" if success else msg)
+                            st.rerun()
 
     # --------------------- 🗖 Sessions Tab --------------------- #
     with tabs[3]:
         st.subheader("All Sessions")
         try:
-            sessions = supabase.table("session") \
-                .select("""
-                    *,
-                    mentee:users!session_menteeid_fkey(email),
-                    mentor:users!session_mentorid_fkey(email)
-                """).execute().data
+            sessions = supabase.table("session").select("""
+                *, mentor:users!session_mentorid_fkey(email),
+                   mentee:users!session_menteeid_fkey(email)
+            """).execute().data
         except Exception as e:
             st.error(f"Could not fetch sessions: {e}")
             sessions = []
@@ -217,8 +196,8 @@ def show():
                 st.markdown(f"""
                 - Mentor: **{s['mentor']['email']}**
                 - Mentee: **{s['mentee']['email']}**
-                - Date: {format_datetime(s['date']) if s.get('date') else 'Unknown'}
-                - Rating: {s.get('rating', '-') if s.get('rating') else '-'}
+                - Date: {format_datetime(s.get('date'))}
+                - Rating: {s.get('rating', 'Not rated')}
                 - Link: [Join Meet]({s.get('meet_link', '#')})
                 """)
         else:
