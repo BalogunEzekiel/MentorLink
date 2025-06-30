@@ -8,7 +8,7 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-CREDENTIALS = 'credentials.json'
+CREDENTIALS = 'credential.json'
 TOKEN = 'token.pkl'
 
 def get_calendar_service():
