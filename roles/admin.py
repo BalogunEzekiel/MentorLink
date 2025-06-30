@@ -34,13 +34,9 @@ def show():
         st.subheader("Register New User")
 
         with st.form("register_user", clear_on_submit=True):
-            # Email input with placeholder
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
-
-            # Role dropdown with 'Select a role' as placeholder-style first item
             roles = ["Select a role", "Mentor", "Mentee"]
             role = st.selectbox("Assign Role", roles)
-
             submitted = st.form_submit_button("Create")
 
         if submitted:
@@ -48,16 +44,13 @@ def show():
                 st.warning("⚠️ Please fill in both email and role.")
             else:
                 register_user(user_email, role)
-
-                # Show temporary success message
                 placeholder = st.empty()
                 placeholder.success(f"✅ User '{user_email}' registered as {role}.")
                 time.sleep(2)
                 placeholder.empty()
-
                 st.rerun()
- 
-    # 👥 Users Tab
+
+    # --------------------- 👥 Users Tab --------------------- #
     with tabs[1]:
         st.subheader("All Users")
 
@@ -173,9 +166,10 @@ def show():
         else:
             st.info("No users found.")
 
-    # 🔁 Requests Tab
+    # --------------------- 🔁 Requests Tab --------------------- #
     with tabs[2]:
         st.subheader("Mentorship Requests")
+
         try:
             requests = supabase.table("mentorshiprequest") \
                 .select("""
@@ -197,7 +191,55 @@ def show():
         else:
             st.info("No mentorship requests found.")
 
-    # 📆 Sessions Tab
+        # Match Mentee to Mentor Section
+        st.markdown("---")
+        with st.expander("🔗 Match Mentee to Mentor"):
+            try:
+                users = supabase.table("users").select("userid, email, role, status").neq("status", "Delete").execute().data
+            except Exception as e:
+                st.error(f"Failed to fetch users for matching: {e}")
+                users = []
+
+            mentees = [u for u in users if u['role'] == 'Mentee']
+            mentors = [u for u in users if u['role'] == 'Mentor']
+
+            if not mentees or not mentors:
+                st.warning("Ensure there are available mentees and mentors to create a match.")
+            else:
+                mentee_email = st.selectbox("Select Mentee", [m["email"] for m in mentees])
+                mentor_email = st.selectbox("Select Mentor", [m["email"] for m in mentors])
+
+                if st.button("Create Match"):
+                    if mentee_email == mentor_email:
+                        st.warning("Mentee and Mentor cannot be the same person.")
+                    else:
+                        mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
+                        mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
+
+                        if mentee_id and mentor_id:
+                            existing_match = supabase.table("mentorshiprequest")\
+                                .select("id")\
+                                .eq("menteeid", mentee_id)\
+                                .eq("mentorid", mentor_id)\
+                                .execute()
+
+                            if existing_match.data:
+                                st.warning(f"A match between {mentee_email} and {mentor_email} already exists.")
+                            else:
+                                try:
+                                    supabase.table("mentorshiprequest").insert({
+                                        "menteeid": mentee_id,
+                                        "mentorid": mentor_id,
+                                        "status": "Pending"
+                                    }).execute()
+                                    st.success(f"Match request created: {mentee_email} ➡ {mentor_email}")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error creating match: {str(e)}")
+                        else:
+                            st.error("Could not find valid mentee or mentor ID.")
+
+    # --------------------- 📆 Sessions Tab --------------------- #
     with tabs[3]:
         st.subheader("All Sessions")
         try:
