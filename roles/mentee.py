@@ -2,21 +2,26 @@ import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime
 from emailer import send_email
-from mentee_requests import show as show_booking  # Assumed to be a separate component
+from mentee_requests import show as show_booking  # Handles booking logic UI
 
 def show():
-    # --- Show one-time mentorship request success message ---
+    # Show success message for mentorship request once
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state["mentor_request_success_message"])
         del st.session_state["mentor_request_success_message"]
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, and track bookings.")
+    
+    if "user" not in st.session_state:
+        st.error("Please log in first.")
+        return
+
     user_id = st.session_state.user["userid"]
 
     tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
 
-    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+    # ---------------------- 🧑‍🏫 Browse Mentors ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
 
@@ -24,6 +29,7 @@ def show():
             mentors = supabase.table("users") \
                 .select("*, profile(name, bio, skills, goals, profile_image_url)") \
                 .eq("role", "Mentor") \
+                .neq("status", "Delete") \
                 .execute().data
         except Exception as e:
             st.error(f"❌ Failed to load mentors: {e}")
@@ -43,15 +49,13 @@ def show():
                     goals = profile.get("goals", "No goals set")
                     image_url = profile.get("profile_image_url")
 
-                    avatar_url = image_url if image_url else \
-                        f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
+                    avatar_url = image_url or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128&background=ddd&color=555"
 
                     st.image(avatar_url, width=120, caption=name)
                     st.markdown(f"**Bio:** {bio}")
                     st.markdown(f"**Skills:** {skills}")
                     st.markdown(f"**Goals:** {goals}")
 
-                    # Check mentor availability
                     try:
                         availability = supabase.table("availability") \
                             .select("availabilityid") \
@@ -61,7 +65,6 @@ def show():
                         st.error(f"❌ Could not check availability: {e}")
                         availability = []
 
-                    # Allow request only if availability exists
                     if availability:
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             try:
@@ -88,10 +91,9 @@ def show():
                     else:
                         st.warning("This mentor has no availability yet. Please check back later.")
 
-    # ---------------------- 📄 My Requests Tab ----------------------
+    # ---------------------- 📄 My Requests ----------------------
     with tabs[1]:
         st.subheader("Your Mentorship Requests")
-
         try:
             requests_result = supabase.table("mentorshiprequest") \
                 .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
@@ -109,11 +111,11 @@ def show():
         else:
             st.info("You have not made any mentorship requests yet.")
 
-    # ---------------------- 📌 Book a Session Tab ----------------------
+    # ---------------------- 📌 Book Session ----------------------
     with tabs[2]:
         show_booking()
 
-    # ---------------------- 📆 My Sessions Tab ----------------------
+    # ---------------------- 📆 My Sessions ----------------------
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
 
@@ -134,9 +136,9 @@ def show():
 
                 st.markdown(f"""
                 #### With: {mentor_email}
-                - Date: {session_date}
-                - Rating: {rating}
-                - Feedback: {feedback}
+                - 🗓 Date: {session_date}
+                - ⭐ Rating: {rating}
+                - 💬 Feedback: {feedback}
                 """)
 
                 if st.button("Send Reminder Email", key=f"reminder_{s['sessionid']}"):
