@@ -1,5 +1,3 @@
-# mentee.py
-
 import streamlit as st
 from database import supabase
 from utils.helpers import format_datetime, format_datetime_safe
@@ -30,12 +28,18 @@ def show():
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
                 with col:
-                    profile = mentor.get("profile", {})
+                    profile = mentor.get("profile") or {}
+                    if not isinstance(profile, dict):
+                        profile = {}
+
                     name = profile.get("name", "Unnamed Mentor")
                     avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128"
+                    bio = profile.get("bio", "No bio")
+                    skills = profile.get("skills", "Not listed")
+                    goals = profile.get("goals", "Not set")
 
                     st.image(avatar_url, width=120, caption=name)
-                    st.markdown(f"**Bio:** {profile.get('bio', 'No bio')}  \n**Skills:** {profile.get('skills', 'Not listed')}  \n**Goals:** {profile.get('goals', 'Not set')}")
+                    st.markdown(f"**Bio:** {bio}  \n**Skills:** {skills}  \n**Goals:** {goals}")
 
                     availability = supabase.table("availability") \
                         .select("availabilityid") \
