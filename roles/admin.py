@@ -103,7 +103,7 @@ def show():
                     key=f"status_{user_id}"
                 )
                 confirm_key = f"confirm_delete_{user_id}"
-                confirm_delete = cols[6].checkbox("⚠️ Confirm", key=confirm_key) if new_status == "Delete" else False
+                confirm_delete = cols[6].checkbox("⚠️ Confirm delete", key=confirm_key) if new_status == "Delete" else False
 
                 if cols[7].button("Update", key=f"update_{user_id}"):
                     try:
