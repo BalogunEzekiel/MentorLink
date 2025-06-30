@@ -35,7 +35,7 @@ def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard features: manage users, matches, and sessions.")
 
-    tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Requests", "🗖 Sessions"])
+    tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Matches", "🗖 Sessions"])
 
     # --------------------- 📝 Register Tab --------------------- #
     with tabs[0]:
