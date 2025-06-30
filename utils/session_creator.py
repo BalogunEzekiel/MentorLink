@@ -3,7 +3,7 @@
 from utils.google_calendar import create_meet_event
 from emailer import send_email
 
-def create_session_with_meet_and_email(supabase, mentorid, menteeid, start, end):
+def create_session_if_available(supabase, mentorid, menteeid, start, end):
     # conflict checks omitted for brevity
 
     meet_link, cal_link = create_meet_event(start, end, "Mentorship Session", attendee=None)
