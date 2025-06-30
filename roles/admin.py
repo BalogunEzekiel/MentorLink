@@ -66,7 +66,7 @@ def show():
             st.error(f"Failed to load users: {e}")
             users = []
 
-        if users:
+g        if users:
             email_search = st.text_input("Search by Email").lower()
             status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
 
@@ -122,7 +122,7 @@ def show():
 
     # --------------------- 🔁 Requests Tab --------------------- #
     with tabs[2]:
-        st.subheader("Mentorship Requests")
+        st.subheader("Mentorship M")
 
         try:
             requests = supabase.table("mentorshiprequest").select("""
