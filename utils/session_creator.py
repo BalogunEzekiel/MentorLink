@@ -2,9 +2,6 @@ from utils.google_calendar import create_meet_event
 from emailer import send_email
 from datetime import datetime
 
-# Add at bottom of session_creator.py
-create_session_if_available = create_session_with_meet_and_email
-
 def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, end):
     # ✅ Optional: Check if session already exists for the time slot
     conflict = supabase.table("session") \
@@ -38,3 +35,6 @@ def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, en
                    f"Hi,\n\nYour session is scheduled for {start} - {end}.\nJoin via Google Meet: {meet_link}")
 
     return True, "✅ Session created with Meet link and notifications sent."
+
+# Add at bottom of session_creator.py
+create_session_if_available = create_session_with_meet_and_email
