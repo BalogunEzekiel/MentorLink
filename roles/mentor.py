@@ -1,5 +1,3 @@
-# mentor.py
-
 import streamlit as st
 from database import supabase
 from datetime import datetime, timedelta
@@ -13,7 +11,12 @@ def show():
     st.info("Manage your sessions, availability, and mentee interactions.")
     mentor_id = st.session_state.user["userid"]
 
-    tabs = st.tabs(["📅 My Sessions", "📌 Add Availability", "✅ Session Feedback"])
+    tabs = st.tabs([
+        "📅 My Sessions",
+        "📌 Add Availability",
+        "📥 Requests",     # ✅ NEW
+        "✅ Session Feedback"
+    ])
 
     # ---------------------- 📅 My Sessions Tab ----------------------
     with tabs[0]:
@@ -29,19 +32,21 @@ def show():
                 session_date = format_datetime_safe(s.get("date"))
                 rating = s.get("rating", "Not rated")
                 feedback = s.get("feedback", "No feedback")
+                meet_link = s.get("meet_link", "#")
 
                 st.markdown(f"""
                 #### With: {mentee_email}
                 - 📅 Date: {session_date}
                 - ⭐ Rating: {rating}
                 - 💬 Feedback: {feedback}
+                - 🔗 [Join Meet]({meet_link})
                 """)
 
                 if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
                     if send_email(
                         to_email=mentee_email,
                         subject="📅 Mentorship Session Reminder",
-                        body=f"This is a reminder for your session scheduled on {session_date}."
+                        body=f"This is a reminder for your session scheduled on {session_date}.\n\nJoin via Meet: {meet_link}"
                     ):
                         st.success("Reminder email sent!")
                     else:
@@ -53,7 +58,6 @@ def show():
     with tabs[1]:
         st.subheader("Add Availability Slot")
 
-        # 👇 Use unique key for the form to prevent duplication error
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
             date = st.date_input("Date", value=datetime.now().date())
             start_time = st.time_input("Start Time", value=(datetime.now() + timedelta(hours=1)).time())
@@ -74,12 +78,11 @@ def show():
                             "start": start.isoformat(),
                             "end": end.isoformat()
                         }).execute()
-                        st.success(f"Availability added: {format_datetime_safe(start)} - {format_datetime_safe(end)}")
+                        st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to add availability: {e}")
 
-        # 🗓️ Display existing slots
         st.markdown("### Existing Availability")
         slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
 
@@ -99,8 +102,52 @@ def show():
         else:
             st.info("No availability slots added yet.")
 
-    # ---------------------- ✅ Session Feedback Tab ----------------------
+    # ---------------------- 📥 Requests Tab ----------------------
     with tabs[2]:
+        st.subheader("Incoming Mentorship Requests")
+
+        requests = supabase.table("mentorshiprequest") \
+            .select("*, mentee:users!mentorshiprequest_menteeid_fkey(email)") \
+            .eq("mentorid", mentor_id) \
+            .eq("status", "PENDING").execute().data or []
+
+        if not requests:
+            st.info("No pending requests.")
+        else:
+            for req in requests:
+                mentee_email = req.get("mentee", {}).get("email", "Unknown")
+                req_id = req["mentorshiprequestid"]
+                mentee_id = req["menteeid"]
+
+                with st.expander(f"Request from {mentee_email}"):
+                    col1, col2 = st.columns(2)
+                    if col1.button("✅ Accept", key=f"accept_{req_id}"):
+                        # Schedule session for next available slot
+                        now = datetime.utcnow()
+                        start = now + timedelta(minutes=5)
+                        end = start + timedelta(minutes=30)
+
+                        # Create session and send email
+                        success, msg = create_session_with_meet_and_email(
+                            supabase, mentor_id, mentee_id, start, end
+                        )
+
+                        if success:
+                            supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
+                                .eq("mentorshiprequestid", req_id).execute()
+                            st.success("Request accepted and session booked!")
+                            st.rerun()
+                        else:
+                            st.error(msg)
+
+                    if col2.button("❌ Reject", key=f"reject_{req_id}"):
+                        supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
+                            .eq("mentorshiprequestid", req_id).execute()
+                        st.info("Request rejected.")
+                        st.rerun()
+
+    # ---------------------- ✅ Session Feedback Tab ----------------------
+    with tabs[3]:
         st.subheader("Rate Mentees & Provide Feedback")
 
         sessions = supabase.table("session") \
@@ -109,7 +156,7 @@ def show():
 
         for session in sessions:
             if session.get("rating") and session.get("feedback"):
-                continue  # Skip already rated sessions
+                continue  # Skip completed feedback
 
             mentee_email = session.get("users", {}).get("email", "Unknown")
             date_str = format_datetime_safe(session.get("date"))
