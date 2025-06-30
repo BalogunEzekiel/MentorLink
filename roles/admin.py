@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth.auth_handler import register_user
-from utils.session_creator import create_session
+from utils.session_creator import create_session_if_available
 
 # Safe datetime formatter
 def format_datetime(dt):
