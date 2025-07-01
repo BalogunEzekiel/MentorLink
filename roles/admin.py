@@ -118,10 +118,14 @@ def show():
         st.subheader("Mentorship Requests")
 
         try:
-            requests = supabase.table("mentorshiprequest").select("""
-                *, mentee:users!mentorshiprequest_menteeid_fkey(email),
-                   mentor:users!mentorshiprequest_mentorid_fkey(email)
-            """).execute().data
+            requests = supabase.table("mentorshiprequest") \
+            .select("""
+                *,
+                mentee:users!mentorshiprequest_menteeid_fkey(email),
+                mentor:users!mentorshiprequest_mentorid_fkey(email)
+            """) \
+            .neq("status", "ACCEPTED") \
+            .execute().data            
         except Exception as e:
             st.error(f"Could not fetch mentorship requests: {e}")
             requests = []
