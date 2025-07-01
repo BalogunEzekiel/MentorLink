@@ -6,7 +6,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 SERVICE_ACCOUNT_FILE = 'service_account.json'  # Put it in your project root
 
 # This is the Google account you shared your calendar with
-USER_EMAIL = 'youremail@gmail.com'  # Replace with your real Gmail
+USER_EMAIL = 'ezekielo.balogun@gmail.com'  # Replace with your real Gmail
 
 def get_calendar_service():
     credentials = service_account.Credentials.from_service_account_file(
