@@ -1,7 +1,7 @@
 import streamlit as st
 from database import supabase
-from utils.helpers import format_datetime, format_datetime_safe
-from utils.session_creator import create_session_with_meet_and_email
+from utils.helpers import format_datetime_safe
+from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
 
@@ -10,16 +10,21 @@ def show():
         st.success(st.session_state.pop("mentor_request_success_message"))
 
     st.title("Mentee Dashboard")
-    st.info("Browse mentors, request sessions, and track bookings.")
+    st.info("Browse mentors, request sessions, track bookings, and give feedback.")
     user_id = st.session_state.user["userid"]
 
-    tabs = st.tabs(["🧑‍🏫 Browse Mentors", "📄 My Requests", "📌 Book Session", "📆 My Sessions"])
+    tabs = st.tabs([
+        "🧑‍🏫 Browse Mentors",
+        "📄 My Requests",
+        "📆 My Sessions",
+        "✅ Session Feedback"   # ✅ NEW
+    ])
 
     # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
     with tabs[0]:
         st.subheader("Browse Available Mentors")
         mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
-            .eq("role", "Mentor").execute().data or []
+            .eq("role", "Mentor").eq("status", "Active").execute().data or []
 
         if not mentors:
             st.info("No mentors available.")
@@ -78,34 +83,13 @@ def show():
         if requests:
             for req in requests:
                 mentor_email = req.get("users", {}).get("email", "Unknown")
-                st.markdown(f"- 🧑 Mentor: **{mentor_email}**\n- Status: **{req.get('status', 'Unknown')}**")
+                status = req.get("status", "Unknown")
+                st.markdown(f"- 🧑 Mentor: **{mentor_email}**\n- 📌 Status: **{status}**")
         else:
             st.info("You have not made any mentorship requests yet.")
 
-    # ---------------------- 📌 Book Session Tab ----------------------
-    with tabs[2]:
-        st.subheader("Book a Session")
-        mentors = supabase.table("users").select("userid, email").eq("role", "Mentor").execute().data or []
-        mentor_email_list = [m["email"] for m in mentors]
-
-        mentor_email = st.selectbox("Select a Mentor", mentor_email_list)
-        selected_date = st.date_input("Select Date", value=datetime.now().date())
-        selected_time = st.time_input("Select Start Time", value=(datetime.now() + timedelta(hours=1)).time())
-        start = datetime.combine(selected_date, selected_time)
-
-        end_time = st.time_input("Select End Time", value=(start + timedelta(hours=1)).time())
-        end = datetime.combine(selected_date, end_time)
-
-        if st.button("📌 Book Session"):
-            if end <= start:
-                st.warning("End time must be after start time.")
-            else:
-                mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
-                success, message = create_session_if_available(supabase, mentor_id, user_id, start, end)
-                st.success(message) if success else st.error(message)
-
     # ---------------------- 📆 My Sessions Tab ----------------------
-    with tabs[3]:
+    with tabs[2]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
             .select("*, users!session_mentorid_fkey(email)") \
@@ -117,22 +101,57 @@ def show():
                 session_date = format_datetime_safe(s.get("date"))
                 rating = s.get("rating", "Pending")
                 feedback = s.get("feedback", "Not submitted")
+                meet_link = s.get("meet_link", "#")
 
                 st.markdown(f"""
                 #### With: {mentor_email}
                 - 📅 Date: {session_date}
                 - ⭐ Rating: {rating}
                 - 💬 Feedback: {feedback}
+                - 🔗 [Join Meet]({meet_link})
                 """)
 
                 if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
                     if send_email(
                         to_email=mentor_email,
                         subject="📅 Session Reminder",
-                        body=f"Reminder for your session on {session_date}."
+                        body=f"Reminder for your session on {session_date}. Join via Meet: {meet_link}"
                     ):
                         st.success("Reminder email sent!")
                     else:
                         st.error("Failed to send email.")
         else:
             st.info("You don’t have any sessions yet.")
+
+    # ---------------------- ✅ Session Feedback Tab ----------------------
+    with tabs[3]:
+        st.subheader("Rate Mentors & Provide Feedback")
+
+        sessions = supabase.table("session") \
+            .select("sessionid, date, rating, feedback, users!session_mentorid_fkey(email)") \
+            .eq("menteeid", user_id).execute().data or []
+
+        if not sessions:
+            st.info("No sessions to give feedback for.")
+        else:
+            for session in sessions:
+                if session.get("rating") and session.get("feedback"):
+                    continue  # Skip already rated sessions
+
+                mentor_email = session.get("users", {}).get("email", "Unknown")
+                date_str = format_datetime_safe(session.get("date"))
+
+                with st.expander(f"Session with {mentor_email} on {date_str}"):
+                    rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
+                    feedback = st.text_area("Feedback", key=f"feedback_{session['sessionid']}")
+
+                    if st.button("Submit Feedback", key=f"submit_feedback_{session['sessionid']}"):
+                        try:
+                            supabase.table("session").update({
+                                "rating": rating,
+                                "feedback": feedback
+                            }).eq("sessionid", session["sessionid"]).execute()
+                            st.success("Feedback submitted.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error submitting feedback: {e}")
