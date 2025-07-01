@@ -13,6 +13,7 @@ from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
 from utils.helpers import format_datetime_safe
 
+
 def format_datetime(dt):
     if not dt:
         return "Unknown"
@@ -23,6 +24,7 @@ def format_datetime(dt):
         return parsed.strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
         return str(dt)
+
 
 def show():
     st.title("Admin Dashboard")
@@ -116,16 +118,11 @@ def show():
     # --------------------- 📩 Requests Tab --------------------- #
     with tabs[2]:
         st.subheader("Mentorship Requests")
-
         try:
-            requests = supabase.table("mentorshiprequest") \
-            .select("""
-                *,
-                mentee:users!mentorshiprequest_menteeid_fkey(email),
-                mentor:users!mentorshiprequest_mentorid_fkey(email)
-            """) \
-            .neq("status", "ACCEPTED") \
-            .execute().data            
+            requests = supabase.table("mentorshiprequest").select("""
+                *, mentee:users!mentorshiprequest_menteeid_fkey(email),
+                   mentor:users!mentorshiprequest_mentorid_fkey(email)
+            """).neq("status", "ACCEPTED").execute().data
         except Exception as e:
             st.error(f"Could not fetch mentorship requests: {e}")
             requests = []
@@ -136,8 +133,8 @@ def show():
                 mentee_email = req['mentee']['email']
                 mentor_email = req['mentor']['email']
                 st.markdown(f"""
-                - 🧑 Mentee: **{mentee_email}**
-                - 🧑‍🏫 Mentor: **{mentor_email}**
+                - 🧑 Mentee: **{mentee_email}**  
+                - 🧑‍🏫 Mentor: **{mentor_email}**  
                 - 📌 Status: **{status}**
                 """)
         else:
@@ -173,6 +170,16 @@ def show():
                     if existing:
                         st.warning("This mentorship request already exists.")
                     else:
+                        # 💡 Check if mentor has availability
+                        availability = supabase.table("availability") \
+                            .select("availabilityid") \
+                            .eq("mentorid", mentor_id) \
+                            .execute().data
+
+                        if not availability:
+                            st.warning("⚠️ Note: This mentor has no availability slots set. A session will still be created.")
+
+                        # Create request and session
                         result = supabase.table("mentorshiprequest").insert({
                             "menteeid": mentee_id,
                             "mentorid": mentor_id,
@@ -208,11 +215,11 @@ def show():
         if sessions:
             for s in sessions:
                 st.markdown(f"""
-                - 🧑‍🏫 Mentor: **{s['mentor']['email']}**
-                - 🧑 Mentee: **{s['mentee']['email']}**
-                - 📅 Date: {format_datetime_safe(s.get('date'))}
-                - ⭐ Rating: {s.get('rating', 'Not rated')}
-                - 💬 Feedback: {s.get('feedback', 'No feedback')}
+                - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
+                - 🧑 Mentee: **{s['mentee']['email']}**  
+                - 📅 Date: {format_datetime_safe(s.get('date'))}  
+                - ⭐ Rating: {s.get('rating', 'Not rated')}  
+                - 💬 Feedback: {s.get('feedback', 'No feedback')}  
                 - 🔗 [Join Meet]({s.get('meet_link', '#')})
                 """)
         else:
