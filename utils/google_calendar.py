@@ -22,12 +22,7 @@ def create_meet_event(start: datetime, end: datetime, summary: str, attendee: st
         'summary': summary,
         'start': {'dateTime': start.astimezone(timezone.utc).isoformat()},
         'end': {'dateTime': end.astimezone(timezone.utc).isoformat()},
-        'conferenceData': {
-            'createRequest': {
-                'requestId': f"meet-{int(start.timestamp())}",
-                'conferenceSolutionKey': {'type': 'hangoutsMeet'}
-            }
-        }
+        # Removed conferenceData to prevent "Invalid conference type value" error
     }
 
     if attendee:
@@ -35,17 +30,16 @@ def create_meet_event(start: datetime, end: datetime, summary: str, attendee: st
 
     try:
         created_event = service.events().insert(
-            calendarId='ezekielo.balogun@gmail.com',  # The calendar shared with the service account
-            body=event,
-            conferenceDataVersion=1
+            calendarId='ezekielo.balogun@gmail.com',  # Calendar must be shared with service account
+            body=event
         ).execute()
 
-        return created_event.get('hangoutLink'), created_event.get('htmlLink')
+        return None, created_event.get('htmlLink')  # No Meet link, only calendar link
 
     except HttpError as error:
         st.error("Google Calendar API error occurred:")
         try:
-            st.code(error.content.decode("utf-8"), language="json")  # Show the detailed JSON error
+            st.code(error.content.decode("utf-8"), language="json")
         except Exception:
-            st.exception(error)  # Fallback if decoding fails
+            st.exception(error)
         return None, None
