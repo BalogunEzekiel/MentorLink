@@ -189,9 +189,12 @@ def show():
                         now = datetime.utcnow()
                         end = now + pd.Timedelta(minutes=30)
 
-                        success, msg = create_session_if_available(
-                            supabase, mentor_id, mentee_id, now, end, send_email=True
-                        )
+                        success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
+
+
+#                        success, msg = create_session_if_available(
+#                            supabase, mentor_id, mentee_id, now, end, send_email=True
+#                        )
 
                         if success:
                             st.success("✅ Match created and session booked!")
