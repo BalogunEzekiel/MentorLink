@@ -10,11 +10,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth.auth_handler import register_user
-from utils.session_creator import create_session_with_meet_and_email
-#from utils.session_creator import create_session_if_available
+from utils.session_creator import create_session_if_available
+from utils.helpers import format_datetime_safe
 
-
-# Safe datetime formatter
 def format_datetime(dt):
     if not dt:
         return "Unknown"
@@ -26,18 +24,11 @@ def format_datetime(dt):
     except Exception:
         return str(dt)
 
-# Placeholder for session creation (ensure your actual logic handles timing properly)
-def create_session(mentorid, menteeid, request_id):
-    now = datetime.utcnow()
-    end = now + pd.Timedelta(minutes=30)
-    success, msg = create_session_if_available(supabase, mentorid, menteeid, now, end)
-    return success, msg
-
 def show():
     st.title("Admin Dashboard")
-    st.info("Admin dashboard features: manage users, matches, and sessions.")
+    st.info("Admin dashboard: manage users, mentorship matches, and sessions.")
 
-    tabs = st.tabs(["📝 Register", "👥 Users", "🔁 Matches", "🗖 Sessions"])
+    tabs = st.tabs(["📝 Register", "👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions"])
 
     # --------------------- 📝 Register Tab --------------------- #
     with tabs[0]:
@@ -122,9 +113,9 @@ def show():
         else:
             st.info("No users found.")
 
-    # --------------------- 🔁 Requests Tab --------------------- #
+    # --------------------- 📩 Requests Tab --------------------- #
     with tabs[2]:
-        st.subheader("Mentorship M")
+        st.subheader("Mentorship Requests")
 
         try:
             requests = supabase.table("mentorshiprequest").select("""
@@ -137,53 +128,70 @@ def show():
 
         if requests:
             for req in requests:
+                status = req.get("status", "Unknown")
+                mentee_email = req['mentee']['email']
+                mentor_email = req['mentor']['email']
                 st.markdown(f"""
-                - Mentee: **{req['mentee']['email']}**
-                - Mentor: **{req['mentor']['email']}**
-                - Status: **{req.get('status', 'Unknown')}**
+                - 🧑 Mentee: **{mentee_email}**
+                - 🧑‍🏫 Mentor: **{mentor_email}**
+                - 📌 Status: **{status}**
                 """)
+        else:
+            st.info("No mentorship requests found.")
 
-        st.markdown("---")
-        with st.expander("🔗 Match Mentee to Mentor"):
-            users = supabase.table("users").select("userid, email, role, status") \
-                .neq("status", "Delete").execute().data
-            mentees = [u for u in users if u["role"] == "Mentee"]
-            mentors = [u for u in users if u["role"] == "Mentor"]
-
-            if not mentees or not mentors:
-                st.warning("No available mentees or mentors.")
-            else:
-                mentee_email = st.selectbox("Select Mentee", [m["email"] for m in mentees])
-                mentor_email = st.selectbox("Select Mentor", [m["email"] for m in mentors])
-
-                if st.button("Create Match"):
-                    if mentee_email == mentor_email:
-                        st.warning("Mentee and Mentor cannot be the same.")
-                    else:
-                        mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
-                        mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
-
-                        existing = supabase.table("mentorshiprequest") \
-                            .select("mentorshiprequestid") \
-                            .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
-                            .execute().data
-
-                        if existing:
-                            st.warning("This mentorship request already exists.")
-                        else:
-                            result = supabase.table("mentorshiprequest").insert({
-                                "menteeid": mentee_id,
-                                "mentorid": mentor_id,
-                                "status": "ACCEPTED"
-                            }).execute()
-                            request_id = result.data[0]["mentorshiprequestid"]
-                            success, msg = create_session(mentor_id, mentee_id, request_id)
-                            st.success("✅ Match created and session booked!" if success else msg)
-                            st.rerun()
-
-    # --------------------- 🗖 Sessions Tab --------------------- #
+    # --------------------- 🔁 Matches Tab --------------------- #
     with tabs[3]:
+        st.subheader("Match Mentee to Mentor")
+
+        users = supabase.table("users").select("userid, email, role, status") \
+            .neq("status", "Delete").execute().data
+        mentees = [u for u in users if u["role"] == "Mentee"]
+        mentors = [u for u in users if u["role"] == "Mentor"]
+
+        if not mentees or not mentors:
+            st.warning("No available mentees or mentors.")
+        else:
+            mentee_email = st.selectbox("Select Mentee", [m["email"] for m in mentees])
+            mentor_email = st.selectbox("Select Mentor", [m["email"] for m in mentors])
+
+            if st.button("Create Match"):
+                if mentee_email == mentor_email:
+                    st.warning("Mentee and Mentor cannot be the same.")
+                else:
+                    mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
+                    mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
+
+                    existing = supabase.table("mentorshiprequest") \
+                        .select("mentorshiprequestid") \
+                        .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
+                        .execute().data
+
+                    if existing:
+                        st.warning("This mentorship request already exists.")
+                    else:
+                        result = supabase.table("mentorshiprequest").insert({
+                            "menteeid": mentee_id,
+                            "mentorid": mentor_id,
+                            "status": "ACCEPTED"
+                        }).execute()
+
+                        now = datetime.utcnow()
+                        end = now + pd.Timedelta(minutes=30)
+
+                        success, msg = create_session_if_available(
+                            supabase, mentor_id, mentee_id, now, end, send_email=True
+                        )
+
+                        if success:
+                            st.success("✅ Match created and session booked!")
+                        else:
+                            st.warning(msg)
+                        st.rerun()
+
+    # --------------------- 🗓️ Sessions Tab --------------------- #
+    with tabs[4]:
         st.subheader("All Sessions")
+
         try:
             sessions = supabase.table("session").select("""
                 *, mentor:users!session_mentorid_fkey(email),
@@ -196,11 +204,12 @@ def show():
         if sessions:
             for s in sessions:
                 st.markdown(f"""
-                - Mentor: **{s['mentor']['email']}**
-                - Mentee: **{s['mentee']['email']}**
-                - Date: {format_datetime(s.get('date'))}
-                - Rating: {s.get('rating', 'Not rated')}
-                - Link: [Join Meet]({s.get('meet_link', '#')})
+                - 🧑‍🏫 Mentor: **{s['mentor']['email']}**
+                - 🧑 Mentee: **{s['mentee']['email']}**
+                - 📅 Date: {format_datetime_safe(s.get('date'))}
+                - ⭐ Rating: {s.get('rating', 'Not rated')}
+                - 💬 Feedback: {s.get('feedback', 'No feedback')}
+                - 🔗 [Join Meet]({s.get('meet_link', '#')})
                 """)
         else:
             st.info("No sessions found.")
