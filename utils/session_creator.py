@@ -4,7 +4,7 @@ from datetime import datetime
 from postgrest.exceptions import APIError
 
 def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, end):
-    # ✅ Check if session already exists for the same mentor during the time slot
+    # ✅ Check for conflict: any existing session for the mentor in this slot
     conflict = supabase.table("session") \
         .select("sessionid") \
         .eq("mentorid", mentor_id) \
@@ -15,18 +15,18 @@ def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, en
     if conflict:
         return False, "⚠️ This time slot is already booked for the mentor."
 
-    # ✅ Create Google Meet or Zoom meeting link
+    # ✅ Create Google Meet link
     meet_link, cal_link = create_meet_event(start, end, "Mentorship Session")
 
-    # ✅ Prepare session data
+    # ✅ Build session data
     session_data = {
         "mentorid": mentor_id,
         "menteeid": mentee_id,
-        "date": start.replace(tzinfo=None).isoformat(),  # removes timezone info
+        "date": start.replace(tzinfo=None).isoformat(),  # strip timezone
         "meet_link": meet_link
     }
 
-    # ✅ Save session to Supabase
+    # ✅ Insert into Supabase
     try:
         supabase.table("session").insert(session_data).execute()
     except APIError as e:
@@ -36,22 +36,22 @@ def create_session_with_meet_and_email(supabase, mentor_id, mentee_id, start, en
         print("Hint:", e.hint)
         return False, "❌ Failed to save session to database."
 
-    # ✅ Fetch participant emails
+    # ✅ Get user emails
     try:
         mentor = supabase.table("users").select("email").eq("userid", mentor_id).execute().data[0]
         mentee = supabase.table("users").select("email").eq("userid", mentee_id).execute().data[0]
     except Exception:
         return False, "❌ Failed to fetch mentor/mentee emails."
 
-    # ✅ Send email notifications
+    # ✅ Notify both
     for email in [mentor["email"], mentee["email"]]:
         send_email(
             email,
             "📅 Mentorship Session Booked",
-            f"Hi,\n\nYour session is scheduled from {start} to {end}.\nJoin using: {meet_link}"
+            f"Hi,\n\nYour session is scheduled from {start} to {end}.\nJoin here: {meet_link}"
         )
 
-    return True, f"✅ Session created! [Join Meeting]({meet_link}) | [View in Calendar]({cal_link})"
+    return True, f"✅ Session created! [Join Meeting]({meet_link}) | [Calendar]({cal_link})"
 
-# Make alias
+# ✅ Alias (for admin.py and mentee.py compatibility)
 create_session_if_available = create_session_with_meet_and_email
