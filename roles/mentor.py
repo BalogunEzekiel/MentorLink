@@ -8,14 +8,13 @@ from emailer import send_email
 
 def show():
     st.title("Mentor Dashboard")
-    st.info("Manage your sessions, availability, and mentee interactions.")
+    st.info("Manage your sessions, availability, and incoming mentorship requests.")
     mentor_id = st.session_state.user["userid"]
 
     tabs = st.tabs([
         "📅 My Sessions",
         "📌 Add Availability",
-        "📥 Requests",     # ✅ NEW
-        "✅ Session Feedback"
+        "📥 Requests"
     ])
 
     # ---------------------- 📅 My Sessions Tab ----------------------
@@ -122,12 +121,11 @@ def show():
                 with st.expander(f"Request from {mentee_email}"):
                     col1, col2 = st.columns(2)
                     if col1.button("✅ Accept", key=f"accept_{req_id}"):
-                        # Schedule session for next available slot
+                        # Schedule session for the next 5 mins (temporary logic)
                         now = datetime.utcnow()
                         start = now + timedelta(minutes=5)
                         end = start + timedelta(minutes=30)
 
-                        # Create session and send email
                         success, msg = create_session_with_meet_and_email(
                             supabase, mentor_id, mentee_id, start, end
                         )
@@ -145,33 +143,3 @@ def show():
                             .eq("mentorshiprequestid", req_id).execute()
                         st.info("Request rejected.")
                         st.rerun()
-
-    # ---------------------- ✅ Session Feedback Tab ----------------------
-    with tabs[3]:
-        st.subheader("Rate Mentees & Provide Feedback")
-
-        sessions = supabase.table("session") \
-            .select("sessionid, users!session_menteeid_fkey(email), date, rating, feedback") \
-            .eq("mentorid", mentor_id).execute().data or []
-
-        for session in sessions:
-            if session.get("rating") and session.get("feedback"):
-                continue  # Skip completed feedback
-
-            mentee_email = session.get("users", {}).get("email", "Unknown")
-            date_str = format_datetime_safe(session.get("date"))
-
-            with st.expander(f"Session with {mentee_email} on {date_str}"):
-                rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
-                feedback = st.text_area("Feedback", key=f"feedback_{session['sessionid']}")
-
-                if st.button("Submit Feedback", key=f"submit_feedback_{session['sessionid']}"):
-                    try:
-                        supabase.table("session").update({
-                            "rating": rating,
-                            "feedback": feedback
-                        }).eq("sessionid", session["sessionid"]).execute()
-                        st.success("Feedback submitted.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error submitting feedback: {e}")
