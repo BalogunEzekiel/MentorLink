@@ -37,7 +37,8 @@ def create_meet_event(start: datetime, end: datetime, summary: str, attendee: st
 
     # Insert the event into the shared calendar
     created_event = service.events().insert(
-        calendarId='primary',  # This works if the calendar is owned by the service account or shared with it
+        calendarId='ezekielo.balogun@gmail.com',  # The calendar shared with the service account
+#        calendarId='primary',  # This works if the calendar is owned by the service account or shared with it
         body=event,
         conferenceDataVersion=1
     ).execute()
