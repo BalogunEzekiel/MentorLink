@@ -78,7 +78,9 @@ def show():
         st.subheader("Your Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
             .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
+            .eq("menteeid", user_id) \
+            .neq("status", "ACCEPTED") \
+            .execute().data or []
 
         if requests:
             for req in requests:
