@@ -1,6 +1,7 @@
 import streamlit as st
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from datetime import datetime, timezone
 
 # Define the scope and calendar access
@@ -12,14 +13,11 @@ def get_calendar_service():
         st.secrets["google_service_account"],
         scopes=SCOPES
     )
-    
-    # DO NOT use with_subject() for personal Gmail — it will cause a RefreshError
     return build('calendar', 'v3', credentials=credentials)
 
 def create_meet_event(start: datetime, end: datetime, summary: str, attendee: str = None):
     service = get_calendar_service()
     
-    # Define event with Meet link creation
     event = {
         'summary': summary,
         'start': {'dateTime': start.astimezone(timezone.utc).isoformat()},
@@ -35,12 +33,19 @@ def create_meet_event(start: datetime, end: datetime, summary: str, attendee: st
     if attendee:
         event.setdefault('attendees', []).append({'email': attendee})
 
-    # Insert the event into the shared calendar
-    created_event = service.events().insert(
-        calendarId='ezekielo.balogun@gmail.com',  # The calendar shared with the service account
-#        calendarId='primary',  # This works if the calendar is owned by the service account or shared with it
-        body=event,
-        conferenceDataVersion=1
-    ).execute()
+    try:
+        created_event = service.events().insert(
+            calendarId='ezekielo.balogun@gmail.com',  # The calendar shared with the service account
+            body=event,
+            conferenceDataVersion=1
+        ).execute()
 
-    return created_event.get('hangoutLink'), created_event.get('htmlLink')
+        return created_event.get('hangoutLink'), created_event.get('htmlLink')
+
+    except HttpError as error:
+        st.error("Google Calendar API error occurred:")
+        try:
+            st.code(error.content.decode("utf-8"), language="json")  # Show the detailed JSON error
+        except Exception:
+            st.exception(error)  # Fallback if decoding fails
+        return None, None
