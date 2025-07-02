@@ -8,6 +8,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # ✅ Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
 
+# ✅ Display compact app header
+st.markdown("""
+<div style='text-align: center; margin: 0; padding: 2px 0;'>
+    <h3 style='color: #4B8BBE; font-weight: bold; margin: 0;'>MentorLink</h3>
+</div>
+<hr style='margin: 2px 0;'>
+""", unsafe_allow_html=True)
+
 # ✅ Setup admin on first run
 from utils.setup_admin import setup_admin_account
 setup_admin_account()
@@ -26,14 +34,6 @@ from components.mentorchat_widget import mentorchat_widget  # ✅ floating chat 
 
 # ✅ Always show sidebar
 sidebar()
-
-# ✅ Display App Header (this appears on every page)
-st.markdown("""
-<div style='text-align: center; margin-top: -10px; padding-bottom: 10px;'>
-    <h1 style='color: #4B8BBE; font-weight: bold;'>MentorLink</h1>
-</div>
-<hr>
-""", unsafe_allow_html=True)
 
 # ✅ Show floating chat on every page if toggled
 mentorchat_widget()
