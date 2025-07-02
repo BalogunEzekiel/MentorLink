@@ -1,8 +1,10 @@
-# components/landing_page.py
-
 import streamlit as st
 
 def show_landing():
+    # Store initial page state if not already set
+    if 'page' not in st.session_state:
+        st.session_state.page = 'landing'
+
     st.markdown("""
 <style>
 .mentorlink-public .story-section {
@@ -59,6 +61,7 @@ def show_landing():
         <h3>🔥 The Match That Sparked a Movement</h3>
         <p><em>I used to feel invisible in the tech space.</em></p>
         <p>Coming from agriculture, I didn’t think I had a seat at the digital table. That changed when I met my mentor — a product manager from The Incubator Hub.</p>
+
         <p>Now, I’m building my first AI-powered app for farmers in my community. And it all started with one match.</p>
         <p><strong>We don’t just connect mentors and mentees — we build bridges between dreams and destiny.</strong></p>
       </div>
@@ -80,18 +83,7 @@ def show_landing():
     </div>
 
     <div style="text-align: center; margin-top: 2rem;">
-      <a href="#" style="
-        background-color: #4B8BBE;
-        color: white;
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        display: inline-block;">
-        🚀 Start Your Journey
-      </a>
-    </div>
+      </div>
 
     <div style="text-align: center; margin-top: 2.5rem;">
       <h3>👩🏾‍💻 Are you ready to grow with guidance?</h3>
@@ -103,4 +95,10 @@ def show_landing():
   </div>
 </div>
 """, unsafe_allow_html=True)
-  
+
+    # Adding a Streamlit button for actual interactivity
+    # Placing it outside the markdown to allow Streamlit to handle the click event
+    st.markdown("<div style='text-align: center; margin-top: 2rem;'>", unsafe_allow_html=True)
+    if st.button("🚀 Start Your Journey", key="start_journey_button"):
+        st.session_state.page = 'dashboard' # Or 'signup', 'login', etc.
+    st.markdown("</div>", unsafe_allow_html=True)
