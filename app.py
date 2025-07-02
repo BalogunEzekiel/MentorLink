@@ -2,35 +2,35 @@ import streamlit as st
 import sys
 import os
 
-# Ensure local module imports work
+# ✅ Ensure local module imports work
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # ✅ Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
 
-# ✅ Add global compact header with Pristina font
+# ✅ Add custom header with styling
 st.markdown("""
     <style>
     @font-face {
-        font-family: Pristina;
-        src: local("Pristina");
+        font-family: 'ScriptMTBold';
+        src: local("Script MT Bold");
     }
-    h3.pristina-title {
-        font-family: "Pristina", cursive, serif;
+    .custom-header {
+        font-family: 'ScriptMTBold', cursive, serif;
+        font-size: 38px;
         color: #4B8BBE;
         font-weight: bold;
-        margin: 0;
-        padding: 0;
+        text-align: center;
+        margin-bottom: 0.1rem;
+        margin-top: -1rem;
     }
     .block-container {
-        padding-top: 0.5rem;
+        padding-top: 0.5rem !important;
     }
     </style>
 
-    <div style='text-align: center; margin: 0; padding: 2px 0;'>
-        <h3 class='pristina-title'>MentorLink</h3>
-    </div>
-    <hr style='margin: 2px 0;'>
+    <div class='custom-header'>MentorLink</div>
+    <hr style='margin: 0.2rem 0 0.5rem 0;'>
 """, unsafe_allow_html=True)
 
 # ✅ Setup admin on first run
