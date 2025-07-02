@@ -1,51 +1,60 @@
 import streamlit as st
 
 def show_landing():
-    # Store initial page state if not already set
-    if 'page' not in st.session_state:
-        st.session_state.page = 'landing'
-
+    """
+    Displays the MentorLink public landing page content.
+    This function is purely for presentation, as navigation and authentication
+    are handled by the main app.py file.
+    """
+    # Ensure the entire HTML, including <style> and outer divs, is within the markdown string.
     st.markdown("""
 <style>
+/* General styling for the MentorLink public section */
 .mentorlink-public .story-section {
-    background-color: #f7f9fc;
-    padding: 2rem 1rem;
-    border-radius: 10px;
-    margin-top: 2rem;
+    background-color: #f7f9fc; /* Light grey background for the section */
+    padding: 2rem 1rem; /* Padding around the content */
+    border-radius: 10px; /* Rounded corners for the section */
+    margin-top: 2rem; /* Top margin for spacing */
 }
+/* Container for story cards, using flexbox for layout */
 .mentorlink-public .story-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
+    display: flex; /* Enable flexbox */
+    flex-wrap: wrap; /* Allow items to wrap to the next line */
+    gap: 20px; /* Space between flex items */
+    justify-content: center; /* Center items horizontally */
 }
+/* Styling for individual story cards */
 .mentorlink-public .story-card {
-    background-color: white;
-    flex: 1;
-    min-width: 300px;
-    max-width: 400px;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: white; /* White background for cards */
+    flex: 1; /* Allow cards to grow and shrink */
+    min-width: 300px; /* Minimum width for cards */
+    max-width: 400px; /* Maximum width for cards */
+    padding: 1.5rem; /* Padding inside cards */
+    border-radius: 8px; /* Rounded corners for cards */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
 }
+/* Heading styling within story cards */
 .mentorlink-public .story-card h3 {
-    color: #4B8BBE;
-    font-size: 1.3rem;
+    color: #4B8BBE; /* Specific blue color for headings */
+    font-size: 1.3rem; /* Font size for headings */
 }
+/* Paragraph styling within story cards */
 .mentorlink-public .story-card p {
-    line-height: 1.6;
-    font-size: 0.95rem;
+    line-height: 1.6; /* Line height for readability */
+    font-size: 0.95rem; /* Font size for paragraphs */
 }
+/* Styling for the main hero image */
 .mentorlink-public .hero-image {
-    width: 100%;
-    border-radius: 10px;
-    max-height: 300px;
-    object-fit: cover;
-    margin-bottom: 1.5rem;
+    width: 100%; /* Full width of its container */
+    border-radius: 10px; /* Rounded corners for the image */
+    max-height: 300px; /* Maximum height to prevent it from being too tall */
+    object-fit: cover; /* Cover the area, cropping if necessary */
+    margin-bottom: 1.5rem; /* Bottom margin for spacing */
 }
+/* Responsive design: Stack story cards vertically on smaller screens */
 @media (max-width: 768px) {
     .mentorlink-public .story-container {
-        flex-direction: column;
+        flex-direction: column; /* Stack items vertically */
     }
 }
 </style>
@@ -83,7 +92,9 @@ def show_landing():
     </div>
 
     <div style="text-align: center; margin-top: 2rem;">
-      </div>
+      <!-- The "Start Your Journey" button will be rendered by app.py using st.button for functionality -->
+      <!-- This HTML comment is to indicate where a Streamlit button would conceptually go if this were standalone -->
+    </div>
 
     <div style="text-align: center; margin-top: 2.5rem;">
       <h3>👩🏾‍💻 Are you ready to grow with guidance?</h3>
@@ -95,10 +106,3 @@ def show_landing():
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-    # Adding a Streamlit button for actual interactivity
-    # Placing it outside the markdown to allow Streamlit to handle the click event
-    st.markdown("<div style='text-align: center; margin-top: 2rem;'>", unsafe_allow_html=True)
-    if st.button("🚀 Start Your Journey", key="start_journey_button"):
-        st.session_state.page = 'dashboard' # Or 'signup', 'login', etc.
-    st.markdown("</div>", unsafe_allow_html=True)
