@@ -1,6 +1,6 @@
 import streamlit as st
 from auth.auth_handler import logout
-from database import supabase  # make sure this is imported
+from database import supabase  # Ensure this is imported
 
 def sidebar():
     if "logged_in" not in st.session_state:
@@ -11,22 +11,24 @@ def sidebar():
         if st.session_state.get("logged_in") and "user" in st.session_state:
             user = st.session_state["user"]
             user_id = user.get("userid")
-
+            user_email = user.get("email", "")
+            
             # Default fallback name
-            fallback_name = user.get("email", "User").split("@")[0].capitalize()
+            fallback_name = user_email.split("@")[0].capitalize()
             full_name = fallback_name
 
-            # ✅ Try to fetch profile.name from DB
-            try:
-                profile = supabase.table("profile").select("name") \
-                    .eq("userid", user_id).single().execute().data
-                if profile and profile.get("name"):
-                    full_name = profile["name"]
-            except Exception as e:
-                st.warning("Could not load profile name.")
+            # ✅ Use profile.name if not Admin
+            if user_email != "admin@theincubatorhub.com":
+                try:
+                    profile = supabase.table("profile").select("name") \
+                        .eq("userid", user_id).single().execute().data
+                    if profile and profile.get("name"):
+                        full_name = profile["name"]
+                except Exception:
+                    st.warning("Could not load profile name.")
 
             st.success(f"👋 Welcome, {full_name}!")
-#==========================================================================================
+
             # ✅ Logout Button
             if st.button("🔓 Logout", key="logout_sidebar"):
                 logout()
