@@ -1,7 +1,6 @@
 import streamlit as st
 import sys
 import os
-from components.landing_page import show_landing
 
 # ✅ Ensure local module imports work
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +32,7 @@ st.markdown("""
     <hr style='margin: 0.2rem 0 0.5rem 0;'>
 """, unsafe_allow_html=True)
 
-# ✅ Setup and core utilities
+# ✅ Import core app logic
 from utils.setup_admin import setup_admin_account
 from utils.auto_cancel import cancel_expired_requests
 from auth.auth_handler import login, logout
@@ -42,7 +41,9 @@ from components.sidebar import sidebar
 from components.mentorchat_widget import mentorchat_widget
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
+from components.landing_page import show_landing  # ✅ Import landing page
 
+# ✅ Initialization
 setup_admin_account()
 cancel_expired_requests()
 sidebar()
@@ -51,10 +52,8 @@ mentorchat_widget()
 # ✅ Auth & Routing
 if not st.session_state.get("authenticated", False):
     login()
-    # ✅ Public Landing Page with Stories and CTA
-    show_landing()
+    show_landing()  # ✅ Show public landing page
 else:
-    # ✅ Authenticated View by Role
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
