@@ -4,6 +4,9 @@ from utils.helpers import format_datetime_safe
 from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
+import pytz
+
+WAT = pytz.timezone("Africa/Lagos")  # West Africa Time
 
 
 def show():
@@ -60,7 +63,6 @@ def show():
                     update_data["profile_image_url"] = avatar_url
 
                 supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
-#                supabase.table("profile").upsert(update_data).execute()
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
@@ -78,9 +80,6 @@ def show():
                 col = cols[i % 2]
                 with col:
                     profile = mentor.get("profile") or {}
-                    if not isinstance(profile, dict):
-                        profile = {}
-
                     name = profile.get("name", "Unnamed Mentor")
                     avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128"
                     bio = profile.get("bio", "No bio")
@@ -144,7 +143,7 @@ def show():
         if sessions:
             for s in sessions:
                 mentor_email = s.get("users", {}).get("email", "Unknown")
-                session_date = format_datetime_safe(s.get("date"))
+                session_date = format_datetime_safe(s.get("date"), tz=WAT)
                 rating = s.get("rating", "Pending")
                 feedback = s.get("feedback", "Not submitted")
                 meet_link = s.get("meet_link", "#")
@@ -185,7 +184,7 @@ def show():
                     continue  # Skip already rated sessions
 
                 mentor_email = session.get("users", {}).get("email", "Unknown")
-                date_str = format_datetime_safe(session.get("date"))
+                date_str = format_datetime_safe(session.get("date"), tz=WAT)
 
                 with st.expander(f"Session with {mentor_email} on {date_str}"):
                     rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
