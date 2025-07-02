@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import streamlit as st
 import pandas as pd
+import pytz
 
 # Adjust path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -13,18 +14,19 @@ from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
 from utils.helpers import format_datetime_safe
 
+# West Africa Timezone (UTC+1)
+WAT = pytz.timezone("Africa/Lagos")
 
 def format_datetime(dt):
     if not dt:
         return "Unknown"
     if isinstance(dt, datetime):
-        return dt.strftime("%A, %d %B %Y at %I:%M %p")
+        return dt.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     try:
         parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-        return parsed.strftime("%A, %d %B %Y at %I:%M %p")
+        return parsed.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
         return str(dt)
-
 
 def show():
     st.title("Admin Dashboard")
@@ -170,31 +172,23 @@ def show():
                     if existing:
                         st.warning("This mentorship request already exists.")
                     else:
-                        # 💡 Check if mentor has availability
                         availability = supabase.table("availability") \
                             .select("availabilityid") \
-                            .eq("mentorid", mentor_id) \
-                            .execute().data
+                            .eq("mentorid", mentor_id).execute().data
 
                         if not availability:
-                            st.warning("⚠️ Note: This mentor has no availability slots set. A session will still be created.")
+                            st.warning("⚠️ This mentor has no availability slots set.")
 
-                        # Create request and session
-                        result = supabase.table("mentorshiprequest").insert({
+                        supabase.table("mentorshiprequest").insert({
                             "menteeid": mentee_id,
                             "mentorid": mentor_id,
                             "status": "ACCEPTED"
                         }).execute()
 
-                        now = datetime.utcnow()
+                        now = datetime.now(tz=WAT)
                         end = now + pd.Timedelta(minutes=30)
 
                         success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
-
-
-#                        success, msg = create_session_if_available(
-#                            supabase, mentor_id, mentee_id, now, end, send_email=True
-#                        )
 
                         if success:
                             st.success("✅ Match created and session booked!")
