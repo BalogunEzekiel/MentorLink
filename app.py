@@ -65,7 +65,7 @@ if not st.session_state.get("authenticated", False):
 
       <!-- Story 1 -->
       <div style="flex: 1; min-width: 300px;">
-        <h3>🔥 STORY #1: The Match That Sparked a Movement</h3>
+        <h3>🔥 The Match That Sparked a Movement</h3>
         <p><em>I used to feel invisible in the tech space.</em></p>
         <p>Coming from a background in agriculture, I didn’t think someone like me had a seat at the digital table. That changed the moment I met my mentor — a seasoned product manager from The Incubator Hub. He didn’t just teach me tools. He saw potential in me I had buried long ago.</p>
         <p>Today, I’m building my first AI-powered app to help farmers in my community. And it all began with a single mentorship match.</p>
@@ -75,7 +75,7 @@ if not st.session_state.get("authenticated", False):
 
       <!-- Story 2 -->
       <div style="flex: 1; min-width: 300px;">
-        <h3>🌱 STORY #2: The Ripple Effect of One Yes</h3>
+        <h3>🌱 The Ripple Effect of One Yes</h3>
         <p>When <strong>The Incubator Hub of Digital SkillUp Africa</strong> launched MentorLink, we weren’t just building a platform.</p>
         <p>We were rewriting the future for thousands of curious, courageous Africans from all walks of life — nurses learning frontend, accountants mastering data analysis, and dreamers who simply needed a hand to hold while they crossed into tech.</p>
         <p>Every week, mentors from our curated hub take time to pour their experience into someone ready to learn, lead, and launch.</p>
@@ -85,7 +85,7 @@ if not st.session_state.get("authenticated", False):
 
       <!-- Story 3 -->
       <div style="flex: 1; min-width: 300px;">
-        <h3>🌍 STORY #3: A Letter from a Future Fellow</h3>
+        <h3>🌍 A Letter from a Future Fellow</h3>
         <p><em>Dear Mentor,</em></p>
         <p>You didn’t just help me code.</p>
         <p>You helped me believe.</p>
