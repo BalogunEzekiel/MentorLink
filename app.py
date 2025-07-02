@@ -60,52 +60,84 @@ if not st.session_state.get("authenticated", False):
     login()
 
     # ✅ Public landing page stories section
+
     st.markdown("""
-    <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; margin-top: 2rem;">
-
-      <!-- STORY #1 -->
-      <div style="flex: 1; min-width: 300px;">
-        <h3>🔥 STORY #1: The Match That Sparked a Movement</h3>
-        <p><em>I used to feel invisible in the tech space.</em></p>
-        <p>Coming from a background in agriculture, I didn’t think someone like me had a seat at the digital table. That changed the moment I met my mentor — a seasoned product manager from The Incubator Hub. He didn’t just teach me tools. He saw potential in me I had buried long ago.</p>
-        <p>Today, I’m building my first AI-powered app to help farmers in my community. And it all began with a single mentorship match.</p>
-        <p><strong>At MentorLink, we don’t just connect mentors and mentees — we build bridges between dreams and destiny.</strong></p>
-        <p>👉 <a href="#">Join as a Fellow</a> or <a href="#">Become a Mentor</a></p>
+    <style>
+    .story-section {
+        background-color: #f7f9fc;
+        padding: 2rem 1rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+    }
+    .story-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+    }
+    .story-card {
+        background-color: white;
+        flex: 1;
+        min-width: 300px;
+        max-width: 450px;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    }
+    .story-card h3 {
+        color: #4B8BBE;
+        font-size: 1.3rem;
+    }
+    .story-card p {
+        line-height: 1.6;
+    }
+    .hero-image {
+        width: 100%;
+        border-radius: 10px;
+        max-height: 300px;
+        object-fit: cover;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) {
+        .story-container {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    }
+    </style>
+    
+    <div class="story-section">
+      <img src="https://images.unsplash.com/photo-1607387632374-9e9679aa252b?auto=format&fit=crop&w=1600&q=80" class="hero-image" alt="Mentorship Hero Image" />
+      <div class="story-container">
+    
+        <div class="story-card">
+          <h3>🔥 The Match That Sparked a Movement</h3>
+          <p><em>I used to feel invisible in the tech space.</em></p>
+          <p>Coming from a background in agriculture, I didn’t think someone like me had a seat at the digital table. That changed the moment I met my mentor — a seasoned product manager from The Incubator Hub. He didn’t just teach me tools. He saw potential in me I had buried long ago.</p>
+          <p>Today, I’m building my first AI-powered app to help farmers in my community. And it all began with a single mentorship match.</p>
+          <p><strong>At MentorLink, we don’t just connect mentors and mentees — we build bridges between dreams and destiny.</strong></p>
+          <p>👉 <a href="#">Join as a Fellow</a> or <a href="#">Become a Mentor</a></p>
+        </div>
+    
+        <div class="story-card">
+          <h3>🌱 The Ripple Effect of One Yes</h3>
+          <p>When <strong>The Incubator Hub of Digital SkillUp Africa</strong> launched MentorLink, we weren’t just building a platform.</p>
+          <p>We were rewriting the future for thousands of curious, courageous Africans — nurses learning frontend, accountants mastering data analysis, and dreamers who simply needed a hand to hold while they crossed into tech.</p>
+          <p>Every week, mentors from our curated hub pour their experience into someone ready to learn, lead, and launch.</p>
+          <p><strong>It starts with one conversation. One mentor. One “yes.”</strong></p>
+        </div>
+    
+        <div class="story-card">
+          <h3>🌍 Your World is Changing for Good</h3>
+          <p><em>Dear Mentor,</em></p>
+          <p>You didn’t just help me code.</p>
+          <p>You helped me believe.</p>
+          <p>Before MentorLink, I was unsure. I kept asking myself if I was too old, too inexperienced, too “non-tech” to start. But you showed up — week after week. With patience. With real talk. With direction.</p>
+          <p>Today, I’m helping build accessible edtech platforms in Northern Nigeria. And it’s all because someone from The Incubator Hub said <strong>“I believe in you.”</strong></p>
+          <p><em>Forever grateful,<br>A Fellow, a Builder, a Giver Back</em></p>
+        </div>
+    
       </div>
-
-      <!-- STORY #2 -->
-      <div style="flex: 1; min-width: 300px;">
-        <h3>🌱 STORY #2: The Ripple Effect of One Yes</h3>
-        <p>When <strong>The Incubator Hub of Digital SkillUp Africa</strong> launched MentorLink, we weren’t just building a platform.</p>
-        <p>We were rewriting the future for thousands of curious, courageous Africans from all walks of life — nurses learning frontend, accountants mastering data analysis, and dreamers who simply needed a hand to hold while they crossed into tech.</p>
-        <p>Every week, mentors from our curated hub take time to pour their experience into someone ready to learn, lead, and launch.</p>
-        <p>The result? More than just job placements. We’re witnessing confidence rise, communities transform, and impact multiply.</p>
-        <p><strong>It starts with one conversation. One mentor. One “yes.”</strong></p>
-      </div>
-
-      <!-- STORY #3 -->
-      <div style="flex: 1; min-width: 300px;">
-        <h3>🌍 STORY #3: A Letter from a Future Fellow</h3>
-        <p><em>Dear Mentor,</em></p>
-        <p>You didn’t just help me code.</p>
-        <p>You helped me believe.</p>
-        <p>Before MentorLink, I was unsure. I kept asking myself if I was too old, too inexperienced, too “non-tech” to start. But you showed up. Week after week. With patience. With real talk. With direction.</p>
-        <p>Today, I’m helping build accessible edtech platforms in Northern Nigeria. And it’s all because someone from The Incubator Hub said <strong>“I believe in you.”</strong></p>
-        <p>Thank you for not seeing just my past — but my possibility.</p>
-        <p><em>Forever grateful,<br>A Fellow, a Builder, a Giver Back</em></p>
-      </div>
-
-    </div>
-
-    <hr style="margin-top: 3rem;">
-
-    <!-- Call-To-Action Section -->
-    <div style="text-align: center;">
-      <h3>👩🏾‍💻 Are you ready to grow with guidance?</h3>
-      <p>Whether you’re just breaking into tech or you're here to give back, <strong>MentorLink — powered by The Incubator Hub of Digital SkillUp Africa</strong> — is where growth meets generosity.</p>
-      <p>🔹 <strong>Fellows:</strong> Find your mentor. Rewrite your story.<br>
-         🔹 <strong>Mentors:</strong> Share your light. Shape the future.</p>
-      <p><strong>✨ Impact is just one connection away.</strong></p>
     </div>
     """, unsafe_allow_html=True)
 
