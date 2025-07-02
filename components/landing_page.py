@@ -48,7 +48,7 @@ def show_landing():
       </div>
 
       <div class="story-box">
-        <h5>🌍 A Letter from a Future Fellow</h5>
+        <h5>🌍 Your World is Changing for Good</h5>
         <p><em>Dear Mentor,</em></p>
         <p>You didn’t just help me code. You helped me believe.</p>
         <p>Before MentorLink, I was unsure. I kept asking if I was too old, too non-tech to start. But you showed up. With patience. With direction.</p>
