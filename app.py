@@ -39,9 +39,9 @@ from auth.auth_handler import login, logout
 from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
 from components.mentorchat_widget import mentorchat_widget
+from components.landing_page import show_landing
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
-from components.landing_page import show_landing  # ✅ Import landing page
 
 # ✅ Initialization
 setup_admin_account()
@@ -52,7 +52,7 @@ mentorchat_widget()
 # ✅ Auth & Routing
 if not st.session_state.get("authenticated", False):
     login()
-    show_landing()  # ✅ Show public landing page
+    show_landing()  # ✅ Modular public landing page
 else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
