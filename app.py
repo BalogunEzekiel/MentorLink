@@ -96,7 +96,7 @@ mentorchat_widget()
 # ✅ Auth & Routing
 if not st.session_state.get("authenticated", False):
     login()
-    show_landing()  # ✅ Modular public landing page
+#    show_landing()  # ✅ Modular public landing page
 else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
