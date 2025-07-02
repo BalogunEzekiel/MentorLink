@@ -4,8 +4,9 @@ def show_landing():
     """
     Displays the MentorLink public landing page content (HTML structure only).
     The CSS styling is now handled globally by app.py.
+    This version includes a debug comment to help diagnose truncation.
     """
-    st.markdown("""
+    st.markdown("""<!-- DEBUG START -->
 <div class="mentorlink-public">
   <div class="story-section">
     <img src="https://images.unsplash.com/photo-1607387632374-9e9679aa252b?auto=format&fit=crop&w=1600&q=80"
