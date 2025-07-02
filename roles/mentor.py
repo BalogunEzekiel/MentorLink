@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from utils.helpers import format_datetime_safe
 from utils.session_creator import create_session_with_meet_and_email
 from emailer import send_email
-
+import uuid
 
 def show():
     st.title("Mentor Dashboard")
@@ -35,6 +35,11 @@ def show():
 
         # Profile Management
         st.markdown("### 🙍‍♂️ Update Profile")
+
+        # Show current profile image if available
+        if profile.get("profile_image_url"):
+            st.image(profile["profile_image_url"], width=100, caption="Current Profile Picture")
+       
         with st.form("mentor_profile_form"):
             name = st.text_input("Name", value=profile.get("name", ""))
             bio = st.text_area("Bio", value=profile.get("bio", ""))
@@ -54,8 +59,26 @@ def show():
                 }
 
                 if profile_image:
-                    avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
-                    update_data["profile_image_url"] = avatar_url
+                    # Generate unique filename
+                    file_ext = profile_image.type.split("/")[-1]
+                    file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
+                
+                    # Upload to Supabase Storage bucket 'profile-pictures'
+                    supabase.storage.from_("profile-pictures").upload(
+                        path=file_name,
+                        file=profile_image,
+                        file_options={"content-type": profile_image.type},
+                        upsert=True
+                    )
+                
+                    # Get public URL to the uploaded image
+                    public_url = supabase.storage.from_("profile-pictures").get_public_url(file_name)
+                    update_data["profile_image_url"] = public_url
+
+
+#                if profile_image:
+ #                   avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
+  #                  update_data["profile_image_url"] = avatar_url
 
                 supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
 #                supabase.table("profile").upsert(update_data).execute()
