@@ -27,6 +27,14 @@ from components.mentorchat_widget import mentorchat_widget  # ✅ floating chat 
 # ✅ Always show sidebar
 sidebar()
 
+# ✅ Display App Header (this appears on every page)
+st.markdown("""
+<div style='text-align: center; margin-top: -10px; padding-bottom: 10px;'>
+    <h1 style='color: #4B8BBE; font-weight: bold;'>MentorLink</h1>
+</div>
+<hr>
+""", unsafe_allow_html=True)
+
 # ✅ Show floating chat on every page if toggled
 mentorchat_widget()
 
