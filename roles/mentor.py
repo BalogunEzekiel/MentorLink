@@ -63,18 +63,18 @@ def show():
                     file_ext = profile_image.type.split("/")[-1]
                     file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
                 
-                    # Upload to Supabase Storage bucket 'profile-pictures'
+                    # Upload the file (get bytes)
+                    file_bytes = profile_image.getvalue()
+                
+                    # Upload to Supabase Storage
                     supabase.storage.from_("profile-pictures").upload(
-                        path=file_name,
-                        file=profile_image,
-                        file_options={"content-type": profile_image.type},
-                        upsert=True
+                        file_name,
+                        file_bytes
                     )
                 
-                    # Get public URL to the uploaded image
+                    # Get public URL
                     public_url = supabase.storage.from_("profile-pictures").get_public_url(file_name)
                     update_data["profile_image_url"] = public_url
-
 
 #                if profile_image:
  #                   avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
