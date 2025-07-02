@@ -8,12 +8,29 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # ✅ Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
 
-# ✅ Display compact app header
+# ✅ Add global compact header with Pristina font
 st.markdown("""
-<div style='text-align: center; margin: 0; padding: 2px 0;'>
-    <h3 style='color: #4B8BBE; font-weight: bold; margin: 0;'>MentorLink</h3>
-</div>
-<hr style='margin: 2px 0;'>
+    <style>
+    @font-face {
+        font-family: Pristina;
+        src: local("Pristina");
+    }
+    h3.pristina-title {
+        font-family: "Pristina", cursive, serif;
+        color: #4B8BBE;
+        font-weight: bold;
+        margin: 0;
+        padding: 0;
+    }
+    .block-container {
+        padding-top: 0.5rem;
+    }
+    </style>
+
+    <div style='text-align: center; margin: 0; padding: 2px 0;'>
+        <h3 class='pristina-title'>MentorLink</h3>
+    </div>
+    <hr style='margin: 2px 0;'>
 """, unsafe_allow_html=True)
 
 # ✅ Setup admin on first run
