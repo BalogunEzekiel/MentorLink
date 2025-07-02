@@ -47,7 +47,7 @@ def show():
             else:
                 register_user(user_email, role)
                 st.success(f"✅ User '{user_email}' registered as {role}.")
-                time.sleep(2)
+                time.sleep(1)
                 st.rerun()
 
     # --------------------- 👥 Users Tab --------------------- #
