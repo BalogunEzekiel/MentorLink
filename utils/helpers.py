@@ -1,37 +1,45 @@
-# utils/helpers.py
-
 from datetime import datetime
 from typing import Optional
 import pytz
 
-# --- Safe formatter that handles multiple input types
-def format_datetime_safe(dt: Optional[str or datetime]) -> str:
+# Timezone definition
+WAT = pytz.timezone("Africa/Lagos")
+
+# --- Safe formatter that handles both datetime objects and strings
+def format_datetime_safe(dt: Optional[str or datetime], tz=WAT) -> str:
     if not dt:
         return "Unknown"
-    if isinstance(dt, datetime):
-        return dt.strftime("%A, %d %B %Y at %I:%M %p")
     try:
-        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-        return parsed.strftime("%A, %d %B %Y at %I:%M %p")
+        # If it's already a datetime object
+        if isinstance(dt, datetime):
+            dt_obj = dt
+        else:
+            # Parse ISO or SQL format with fallback
+            try:
+                dt_obj = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except:
+                dt_obj = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
+        
+        # Ensure timezone awareness
+        if dt_obj.tzinfo is None:
+            dt_obj = pytz.utc.localize(dt_obj)
+        dt_local = dt_obj.astimezone(tz)
+
+        return dt_local.strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
         return str(dt)
 
-# --- Formatter that converts UTC string to localized Lagos time
+# --- Strict formatter for known UTC ISO string input (fallback format)
 def format_datetime(dt_string: str) -> str:
     try:
-        # Try ISO UTC with milliseconds
         dt = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError:
         try:
-            # Try standard SQL format
             dt = datetime.strptime(dt_string, "%Y-%m-%d %H:%M:%S.%f")
         except ValueError:
             return "Invalid date"
 
-    # Convert UTC to Africa/Lagos timezone
-    utc = pytz.utc
-    local_tz = pytz.timezone("Africa/Lagos")
-    dt_utc = utc.localize(dt)
-    dt_local = dt_utc.astimezone(local_tz)
-
+    # Convert to WAT
+    dt_utc = pytz.utc.localize(dt)
+    dt_local = dt_utc.astimezone(WAT)
     return dt_local.strftime("%d %b %Y %H:%M")
