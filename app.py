@@ -51,7 +51,7 @@ mentorchat_widget()
 if not st.session_state.get("authenticated", False):
     login()
 
-    # ✅ Public Landing Page with Stories
+    # ✅ Public Landing Page with Stories and CTA
     st.markdown("""
     <style>
     .mentorlink-public .story-section {
@@ -132,6 +132,7 @@ if not st.session_state.get("authenticated", False):
           </div>
         </div>
 
+        <!-- CTA Button -->
         <div style="text-align: center; margin-top: 2rem;">
           <a href="#" style="
             background-color: #4B8BBE;
@@ -144,6 +145,15 @@ if not st.session_state.get("authenticated", False):
             display: inline-block;">
             🚀 Start Your Journey
           </a>
+        </div>
+
+        <!-- CTA Section -->
+        <div style="text-align: center; margin-top: 2.5rem;">
+          <h3>👩🏾‍💻 Are you ready to grow with guidance?</h3>
+          <p>Whether you’re just breaking into tech or you're here to give back, <strong>MentorLink — powered by The Incubator Hub of Digital SkillUp Africa</strong> — is where growth meets generosity.</p>
+          <p>🔹 <strong>Fellows:</strong> Find your mentor. Rewrite your story.<br>
+             🔹 <strong>Mentors:</strong> Share your light. Shape the future.</p>
+          <p><strong>✨ Impact is just one connection away.</strong></p>
         </div>
       </div>
     </div>
