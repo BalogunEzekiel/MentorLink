@@ -59,7 +59,8 @@ def show():
                     avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
                     update_data["profile_image_url"] = avatar_url
 
-                supabase.table("profile").upsert(update_data).execute()
+                supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
+#                supabase.table("profile").upsert(update_data).execute()
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
