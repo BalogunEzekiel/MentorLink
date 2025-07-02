@@ -2,17 +2,30 @@ import streamlit as st
 
 def show_landing():
     """
-    Displays the MentorLink public landing page content (full HTML structure in one block).
+    Displays the MentorLink public landing page content by breaking it into
+    multiple st.markdown calls to mitigate potential rendering issues.
     The CSS styling is handled globally by app.py.
     """
+    # Start the main container div
     st.markdown("""
 <div class="mentorlink-public">
   <div class="story-section">
+    """, unsafe_allow_html=True)
+
+    # Hero Image
+    st.markdown("""
     <img src="https://images.unsplash.com/photo-1607387632374-9e9679aa252b?auto=format&fit=crop&w=1600&q=80"
          class="hero-image"
          alt="Mentorship Community Image" />
+    """, unsafe_allow_html=True)
 
+    # Story Container start
+    st.markdown("""
     <div class="story-container">
+    """, unsafe_allow_html=True)
+
+    # Story Card 1
+    st.markdown("""
       <div class="story-card">
         <h3>🔥 The Match That Sparked a Movement</h3>
         <p><em>I used to feel invisible in the tech space.</em></p>
@@ -21,14 +34,20 @@ def show_landing():
         <p>Now, I’m building my first AI-powered app for farmers in my community. And it all started with one match.</p>
         <p><strong>We don’t just connect mentors and mentees — we build bridges between dreams and destiny.</strong></p>
       </div>
+    """, unsafe_allow_html=True)
 
+    # Story Card 2
+    st.markdown("""
       <div class="story-card">
         <h3>🌱 The Ripple Effect of One Yes</h3>
         <p><strong>The Incubator Hub of Digital SkillUp Africa</strong> launched MentorLink not just as a platform, but a future rewrite.</p>
         <p>Thousands — nurses, accountants, dreamers — started tech with one “yes.”</p>
         <p><strong>It begins with one conversation. One mentor. One belief.</strong></p>
       </div>
+    """, unsafe_allow_html=True)
 
+    # Story Card 3
+    st.markdown("""
       <div class="story-card">
         <h3>🌍 Your World is Changing for Good</h3>
         <p><em>Dear Mentor,</em></p>
@@ -36,12 +55,22 @@ def show_landing():
         <p>Today, I build edtech in Northern Nigeria because someone said <strong>“I believe in you.”</strong></p>
         <p><em>Forever grateful,<br>A Fellow, a Builder, a Giver Back</em></p>
       </div>
-    </div>
+    """, unsafe_allow_html=True)
 
+    # Close Story Container
+    st.markdown("""
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Call to Action placeholder div
+    st.markdown("""
     <div style="text-align: center; margin-top: 2rem;">
       <!-- The "Start Your Journey" button will be rendered by app.py's login function or a dedicated button -->
     </div>
+    """, unsafe_allow_html=True)
 
+    # Final section
+    st.markdown("""
     <div style="text-align: center; margin-top: 2.5rem;">
       <h3>👩🏾‍💻 Are you ready to grow with guidance?</h3>
       <p>Whether breaking into tech or giving back, <strong>MentorLink — powered by The Incubator Hub of Digital SkillUp Africa</strong> — is where growth meets generosity.</p>
@@ -49,6 +78,10 @@ def show_landing():
          🔹 <strong>Mentors:</strong> Share your light. Shape the future.</p>
       <p><strong>✨ Impact is just one connection away.</strong></p>
     </div>
+    """, unsafe_allow_html=True)
+
+    # Close main section and public container divs
+    st.markdown("""
   </div>
 </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
