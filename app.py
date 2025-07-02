@@ -32,7 +32,7 @@ st.markdown("""
     <hr style='margin: 0.2rem 0 0.5rem 0;'>
 """, unsafe_allow_html=True)
 
-# ✅ Setup and utilities
+# ✅ Setup and core utilities
 from utils.setup_admin import setup_admin_account
 from utils.auto_cancel import cancel_expired_requests
 from auth.auth_handler import login, logout
@@ -47,11 +47,11 @@ cancel_expired_requests()
 sidebar()
 mentorchat_widget()
 
-# 🔐 Authentication and public routing
+# ✅ Auth & Routing
 if not st.session_state.get("authenticated", False):
     login()
 
-    # ✅ Public landing page
+    # ✅ Public Landing Page with Stories
     st.markdown("""
     <style>
     .mentorlink-public .story-section {
@@ -145,13 +145,12 @@ if not st.session_state.get("authenticated", False):
             🚀 Start Your Journey
           </a>
         </div>
-
       </div>
     </div>
     """, unsafe_allow_html=True)
 
 else:
-    # ✅ Authenticated views by role
+    # ✅ Authenticated View by Role
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
@@ -170,11 +169,11 @@ else:
     else:
         admin.show()
 
-# 🧾 Footer for public pages
+# ✅ Footer for public page
 if not st.session_state.get("authenticated", False):
     app_footer()
 
-# 🔁 Manual rerun trigger
+# 🔁 Optional rerun trigger
 if st.session_state.get("do_rerun"):
     st.session_state["do_rerun"] = False
     st.rerun()
