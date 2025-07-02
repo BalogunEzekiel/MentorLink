@@ -83,7 +83,7 @@ from auth.auth_handler import login, logout
 from auth.profile import change_password, profile_form
 from components.sidebar import sidebar
 from components.mentorchat_widget import mentorchat_widget
-from components.landing_page import show_landing # This still imports the function
+#from components.landing_page import show_landing # This still imports the function
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
 
