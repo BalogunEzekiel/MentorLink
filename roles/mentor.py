@@ -67,13 +67,13 @@ def show():
                     file_bytes = profile_image.getvalue()
                 
                     # Upload to Supabase Storage
-                    supabase.storage.from_("profile-pictures").upload(
+                    supabase.storage.from_("profilepics").upload(
                         file_name,
                         file_bytes
                     )
                 
                     # Get public URL
-                    public_url = supabase.storage.from_("profile-pictures").get_public_url(file_name)
+                    public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
                     update_data["profile_image_url"] = public_url
 
 #                if profile_image:
