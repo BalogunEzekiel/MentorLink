@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
 from database import supabase
+import pytz
 
 def show_calendar():
     st.subheader("🗓️ Mentor Calendar")
@@ -13,6 +14,7 @@ def show_calendar():
 
     user = st.session_state["user"]
     mentorid = user.get("userid")
+    lagos_tz = pytz.timezone("Africa/Lagos")
 
     if not mentorid:
         st.error("Mentor ID not found.")
@@ -20,7 +22,7 @@ def show_calendar():
 
     tabs = st.tabs(["📅 My Sessions", "🗓️ Set Availability"])
 
-    # 📅 My Sessions Tab
+    # ---------------------- 📅 My Sessions Tab ----------------------
     with tabs[0]:
         st.subheader("📅 Scheduled Sessions")
 
@@ -31,10 +33,13 @@ def show_calendar():
                 .order("date") \
                 .execute()
 
-            all_sessions = response.data
+            all_sessions = response.data or []
 
-            # ✅ Filter sessions where mentorship request is ACCEPTED
-            sessions = [s for s in all_sessions if s.get("mentorshiprequest", {}).get("status") == "ACCEPTED"]
+            # ✅ Filter for accepted requests only
+            sessions = [
+                s for s in all_sessions
+                if s.get("mentorshiprequest", {}).get("status") == "ACCEPTED"
+            ]
 
             if not sessions:
                 st.info("No upcoming or past sessions yet.")
@@ -42,30 +47,43 @@ def show_calendar():
 
             df = pd.DataFrame([{
                 "Session ID": s["sessionid"],
-                "Session With": s["users"]["email"],
-                "Start": pd.to_datetime(s["date"]),
-                "End": pd.to_datetime(s["date"]) + timedelta(hours=1),
+                "Session With": s.get("users", {}).get("email", "Unknown"),
+                "Start": pd.to_datetime(s["date"]).tz_localize("UTC").astimezone(lagos_tz),
+                "End": pd.to_datetime(s["date"]).tz_localize("UTC").astimezone(lagos_tz) + timedelta(hours=1),
                 "Feedback": s.get("feedback", ""),
                 "Rating": s.get("rating", "Pending")
             } for s in sessions])
 
             # 📊 Timeline Chart
-            fig = px.timeline(df, x_start="Start", x_end="End", y="Session With", color="Rating",
-                              hover_data=["Feedback", "Rating"])
+            fig = px.timeline(
+                df,
+                x_start="Start",
+                x_end="End",
+                y="Session With",
+                color="Rating",
+                hover_data=["Feedback", "Rating"]
+            )
             fig.update_yaxes(autorange="reversed")
-            fig.update_layout(title="Mentor Session Calendar", margin=dict(l=20, r=20, t=40, b=20))
+            fig.update_layout(
+                title="Mentor Session Calendar",
+                margin=dict(l=20, r=20, t=40, b=20)
+            )
             st.plotly_chart(fig, use_container_width=True)
 
             # 🔍 Session Details Dropdown
-            session_options = {f"{row['Session With']} @ {row['Start']}": row for _, row in df.iterrows()}
+            session_options = {
+                f"{row['Session With']} @ {row['Start'].strftime('%a, %d %b %Y %I:%M %p')}": row
+                for _, row in df.iterrows()
+            }
+
             selected_label = st.selectbox("📂 View Session Details", list(session_options.keys()))
             selected_row = session_options[selected_label]
 
             st.markdown(f"""
             ### 📝 Session Details
             - 👤 **Mentee**: {selected_row['Session With']}
-            - 🗓️ **Start Time**: {selected_row['Start']}
-            - 🕒 **End Time**: {selected_row['End']}
+            - 🗓️ **Start Time**: {selected_row['Start'].strftime('%A, %d %B %Y %I:%M %p')}
+            - 🕒 **End Time**: {selected_row['End'].strftime('%I:%M %p')}
             - ⭐ **Rating**: {selected_row['Rating']}
             - 💬 **Feedback**: {selected_row['Feedback'] or 'Not provided'}
             """)
@@ -73,7 +91,7 @@ def show_calendar():
             st.error("🚫 Failed to load sessions.")
             st.exception(e)
 
-    # 🗓️ Set Availability Tab
+    # ---------------------- 🗓️ Set Availability Tab ----------------------
     with tabs[1]:
         st.subheader("🗓️ Add Your Availability")
         with st.form("availability_form"):
@@ -89,23 +107,24 @@ def show_calendar():
                 if end_datetime <= start_datetime:
                     st.error("❌ End time must be after start time.")
                 else:
-                    # ✅ Check for overlap before inserting
-                    overlap_check = supabase.table("availability") \
-                        .select("*") \
-                        .eq("mentorid", mentorid) \
-                        .execute()
+                    try:
+                        # Check for overlapping slots
+                        existing_slots = supabase.table("availability") \
+                            .select("*") \
+                            .eq("mentorid", mentorid) \
+                            .execute().data or []
 
-                    existing_slots = overlap_check.data or []
+                        has_overlap = any(
+                            not (
+                                end_datetime <= pd.to_datetime(slot["start"]) or
+                                start_datetime >= pd.to_datetime(slot["end"])
+                            )
+                            for slot in existing_slots
+                        )
 
-                    has_overlap = any(
-                        not (end_datetime <= pd.to_datetime(slot["start"]) or start_datetime >= pd.to_datetime(slot["end"]))
-                        for slot in existing_slots
-                    )
-
-                    if has_overlap:
-                        st.error("❌ This time slot overlaps with existing availability. Please choose a different time.")
-                    else:
-                        try:
+                        if has_overlap:
+                            st.error("❌ This time slot overlaps with an existing one.")
+                        else:
                             supabase.table("availability").insert({
                                 "mentorid": mentorid,
                                 "start": start_datetime.isoformat(),
@@ -113,11 +132,12 @@ def show_calendar():
                             }).execute()
                             st.success("✅ Availability set successfully!")
                             st.rerun()
-                        except Exception as e:
-                            st.error("❌ Failed to set availability.")
-                            st.exception(e)
 
-        # 📋 List Availability
+                    except Exception as e:
+                        st.error("❌ Failed to set availability.")
+                        st.exception(e)
+
+        # 📋 List of existing availability
         st.markdown("### 📋 Your Availability")
         try:
             result = supabase.table("availability") \
@@ -126,11 +146,12 @@ def show_calendar():
                 .order("start") \
                 .execute()
 
-            availability = result.data
+            availability = result.data or []
+
             if availability:
                 availability_df = pd.DataFrame([{
-                    "Start": pd.to_datetime(a["start"]),
-                    "End": pd.to_datetime(a["end"])
+                    "Start": pd.to_datetime(a["start"]).tz_localize("UTC").astimezone(lagos_tz),
+                    "End": pd.to_datetime(a["end"]).tz_localize("UTC").astimezone(lagos_tz)
                 } for a in availability])
                 st.dataframe(availability_df, use_container_width=True)
             else:
