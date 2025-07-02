@@ -2,63 +2,10 @@ import streamlit as st
 
 def show_landing():
     """
-    Displays the MentorLink public landing page content.
-    This function is purely for presentation, as navigation and authentication
-    are handled by the main app.py file.
+    Displays the MentorLink public landing page content (HTML structure only).
+    The CSS styling is now handled globally by app.py.
     """
-    # Ensure the entire HTML, including <style> and outer divs, is within the markdown string.
     st.markdown("""
-<style>
-/* General styling for the MentorLink public section */
-.mentorlink-public .story-section {
-    background-color: #f7f9fc; /* Light grey background for the section */
-    padding: 2rem 1rem; /* Padding around the content */
-    border-radius: 10px; /* Rounded corners for the section */
-    margin-top: 2rem; /* Top margin for spacing */
-}
-/* Container for story cards, using flexbox for layout */
-.mentorlink-public .story-container {
-    display: flex; /* Enable flexbox */
-    flex-wrap: wrap; /* Allow items to wrap to the next line */
-    gap: 20px; /* Space between flex items */
-    justify-content: center; /* Center items horizontally */
-}
-/* Styling for individual story cards */
-.mentorlink-public .story-card {
-    background-color: white; /* White background for cards */
-    flex: 1; /* Allow cards to grow and shrink */
-    min-width: 300px; /* Minimum width for cards */
-    max-width: 400px; /* Maximum width for cards */
-    padding: 1.5rem; /* Padding inside cards */
-    border-radius: 8px; /* Rounded corners for cards */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
-}
-/* Heading styling within story cards */
-.mentorlink-public .story-card h3 {
-    color: #4B8BBE; /* Specific blue color for headings */
-    font-size: 1.3rem; /* Font size for headings */
-}
-/* Paragraph styling within story cards */
-.mentorlink-public .story-card p {
-    line-height: 1.6; /* Line height for readability */
-    font-size: 0.95rem; /* Font size for paragraphs */
-}
-/* Styling for the main hero image */
-.mentorlink-public .hero-image {
-    width: 100%; /* Full width of its container */
-    border-radius: 10px; /* Rounded corners for the image */
-    max-height: 300px; /* Maximum height to prevent it from being too tall */
-    object-fit: cover; /* Cover the area, cropping if necessary */
-    margin-bottom: 1.5rem; /* Bottom margin for spacing */
-}
-/* Responsive design: Stack story cards vertically on smaller screens */
-@media (max-width: 768px) {
-    .mentorlink-public .story-container {
-        flex-direction: column; /* Stack items vertically */
-    }
-}
-</style>
-
 <div class="mentorlink-public">
   <div class="story-section">
     <img src="https://images.unsplash.com/photo-1607387632374-9e9679aa252b?auto=format&fit=crop&w=1600&q=80"
@@ -92,8 +39,7 @@ def show_landing():
     </div>
 
     <div style="text-align: center; margin-top: 2rem;">
-      <!-- The "Start Your Journey" button will be rendered by app.py using st.button for functionality -->
-      <!-- This HTML comment is to indicate where a Streamlit button would conceptually go if this were standalone -->
+      <!-- The "Start Your Journey" button will be rendered by app.py's login function or a dedicated button -->
     </div>
 
     <div style="text-align: center; margin-top: 2.5rem;">
