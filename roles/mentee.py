@@ -5,6 +5,7 @@ from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
 
+
 def show():
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state.pop("mentor_request_success_message"))
@@ -14,14 +15,56 @@ def show():
     user_id = st.session_state.user["userid"]
 
     tabs = st.tabs([
+        "🏠 Dashboard",
         "🧑‍🏫 Browse Mentors",
         "📄 My Requests",
         "📆 My Sessions",
-        "✅ Session Feedback"   # ✅ NEW
+        "✅ Session Feedback"
     ])
 
-    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+    # ---------------------- 🏠 Dashboard Tab ----------------------
     with tabs[0]:
+        st.subheader("Welcome to your Mentee Dashboard")
+
+        profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
+        profile = profile_data[0] if profile_data else {}
+
+        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data
+        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data
+
+        st.markdown("### 📊 Summary")
+        st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
+        st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
+
+        st.markdown("### 🙍‍♀️ Update Profile")
+        with st.form("mentee_profile_form"):
+            name = st.text_input("Name", value=profile.get("name", ""))
+            bio = st.text_area("Bio", value=profile.get("bio", ""))
+            skills = st.text_area("Skills", value=profile.get("skills", ""))
+            goals = st.text_area("Goals", value=profile.get("goals", ""))
+            profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
+
+            submit_btn = st.form_submit_button("Update Profile")
+
+            if submit_btn:
+                update_data = {
+                    "userid": user_id,
+                    "name": name,
+                    "bio": bio,
+                    "skills": skills,
+                    "goals": goals,
+                }
+
+                if profile_image:
+                    avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
+                    update_data["profile_image_url"] = avatar_url
+
+                supabase.table("profile").upsert(update_data).execute()
+                st.success("✅ Profile updated successfully!")
+                st.rerun()
+
+    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+    with tabs[1]:
         st.subheader("Browse Available Mentors")
         mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
             .eq("role", "Mentor").eq("status", "Active").execute().data or []
@@ -74,7 +117,7 @@ def show():
                         st.warning("This mentor has no availability yet.")
 
     # ---------------------- 📄 My Requests Tab ----------------------
-    with tabs[1]:
+    with tabs[2]:
         st.subheader("Your Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
             .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
@@ -91,7 +134,7 @@ def show():
             st.info("You have not made any mentorship requests yet.")
 
     # ---------------------- 📆 My Sessions Tab ----------------------
-    with tabs[2]:
+    with tabs[3]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
             .select("*, users!session_mentorid_fkey(email)") \
@@ -126,7 +169,7 @@ def show():
             st.info("You don’t have any sessions yet.")
 
     # ---------------------- ✅ Session Feedback Tab ----------------------
-    with tabs[3]:
+    with tabs[4]:
         st.subheader("Rate Mentors & Provide Feedback")
 
         sessions = supabase.table("session") \
