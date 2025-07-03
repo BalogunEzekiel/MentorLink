@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 
 def show_landing():
     hero_images = [
@@ -13,12 +14,16 @@ def show_landing():
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
 
+    # Pick one image randomly each time the page is loaded
+    selected_image = random.choice(hero_images)
+
     st.markdown(f"""
     <style>
     .hero-container {{
         position: relative;
         width: 100%;
         height: 420px;
+        background-image: url('{selected_image}');
         background-size: cover;
         background-position: center;
         border-radius: 10px;
@@ -27,7 +32,6 @@ def show_landing():
         align-items: center;
         justify-content: center;
         margin-bottom: 3rem;
-        transition: background-image 1s ease-in-out;
     }}
     .hero-overlay {{
         background-color: rgba(0, 0, 0, 0.6);
@@ -76,7 +80,7 @@ def show_landing():
     }}
     </style>
 
-    <div id="hero" class="hero-container">
+    <div class="hero-container">
       <div class="hero-overlay">
         <h1>Mentorship that Moves Mountains</h1>
         <p>From non-tech to tech. From doubt to destiny. MentorLink is where stories begin.</p>
@@ -121,19 +125,4 @@ def show_landing():
          🔹 <strong>Mentors:</strong> Share your light. Shape the future.</p>
       <p><strong>✨ Impact is just one connection away.</strong></p>
     </div>
-
-    <script>
-      const images = {hero_images};
-      const heroDiv = document.getElementById("hero");
-
-      function changeBackground() {{
-          const randomImage = images[Math.floor(Math.random() * images.length)];
-          heroDiv.style.backgroundImage = `url('${{randomImage}}')`;
-      }}
-
-      // Initial load
-      changeBackground();
-      // Rotate every 5 seconds
-      setInterval(changeBackground, 5000);
-    </script>
     """, unsafe_allow_html=True)
