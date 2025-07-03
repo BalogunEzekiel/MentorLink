@@ -1,5 +1,5 @@
 import streamlit as st
-import random
+import time
 
 def show_landing():
     hero_images = [
@@ -14,8 +14,18 @@ def show_landing():
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
 
-    # Pick one image randomly each time the page is loaded
-    selected_image = random.choice(hero_images)
+    # Initialize session state
+    if "image_index" not in st.session_state:
+        st.session_state.image_index = 0
+        st.session_state.last_update_time = time.time()
+
+    # Check if 5 seconds have passed since last update
+    if time.time() - st.session_state.last_update_time > 5:
+        st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
+        st.session_state.last_update_time = time.time()
+        st.rerun()
+
+    selected_image = hero_images[st.session_state.image_index]
 
     st.markdown(f"""
     <style>
@@ -126,3 +136,7 @@ def show_landing():
       <p><strong>✨ Impact is just one connection away.</strong></p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Optional spinner while reloading
+    with st.spinner("Rotating hero image..."):
+        time.sleep(0.1)
