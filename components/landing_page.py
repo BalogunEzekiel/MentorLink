@@ -5,6 +5,13 @@ def show_landing():
     hero_images = [
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//256436-P4QWCA-715.png",
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//women-lift-women_2020-11-23-133503.png"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//what-is-mentoring1-square.jpg"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//1.png"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//2.avif"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//3.jpg"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//4.webp"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//5.webp"
+        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
     selected_image = random.choice(hero_images)
 
