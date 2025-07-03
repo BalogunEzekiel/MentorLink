@@ -109,10 +109,10 @@ def show():
         st.subheader("Add Availability Slot")
 
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
-            today = datetime.now(WAT)
-            date = st.date_input("Date", value=today.date())
-            start_time = st.time_input("Start Time", value=(today + timedelta(hours=1)).time())
-            end_time = st.time_input("End Time", value=(today + timedelta(hours=2)).time())
+            now_wat = datetime.now(WAT)
+            date = st.date_input("Date", value=now_wat.date())
+            start_time = st.time_input("Start Time", value=(now_wat + timedelta(hours=1)).time())
+            end_time = st.time_input("End Time", value=(now_wat + timedelta(hours=2)).time())
             submitted = st.form_submit_button("➕ Add Slot")
 
             if submitted:
