@@ -5,7 +5,7 @@ def show_landing():
     hero_images = [
 #        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//256436-P4QWCA-715.png",
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//women-lift-women_2020-11-23-133503.png"
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//what-is-mentoring1-square.jpg"
+#        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//what-is-mentoring1-square.jpg"
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//1.png"
     ]
     selected_image = random.choice(hero_images)
