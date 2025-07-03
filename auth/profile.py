@@ -87,7 +87,6 @@ def change_password():
             response = supabase.table("users").update({
                 "password": hashed_pw,
                 "must_change_password": False,
-                "password_updated_at": now_wat
             }).eq("userid", userid).execute()
 
             if response.data:
