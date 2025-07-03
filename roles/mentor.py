@@ -21,17 +21,15 @@ def show():
         "📥 Requests"
     ])
 
-    # ---------------------- 🏠 Dashboard ----------------------
+    # --- Dashboard ---
     with tabs[0]:
         st.subheader("Welcome to your Mentor Dashboard")
 
         profile_data = supabase.table("profile").select("*").eq("userid", mentor_id).execute().data
         profile = profile_data[0] if profile_data else {}
 
-        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid") \
-            .eq("mentorid", mentor_id).execute().data
-        total_sessions = supabase.table("session").select("sessionid") \
-            .eq("mentorid", mentor_id).execute().data
+        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("mentorid", mentor_id).execute().data or []
+        total_sessions = supabase.table("session").select("sessionid").eq("mentorid", mentor_id).execute().data or []
 
         st.markdown("### 📊 Summary")
         st.write(f"- 📥 Incoming Requests: **{len(total_requests)}**")
@@ -59,18 +57,21 @@ def show():
                 }
 
                 if profile_image:
-                    file_ext = profile_image.type.split("/")[-1]
-                    file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
-                    file_bytes = profile_image.getvalue()
-                    supabase.storage.from_("profilepics").upload(file_name, file_bytes)
-                    public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
-                    update_data["profile_image_url"] = public_url
+                    try:
+                        file_ext = profile_image.type.split("/")[-1]
+                        file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
+                        file_bytes = profile_image.getvalue()
+                        supabase.storage.from_("profilepics").upload(file_name, file_bytes)
+                        public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
+                        update_data["profile_image_url"] = public_url
+                    except Exception as e:
+                        st.error(f"Profile image upload failed: {e}")
 
                 supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
-    # ---------------------- 📅 My Sessions ----------------------
+    # --- My Sessions ---
     with tabs[1]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
@@ -104,7 +105,7 @@ def show():
         else:
             st.info("No sessions yet.")
 
-    # ---------------------- 📌 Add Availability ----------------------
+    # --- Add Availability ---
     with tabs[2]:
         st.subheader("Add Availability Slot")
 
@@ -152,7 +153,7 @@ def show():
         else:
             st.info("No availability slots added yet.")
 
-    # ---------------------- 📥 Requests ----------------------
+    # --- Incoming Requests ---
     with tabs[3]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
