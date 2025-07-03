@@ -11,6 +11,7 @@ WAT = pytz.timezone("Africa/Lagos")  # West Africa Time
 
 
 def show():
+    # Show any success message stored in session state
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state.pop("mentor_request_success_message"))
 
@@ -26,15 +27,15 @@ def show():
         "✅ Session Feedback"
     ])
 
-    # ---------------------- 🏠 Dashboard Tab ----------------------
+    # --- Dashboard Tab ---
     with tabs[0]:
         st.subheader("Welcome to your Mentee Dashboard")
 
         profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
         profile = profile_data[0] if profile_data else {}
 
-        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data
-        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data
+        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
+        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
 
         st.markdown("### 📊 Summary")
         st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
@@ -60,6 +61,8 @@ def show():
                 }
 
                 if profile_image:
+                    # You might want to upload the file somewhere. 
+                    # For now, generate avatar url based on name
                     avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
                     update_data["profile_image_url"] = avatar_url
 
@@ -67,7 +70,7 @@ def show():
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
-    # ---------------------- 🧑‍🏫 Browse Mentors Tab ----------------------
+    # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
         mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
@@ -118,7 +121,7 @@ def show():
                     else:
                         st.warning("This mentor has no availability yet.")
 
-    # ---------------------- 📄 My Requests Tab ----------------------
+    # --- My Requests Tab ---
     with tabs[2]:
         st.subheader("Your Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
@@ -135,7 +138,7 @@ def show():
         else:
             st.info("You have not made any mentorship requests yet.")
 
-    # ---------------------- 📆 My Sessions Tab ----------------------
+    # --- My Sessions Tab ---
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
@@ -170,7 +173,7 @@ def show():
         else:
             st.info("You don’t have any sessions yet.")
 
-    # ---------------------- ✅ Session Feedback Tab ----------------------
+    # --- Session Feedback Tab ---
     with tabs[4]:
         st.subheader("Rate Mentors & Provide Feedback")
 
@@ -182,8 +185,9 @@ def show():
             st.info("No sessions to give feedback for.")
         else:
             for session in sessions:
+                # Skip sessions already rated and with feedback
                 if session.get("rating") and session.get("feedback"):
-                    continue  # Skip already rated sessions
+                    continue
 
                 mentor_email = session.get("users", {}).get("email", "Unknown")
                 date_str = format_datetime_safe(session.get("date"), tz=WAT)
