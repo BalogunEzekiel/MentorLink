@@ -79,7 +79,7 @@ def login():
                 st.session_state.force_profile_update = True
 
             time.sleep(1)
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid password.")
 
@@ -87,7 +87,7 @@ def logout():
     # Clear all session keys
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.experimental_rerun()
+    st.rerun()
 
 def register_user(email, role):
     # Default password for new users
