@@ -109,6 +109,7 @@ def show():
 
                             if existing:
                                 st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                st.rerun()
                             else:
                                 supabase.table("mentorshiprequest").insert({
                                     "mentorid": mentor["userid"],
@@ -116,7 +117,6 @@ def show():
                                     "status": "PENDING"
                                 }).execute()
                                 st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
-                                time.sleep(1)
                                 st.rerun()
                     else:
                         st.warning("This mentor has no availability yet.")
