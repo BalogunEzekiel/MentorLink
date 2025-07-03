@@ -6,10 +6,10 @@ from database import supabase
 def profile_form():
     st.title("🧑‍💼 Complete Your Profile")
 
-    name = st.text_input("Full Name")
-    bio = st.text_area("Bio", max_chars=500)
-    skills = st.text_input("Skills (comma-separated)")
-    goals = st.text_area("Your Goals")
+    name = st.text_input("Full Name", placeholder="Enter your full name")
+    bio = st.text_area("Bio", max_chars=500, placeholder="Tell us about yourself")
+    skills = st.text_input("Skills (comma-separated)", placeholder="e.g. Python, Excel, Communication")
+    goals = st.text_area("Your Goals", placeholder="What do you hope to achieve from this mentorship program?")
 
     if st.button("Submit Profile"):
         if not all([name, bio, skills, goals]):
