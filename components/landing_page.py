@@ -1,30 +1,7 @@
 import streamlit as st
 import time
 
-def show_landing():
-    hero_images = [
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//256436-P4QWCA-715.png",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//women-lift-women_2020-11-23-133503.png",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//what-is-mentoring1-square.jpg",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//1.png",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//2.avif",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//3.jpg",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//4.webp",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//5.webp",
-        "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
-    ]
-
-    # Initialize session state
-    if "image_index" not in st.session_state:
-        st.session_state.image_index = 0
-        st.session_state.last_update_time = time.time()
-
-    # Check if 5 seconds have passed since last update
-    if time.time() - st.session_state.last_update_time > 5:
-        st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
-        st.session_state.last_update_time = time.time()
-        st.rerun()
-
+def show_landing(hero_images):
     selected_image = hero_images[st.session_state.image_index]
 
     st.markdown(f"""
@@ -137,6 +114,32 @@ def show_landing():
     </div>
     """, unsafe_allow_html=True)
 
-    # Optional spinner while reloading
-    with st.spinner("Rotating hero image..."):
-        time.sleep(0.1)
+
+# ---------------------
+# ROOT LEVEL EXECUTION
+# ---------------------
+hero_images = [
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//256436-P4QWCA-715.png",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//women-lift-women_2020-11-23-133503.png",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//what-is-mentoring1-square.jpg",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//1.png",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//2.avif",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//3.jpg",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//4.webp",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//5.webp",
+    "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
+]
+
+# Initialize state
+if "image_index" not in st.session_state:
+    st.session_state.image_index = 0
+    st.session_state.last_update_time = time.time()
+
+# Check and rotate
+if time.time() - st.session_state.last_update_time > 2:
+    st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
+    st.session_state.last_update_time = time.time()
+    st.rerun()
+
+# Call landing page
+show_landing(hero_images)
