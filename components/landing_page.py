@@ -15,20 +15,24 @@ def show_landing():
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
 
-    # ✅ Initialize session state
+    # ✅ Initialize image rotation state
     if "image_index" not in st.session_state:
         st.session_state.image_index = 0
         st.session_state.last_update_time = time.time()
 
-    # ✅ Rotate image every 3 seconds
-    if time.time() - st.session_state.last_update_time > 3:
+    # ✅ Auto-update every 3 seconds (streamlit-style interval)
+    time_since_update = time.time() - st.session_state.last_update_time
+    if time_since_update > 3:
         st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
         st.session_state.last_update_time = time.time()
-        st.rerun()
+        st.experimental_rerun()  # rerun the app to update image
 
     selected_image = hero_images[st.session_state.image_index]
 
-    # ✅ Render hero section and stories
+    # ✅ Optional: avoid rerunning whole UI rapidly for smoother UX
+    st.markdown(f"<meta http-equiv='refresh' content='3'>", unsafe_allow_html=True)
+
+    # ✅ Hero + Story Section
     st.markdown(f"""
     <style>
     .hero-container {{
