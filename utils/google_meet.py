@@ -48,8 +48,17 @@ def create_meet_link(summary, description, start_time, end_time, attendees):
             conferenceDataVersion=1
         ).execute()
 
-        meet_link = created_event.get("hangoutLink")
+        # Extract Google Meet link from conferenceData entryPoints
+        meet_link = None
+        conference_data = created_event.get("conferenceData", {})
+        entry_points = conference_data.get("entryPoints", [])
+        for entry in entry_points:
+            if entry.get("entryPointType") == "video":
+                meet_link = entry.get("uri")
+                break
+
         return meet_link
+
     except Exception as e:
         print(f"Error creating Meet link: {e}")
         return None
