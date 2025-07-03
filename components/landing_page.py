@@ -93,8 +93,8 @@ def show_landing():
         <h1>Mentorship that Moves Mountains</h1>
         <p>From non-tech to tech. From doubt to destiny. MentorLink is where stories begin.</p>
         <div class="hero-buttons">
-            <a href="#">🚀 Join as a Fellow</a>
-            <a href="#">✨ Become a Mentor</a>
+            <a href="https://mentorlink.streamlit.app/">🚀 Join as a Fellow</a>
+            <a href="https://mentorlink.streamlit.app/">✨ Become a Mentor</a>
         </div>
       </div>
     </div>
@@ -106,11 +106,6 @@ def show_landing():
         <p>Coming from a background in agriculture, I didn’t think someone like me had a seat at the digital table. That changed the moment I met my mentor — a seasoned product manager from The Incubator Hub. He didn’t just teach me tools. He saw potential in me I had buried long ago.</p>
         <p>Today, I’m building my first AI-powered app to help farmers in my community. And it all began with a single mentorship match.</p>
         <p><strong>At MentorLink, we don’t just connect mentors and mentees — we build bridges between dreams and destiny.</strong></p>
-        <p>
-          <a href="#" style="background:#4B8BBE;color:white;padding:8px 16px;border-radius:5px;text-decoration:none;">Join as a Fellow</a> 
-          &nbsp;
-          <a href="#" style="background:#00a76f;color:white;padding:8px 16px;border-radius:5px;text-decoration:none;">Become a Mentor</a>
-        </p>
       </div>
 
       <div class="story-box">
