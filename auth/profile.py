@@ -59,9 +59,7 @@ def profile_form():
             st.session_state["user_display_name"] = profile.get("name")
 
         st.success("✅ Profile completed!")
-        time.sleep(1)
         st.rerun()
-
 
 def change_password():
     st.title("🔐 Change Password")
@@ -78,17 +76,27 @@ def change_password():
             return
 
         userid = st.session_state.user.get("userid")
+        if not userid:
+            st.error("User session invalid. Please log in again.")
+            return
+
         hashed_pw = bcrypt.hashpw(new_pw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         now_wat = datetime.now(WAT).isoformat()
 
-        supabase.table("users").update({
-            "password": hashed_pw,
-            "must_change_password": False,
-            "password_updated_at": now_wat
-        }).eq("userid", userid).execute()
+        try:
+            response = supabase.table("users").update({
+                "password": hashed_pw,
+                "must_change_password": False,
+                "password_updated_at": now_wat
+            }).eq("userid", userid).execute()
 
-        st.session_state.user["must_change_password"] = False
-        st.session_state.force_profile_update = True
-        st.success("✅ Password updated!")
-        time.sleep(1)
-        st.rerun()
+            if response.data:
+                st.session_state.user["must_change_password"] = False
+                st.session_state.force_profile_update = True
+                st.success("✅ Password updated!")
+                st.rerun()
+            else:
+                st.error("Password update failed. Please try again.")
+        except Exception as e:
+            st.error("Something went wrong while updating the password.")
+            st.exception(e)
