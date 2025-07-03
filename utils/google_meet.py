@@ -1,17 +1,34 @@
 # utils/google_meet.py
-from google_auth import get_calendar_service
-from datetime import datetime
+import streamlit as st
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from datetime import datetime, timezone
 import pytz
+
+# Required Google Calendar API scope
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+def get_calendar_service():
+    """
+    Authenticates and returns a Google Calendar API service object using
+    a service account key stored in Streamlit secrets.
+    """
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["google_service_account"],
+        scopes=SCOPES
+    )
+    service = build('calendar', 'v3', credentials=credentials)
+    return service
 
 def create_meet_link(summary, description, start_time, end_time, attendees):
     """
-    Creates a Google Meet event on the calendar with given details.
+    Creates a Google Calendar event with a Google Meet link.
 
     Args:
         summary (str): Event title.
         description (str): Event description.
-        start_time (datetime): Start time (should be timezone-aware).
-        end_time (datetime): End time (should be timezone-aware).
+        start_time (datetime): Start time (timezone-aware).
+        end_time (datetime): End time (timezone-aware).
         attendees (list of str): List of attendee emails.
 
     Returns:
@@ -19,36 +36,40 @@ def create_meet_link(summary, description, start_time, end_time, attendees):
     """
     service = get_calendar_service()
 
-    timezone = "Africa/Lagos"  # Use Lagos timezone
+    # Lagos timezone string
+    timezone_str = "Africa/Lagos"
 
     event = {
         "summary": summary,
         "description": description,
         "start": {
             "dateTime": start_time.isoformat(),
-            "timeZone": timezone,
+            "timeZone": timezone_str,
         },
         "end": {
             "dateTime": end_time.isoformat(),
-            "timeZone": timezone,
+            "timeZone": timezone_str,
         },
         "attendees": [{"email": email} for email in attendees] if attendees else [],
         "conferenceData": {
             "createRequest": {
                 "conferenceSolutionKey": {"type": "hangoutsMeet"},
-                "requestId": f"meet-{int(datetime.now().timestamp())}"
+                "requestId": f"meet-{int(datetime.now(timezone.utc).timestamp())}"
             }
+        },
+        "reminders": {
+            "useDefault": True
         }
     }
 
     try:
         created_event = service.events().insert(
-            calendarId='primary',  # or your custom calendar ID
+            calendarId='primary',  # Replace if you want to use a specific calendar ID shared with your service account
             body=event,
             conferenceDataVersion=1
         ).execute()
 
-        # Extract Google Meet link from conferenceData entryPoints
+        # Extract the Google Meet link from the conferenceData entry points
         meet_link = None
         conference_data = created_event.get("conferenceData", {})
         entry_points = conference_data.get("entryPoints", [])
