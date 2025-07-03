@@ -1,6 +1,9 @@
 import streamlit as st
 import time
 
+# Add meta-refresh tag to refresh the page every 3 seconds
+st.markdown("<meta http-equiv='refresh' content='3'>", unsafe_allow_html=True)
+
 def show_landing(hero_images):
     selected_image = hero_images[st.session_state.image_index]
 
@@ -133,13 +136,9 @@ hero_images = [
 # Initialize state
 if "image_index" not in st.session_state:
     st.session_state.image_index = 0
-    st.session_state.last_update_time = time.time()
 
-# Check and rotate
-if time.time() - st.session_state.last_update_time > 2:
-    st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
-    st.session_state.last_update_time = time.time()
-    st.rerun()
+# Rotate image
+st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
 
-# Call landing page
+# Render landing
 show_landing(hero_images)
