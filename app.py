@@ -54,7 +54,7 @@ mentorchat_widget()
 # ✅ Routing logic
 if not st.session_state.get("authenticated", False):
     login()
-    show_landing()
+    show_landing(hero_images)
     app_footer()
 else:
     role = st.session_state.get("role")
