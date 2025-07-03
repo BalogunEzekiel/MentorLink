@@ -18,7 +18,7 @@ def show_landing():
     # ✅ Pick a random image at each page load (refresh)
     selected_image = random.choice(hero_images)
 
-    # ✅ Hero + Story Section
+    # ✅ Render hero and full story + CTA section
     st.markdown(f"""
     <style>
     .hero-container {{
@@ -92,9 +92,6 @@ def show_landing():
         </div>
       </div>
     </div>
-
-    <!-- Add the rest of your story and CTA section below -->
-    """, unsafe_allow_html=True)
 
     <div class="story-container">
       <div class="story-box">
