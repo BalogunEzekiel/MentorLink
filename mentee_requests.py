@@ -15,7 +15,7 @@ def show():
     menteeid = user.get("userid")
     lagos_tz = pytz.timezone("Africa/Lagos")
 
-    # Step 1: Fetch accepted mentorship requests
+    # Step 1: Fetch accepted mentorship requests for the mentee
     accepted_requests = supabase.table("mentorshiprequest") \
         .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
         .eq("menteeid", menteeid) \
@@ -42,7 +42,7 @@ def show():
             st.info("No available slots for this mentor yet.")
             continue
 
-        # Format slot options nicely
+        # Format slot options nicely, converting UTC to Lagos time
         slot_options = {}
         for s in slots:
             start_dt = pd.to_datetime(s["start"]).tz_localize("UTC").astimezone(lagos_tz)
@@ -71,7 +71,7 @@ def show():
                     st.rerun()
                     return
 
-                # Step 3: Create the session
+                # Step 3: Create the session record
                 supabase.table("session").insert({
                     "mentorid": req["mentorid"],
                     "menteeid": req["menteeid"],
@@ -83,7 +83,7 @@ def show():
                     "status": "Scheduled"
                 }).execute()
 
-                # Optional: Remove the slot after booking
+                # Optionally remove the slot after booking
                 supabase.table("availability") \
                     .delete().eq("availabilityid", selected_slot["availabilityid"]).execute()
 
