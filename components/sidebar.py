@@ -1,6 +1,6 @@
 import streamlit as st
 from auth.auth_handler import logout
-from database import supabase  # Ensure this is imported
+from database import supabase  # Ensure supabase client is properly imported
 
 def sidebar():
     if "logged_in" not in st.session_state:
@@ -12,20 +12,21 @@ def sidebar():
             user = st.session_state["user"]
             user_id = user.get("userid")
             user_email = user.get("email", "")
-            
-            # Default fallback name
+
+            # Default fallback name (before fetching profile name)
             fallback_name = user_email.split("@")[0].capitalize()
             full_name = fallback_name
 
-            # ✅ Use profile.name if not Admin
-            if user_email != "admin@theincubatorhub.com":
+            # ✅ Use profile.name if not admin
+            if user_email.lower() != "admin@theincubatorhub.com":
                 try:
-                    profile = supabase.table("profile").select("name") \
-                        .eq("userid", user_id).single().execute().data
+                    profile_result = supabase.table("profile").select("name").eq("userid", user_id).single().execute()
+                    profile = profile_result.data
                     if profile and profile.get("name"):
                         full_name = profile["name"]
-                except Exception:
+                except Exception as e:
                     st.warning("Could not load profile name.")
+                    # Optionally, log error e
 
             st.success(f"👋 Welcome, {full_name}!")
 
@@ -33,17 +34,20 @@ def sidebar():
             if st.button("🔓 Logout", key="logout_sidebar"):
                 logout()
                 st.session_state["do_rerun"] = True
+                st.experimental_rerun()
 
         # ✅ Toggle MentorChat
-        chat_visible = st.toggle("💬 Toggle MentorChat", key="toggle_mentor_chat")
+        chat_visible = st.checkbox("💬 Toggle MentorChat", key="toggle_mentor_chat")
         st.session_state["show_mentor_chat"] = chat_visible
 
         st.markdown("---")
 
         # ✅ About Section
-        st.sidebar.title("About MentorLink")
-        st.info("**MentorLink**\n\n"
-                "_...unlocking success through purposeful mentorship connections._")
+        st.title("About MentorLink")
+        st.info(
+            "**MentorLink**\n\n"
+            "_...unlocking success through purposeful mentorship connections._"
+        )
 
         # ✅ Contact Info
         st.markdown("**📞 Contact Us:**")
