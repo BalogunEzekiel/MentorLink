@@ -24,7 +24,7 @@ def show_landing():
     if time.time() - st.session_state.last_update_time > 3:
         st.session_state.image_index = (st.session_state.image_index + 1) % len(hero_images)
         st.session_state.last_update_time = time.time()
-        st.experimental_rerun()
+        st.rerun()
 
     selected_image = hero_images[st.session_state.image_index]
 
