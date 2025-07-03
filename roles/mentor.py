@@ -81,15 +81,11 @@ def show():
             for s in sessions:
                 mentee_email = s.get("users", {}).get("email", "Unknown")
                 session_date = format_datetime_safe(s.get("date"), tz=WAT)
-                rating = s.get("rating", "Not rated")
-                feedback = s.get("feedback", "No feedback")
                 meet_link = s.get("meet_link", "#")
 
                 st.markdown(f"""
                 #### With: {mentee_email}
                 - 📅 Date: {session_date}
-                - ⭐ Rating: {rating}
-                - 💬 Feedback: {feedback}
                 - 🔗 [Join Meet]({meet_link})
                 """)
 
@@ -157,18 +153,35 @@ def show():
     with tabs[3]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
-            .select("*, mentee:users!mentorshiprequest_menteeid_fkey(email)") \
+            .select("*, mentee:users!mentorshiprequest_menteeid_fkey(email, userid)") \
             .eq("mentorid", mentor_id).eq("status", "PENDING").execute().data or []
 
         if not requests:
             st.info("No pending requests.")
         else:
             for req in requests:
-                mentee_email = req.get("mentee", {}).get("email", "Unknown")
+                mentee = req.get("mentee", {})
+                mentee_email = mentee.get("email", "Unknown")
+                mentee_id = mentee.get("userid")
                 req_id = req["mentorshiprequestid"]
-                mentee_id = req["menteeid"]
+
+                # Fetch mentee profile details
+                mentee_profile_data = supabase.table("profile").select("*").eq("userid", mentee_id).execute().data
+                mentee_profile = mentee_profile_data[0] if mentee_profile_data else {}
 
                 with st.expander(f"Request from {mentee_email}"):
+                    # Show profile picture if available
+                    if mentee_profile.get("profile_image_url"):
+                        st.image(mentee_profile["profile_image_url"], width=100)
+
+                    # Show other profile info
+                    st.markdown(f"""
+                    **Name:** {mentee_profile.get("name", "N/A")}  
+                    **Bio:** {mentee_profile.get("bio", "N/A")}  
+                    **Skills:** {mentee_profile.get("skills", "N/A")}  
+                    **Goals:** {mentee_profile.get("goals", "N/A")}
+                    """)
+
                     col1, col2 = st.columns(2)
                     if col1.button("✅ Accept", key=f"accept_{req_id}"):
                         now = datetime.now(WAT)
