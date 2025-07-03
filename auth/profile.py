@@ -60,7 +60,7 @@ def profile_form():
 
         st.success("✅ Profile completed!")
         time.sleep(1)
-        st.experimental_rerun()
+        st.rerun()
 
 
 def change_password():
@@ -91,4 +91,4 @@ def change_password():
         st.session_state.force_profile_update = True
         st.success("✅ Password updated!")
         time.sleep(1)
-        st.experimental_rerun()
+        st.rerun()
