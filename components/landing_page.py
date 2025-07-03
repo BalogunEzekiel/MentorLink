@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 
 def show_landing():
     hero_images = [
@@ -14,49 +13,12 @@ def show_landing():
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
 
-    # Initialize session state
-    if "hero_index" not in st.session_state:
-        st.session_state.hero_index = 0
-    if "fade" not in st.session_state:
-        st.session_state.fade = True
-
-    # UI controls
-    auto_rotate = st.checkbox("🔁 Auto-rotate images", value=False)
-    show_picker = st.checkbox("🎛️ Show image picker", value=False)
-
-    if not auto_rotate:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("⬅️ Previous"):
-                st.session_state.hero_index = (st.session_state.hero_index - 1) % len(hero_images)
-                st.session_state.fade = False
-        with col2:
-            if st.button("➡️ Next"):
-                st.session_state.hero_index = (st.session_state.hero_index + 1) % len(hero_images)
-                st.session_state.fade = False
-    else:
-        time.sleep(0.5)
-        st.session_state.hero_index = (st.session_state.hero_index + 1) % len(hero_images)
-        st.session_state.fade = False
-        st.experimental_rerun()
-
-    if show_picker:
-        selected = st.selectbox("📸 Choose background image:", hero_images, index=st.session_state.hero_index)
-        st.session_state.hero_index = hero_images.index(selected)
-        st.session_state.fade = False
-
-    selected_image = hero_images[st.session_state.hero_index]
-    fade_class = "fade-in" if not st.session_state.fade else ""
-    st.session_state.fade = True  # Reset fade to allow animation again
-
-    # Render the full page
     st.markdown(f"""
     <style>
     .hero-container {{
         position: relative;
         width: 100%;
         height: 420px;
-        background-image: url('{selected_image}');
         background-size: cover;
         background-position: center;
         border-radius: 10px;
@@ -65,15 +27,7 @@ def show_landing():
         align-items: center;
         justify-content: center;
         margin-bottom: 3rem;
-        opacity: 1;
-        transition: opacity 1s ease-in-out;
-    }}
-    .fade-in {{
-        animation: fadeIn 1s;
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
+        transition: background-image 1s ease-in-out;
     }}
     .hero-overlay {{
         background-color: rgba(0, 0, 0, 0.6);
@@ -122,7 +76,7 @@ def show_landing():
     }}
     </style>
 
-    <div class="hero-container {fade_class}">
+    <div id="hero" class="hero-container">
       <div class="hero-overlay">
         <h1>Mentorship that Moves Mountains</h1>
         <p>From non-tech to tech. From doubt to destiny. MentorLink is where stories begin.</p>
@@ -167,4 +121,19 @@ def show_landing():
          🔹 <strong>Mentors:</strong> Share your light. Shape the future.</p>
       <p><strong>✨ Impact is just one connection away.</strong></p>
     </div>
+
+    <script>
+      const images = {hero_images};
+      const heroDiv = document.getElementById("hero");
+
+      function changeBackground() {{
+          const randomImage = images[Math.floor(Math.random() * images.length)];
+          heroDiv.style.backgroundImage = `url('${{randomImage}}')`;
+      }}
+
+      // Initial load
+      changeBackground();
+      // Rotate every 5 seconds
+      setInterval(changeBackground, 5000);
+    </script>
     """, unsafe_allow_html=True)
