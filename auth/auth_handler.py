@@ -19,7 +19,7 @@ def login():
             st.warning("Please enter both email and password.")
             return
 
-        # 🔍 Fetch user by email (case-insensitive)
+        # Fetch user by email (case-insensitive)
         result = supabase.table("users").select("*").ilike("email", email).execute()
         users = result.data
 
@@ -29,26 +29,25 @@ def login():
 
         user = users[0]
 
-        # 🚫 Check for inactive/deleted status
+        # Check for inactive/deleted status
         status = user.get("status", "Active")
         if status in ["Inactive", "Delete"]:
             st.error(f"Your account is {status.lower()}. Contact admin.")
             return
 
-        # 🔐 Check password
+        # Check password
         stored_hashed = user.get("password")
         if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
-            # ✅ Store session info
+            # Store session info
             st.session_state.authenticated = True
             st.session_state.logged_in = True
             st.session_state.user = user
             st.session_state.role = user.get("role")
 
-            # 🧑‍💼 Admin role
             if user["email"].lower() == "admin@theincubatorhub.com":
                 st.session_state["user_display_name"] = "Admin"
             else:
-                # 🧾 Get profile name if exists
+                # Get profile name if exists
                 try:
                     result = supabase.table("profile").select("name").eq("userid", user["userid"]).limit(1).execute()
                     profile_data = result.data
@@ -59,7 +58,19 @@ def login():
                 except Exception:
                     st.session_state["user_display_name"] = "User"
 
-            # 🎯 Force flows
+            # Log login time with WAT timezone
+            login_time = datetime.now(WAT).isoformat()
+            try:
+                supabase.table("userlogins").insert({
+                    "userid": user["userid"],
+                    "login_time": login_time,
+                    "timezone": "WAT"
+                }).execute()
+            except Exception as e:
+                # Optional: Log this error or just pass silently
+                pass
+
+            # Redirect logic
             if user.get("role") == "Admin":
                 st.success("Welcome Admin! Redirecting...")
             elif user.get("must_change_password"):
@@ -68,31 +79,32 @@ def login():
                 st.session_state.force_profile_update = True
 
             time.sleep(1)
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Invalid password.")
 
 def logout():
-    # 🔐 Clear all session keys
+    # Clear all session keys
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state["do_rerun"] = True
+    st.experimental_rerun()
 
 def register_user(email, role):
-    # 📌 Default password for new users
+    # Default password for new users
     hashed_pw = bcrypt.hashpw("changeme123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    # 🧾 Check for duplicate
+    # Check for duplicate
     result = supabase.table("users").select("*").eq("email", email).execute()
     if result.data:
         return f"User with email {email} already exists."
 
-    # ✅ Insert new user
+    # Insert new user
     supabase.table("users").insert({
         "email": email,
         "password": hashed_pw,
         "role": role,
         "must_change_password": True,
         "profile_completed": False,
-        "status": "Active"
+        "status": "Active",
+        "created_at": datetime.now(WAT).isoformat()  # store creation timestamp with WAT
     }).execute()
