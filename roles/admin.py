@@ -6,24 +6,26 @@ import streamlit as st
 import pandas as pd
 import pytz
 
-# Adjust path for imports
+# Adjust path for imports if needed
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from database import supabase
 from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
-from utils.helpers import format_datetime_safe
+from utils.helpers import format_datetime_safe  # Should handle tz-aware formatting
 
 # West Africa Timezone (UTC+1)
 WAT = pytz.timezone("Africa/Lagos")
 
 def format_datetime(dt):
+    """Format datetime object or ISO string to WAT-aware human readable string."""
     if not dt:
         return "Unknown"
     if isinstance(dt, datetime):
+        # Convert to WAT timezone
         return dt.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     try:
-        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))  # Parse ISO string with UTC
         return parsed.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
         return str(dt)
@@ -34,7 +36,7 @@ def show():
 
     tabs = st.tabs(["📝 Register", "👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions"])
 
-    # --------------------- 📝 Register Tab --------------------- #
+    # Register new users
     with tabs[0]:
         st.subheader("Register New User")
         with st.form("register_user", clear_on_submit=True):
@@ -52,7 +54,7 @@ def show():
                 time.sleep(1)
                 st.rerun()
 
-    # --------------------- 👥 Users Tab --------------------- #
+    # List all users with filtering and status update
     with tabs[1]:
         st.subheader("All Users")
         try:
@@ -117,7 +119,7 @@ def show():
         else:
             st.info("No users found.")
 
-    # --------------------- 📩 Requests Tab --------------------- #
+    # Mentorship requests tab
     with tabs[2]:
         st.subheader("Mentorship Requests")
         try:
@@ -142,12 +144,12 @@ def show():
         else:
             st.info("No mentorship requests found.")
 
-    # --------------------- 🔁 Matches Tab --------------------- #
+    # Match mentees to mentors
     with tabs[3]:
         st.subheader("Match Mentee to Mentor")
 
         users = supabase.table("users").select("userid, email, role, status") \
-            .neq("status", "Delete").execute().data
+            .neq("status", "Delete").execute().data or []
         mentees = [u for u in users if u["role"] == "Mentee"]
         mentors = [u for u in users if u["role"] == "Mentor"]
 
@@ -196,7 +198,7 @@ def show():
                             st.warning(msg)
                         st.rerun()
 
-    # --------------------- 🗓️ Sessions Tab --------------------- #
+    # Show all sessions
     with tabs[4]:
         st.subheader("All Sessions")
 
