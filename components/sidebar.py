@@ -24,8 +24,8 @@ def sidebar():
                     profile = profile_result.data
                     if profile and profile.get("name"):
                         full_name = profile["name"]
-                except Exception as e:
-                    st.warning("Could not load profile name.")
+#                except Exception as e:
+#                    st.warning("Could not load profile name.")
                     # Optionally, log error e
 
             st.success(f"👋 Welcome, {full_name}!")
