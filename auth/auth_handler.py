@@ -11,8 +11,8 @@ WAT = pytz.timezone("Africa/Lagos")
 def login():
     st.title("Login")
 
-    email = st.text_input("Email").strip().lower()
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", placeholder="Enter your email address").strip().lower()
+    password = st.text_input("Password", type="password", placeholder="Enter your password")
 
     if st.button("Login"):
         if not email or not password:
@@ -78,7 +78,6 @@ def login():
             elif not user.get("profile_completed"):
                 st.session_state.force_profile_update = True
 
-            time.sleep(1)
             st.rerun()
         else:
             st.error("Invalid password.")
