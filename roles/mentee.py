@@ -5,6 +5,7 @@ from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
 import pytz
+import time
 
 WAT = pytz.timezone("Africa/Lagos")  # West Africa Time
 
@@ -112,6 +113,7 @@ def show():
                                     "status": "PENDING"
                                 }).execute()
                                 st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
+                                time.sleep(1)
                                 st.rerun()
                     else:
                         st.warning("This mentor has no availability yet.")
