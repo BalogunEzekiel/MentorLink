@@ -1,9 +1,9 @@
-import plotly.express as px
-import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
+import pandas as pd
 from database import supabase
 import pytz
+import plotly.express as px
 
 def show_calendar():
     st.subheader("🗓️ Mentor Calendar")
@@ -35,7 +35,7 @@ def show_calendar():
 
             all_sessions = response.data or []
 
-            # ✅ Filter for accepted requests only
+            # Filter for sessions where mentorshiprequest status is ACCEPTED
             sessions = [
                 s for s in all_sessions
                 if s.get("mentorshiprequest", {}).get("status") == "ACCEPTED"
@@ -54,7 +54,7 @@ def show_calendar():
                 "Rating": s.get("rating", "Pending")
             } for s in sessions])
 
-            # 📊 Timeline Chart
+            # Plot timeline chart for sessions
             fig = px.timeline(
                 df,
                 x_start="Start",
@@ -70,7 +70,7 @@ def show_calendar():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # 🔍 Session Details Dropdown
+            # Session details dropdown
             session_options = {
                 f"{row['Session With']} @ {row['Start'].strftime('%a, %d %b %Y %I:%M %p')}": row
                 for _, row in df.iterrows()
@@ -87,6 +87,7 @@ def show_calendar():
             - ⭐ **Rating**: {selected_row['Rating']}
             - 💬 **Feedback**: {selected_row['Feedback'] or 'Not provided'}
             """)
+
         except Exception as e:
             st.error("🚫 Failed to load sessions.")
             st.exception(e)
@@ -137,7 +138,7 @@ def show_calendar():
                         st.error("❌ Failed to set availability.")
                         st.exception(e)
 
-        # 📋 List of existing availability
+        # Show existing availability
         st.markdown("### 📋 Your Availability")
         try:
             result = supabase.table("availability") \
