@@ -1,5 +1,5 @@
 import streamlit as st
-import random
+import time
 
 def show_landing():
     hero_images = [
@@ -13,8 +13,43 @@ def show_landing():
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//5.webp",
         "https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//6.jpeg"
     ]
-    selected_image = random.choice(hero_images)
 
+    # Initialize session state
+    if "hero_index" not in st.session_state:
+        st.session_state.hero_index = 0
+    if "fade" not in st.session_state:
+        st.session_state.fade = True
+
+    # UI controls
+    auto_rotate = st.checkbox("🔁 Auto-rotate images", value=False)
+    show_picker = st.checkbox("🎛️ Show image picker", value=False)
+
+    if not auto_rotate:
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("⬅️ Previous"):
+                st.session_state.hero_index = (st.session_state.hero_index - 1) % len(hero_images)
+                st.session_state.fade = False
+        with col2:
+            if st.button("➡️ Next"):
+                st.session_state.hero_index = (st.session_state.hero_index + 1) % len(hero_images)
+                st.session_state.fade = False
+    else:
+        time.sleep(0.5)
+        st.session_state.hero_index = (st.session_state.hero_index + 1) % len(hero_images)
+        st.session_state.fade = False
+        st.experimental_rerun()
+
+    if show_picker:
+        selected = st.selectbox("📸 Choose background image:", hero_images, index=st.session_state.hero_index)
+        st.session_state.hero_index = hero_images.index(selected)
+        st.session_state.fade = False
+
+    selected_image = hero_images[st.session_state.hero_index]
+    fade_class = "fade-in" if not st.session_state.fade else ""
+    st.session_state.fade = True  # Reset fade to allow animation again
+
+    # Render the full page
     st.markdown(f"""
     <style>
     .hero-container {{
@@ -30,6 +65,15 @@ def show_landing():
         align-items: center;
         justify-content: center;
         margin-bottom: 3rem;
+        opacity: 1;
+        transition: opacity 1s ease-in-out;
+    }}
+    .fade-in {{
+        animation: fadeIn 1s;
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
     }}
     .hero-overlay {{
         background-color: rgba(0, 0, 0, 0.6);
@@ -38,15 +82,6 @@ def show_landing():
         text-align: center;
         border-radius: 10px;
         max-width: 80%;
-    }}
-    .hero-overlay h1 {{
-        font-size: 48px;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }}
-    .hero-overlay p {{
-        font-size: 18px;
-        margin-bottom: 20px;
     }}
     .hero-buttons a {{
         margin: 5px 10px;
@@ -60,7 +95,6 @@ def show_landing():
     .hero-buttons a:hover {{
         background-color: #366fa1;
     }}
-
     .story-container {{
         display: flex;
         gap: 20px;
@@ -88,20 +122,20 @@ def show_landing():
     }}
     </style>
 
-    <div class="hero-container">
+    <div class="hero-container {fade_class}">
       <div class="hero-overlay">
         <h1>Mentorship that Moves Mountains</h1>
         <p>From non-tech to tech. From doubt to destiny. MentorLink is where stories begin.</p>
         <div class="hero-buttons">
-            <a href="https://mentorlink.streamlit.app/">🚀 Join as a Fellow</a>
-            <a href="https://mentorlink.streamlit.app/">✨ Become a Mentor</a>
+            <a href="https://mentorlink.streamlit.app/" target="_blank">🚀 Join as a Fellow</a>
+            <a href="https://mentorlink.streamlit.app/" target="_blank">✨ Become a Mentor</a>
         </div>
       </div>
     </div>
 
     <div class="story-container">
       <div class="story-box">
-        <h3.5>🔥 The Match That Sparked a Movement</h3.5>
+        <h4>🔥 The Match That Sparked a Movement</h4>
         <p><em>I used to feel invisible in the tech space.</em></p>
         <p>Coming from a background in agriculture, I didn’t think someone like me had a seat at the digital table. That changed the moment I met my mentor — a seasoned product manager from The Incubator Hub. He didn’t just teach me tools. He saw potential in me I had buried long ago.</p>
         <p>Today, I’m building my first AI-powered app to help farmers in my community. And it all began with a single mentorship match.</p>
@@ -109,7 +143,7 @@ def show_landing():
       </div>
 
       <div class="story-box">
-        <h3.5>🌱 The Ripple Effect of One Yes</h3.5>
+        <h4>🌱 The Ripple Effect of One Yes</h4>
         <p>When <strong>The Incubator Hub of Digital SkillUp Africa</strong> launched MentorLink, we weren’t just building a platform.</p>
         <p>We were rewriting the future for thousands of curious, courageous Africans — nurses learning frontend, accountants mastering data analysis, and dreamers who needed a hand to cross into tech.</p>
         <p>Mentors from our curated hub take time each week to pour their experience into someone ready to learn, lead, and launch.</p>
