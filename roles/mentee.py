@@ -109,6 +109,7 @@ def show():
 
                             if existing:
                                 st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                time.sleep(1)
                                 st.rerun()
                             else:
                                 supabase.table("mentorshiprequest").insert({
