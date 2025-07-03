@@ -3,7 +3,7 @@ import os
 
 def app_footer():
     st.markdown("---")
-    st.markdown("### 🤝 Supporters", unsafe_allow_html=True)
+    st.markdown("## 🤝 Supporters", unsafe_allow_html=True)
 
     asset_dir = "assets"
     logos = [
