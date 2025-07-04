@@ -73,12 +73,32 @@ def show():
     # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
+
         mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
             .eq("role", "Mentor").eq("status", "Active").execute().data or []
 
         if not mentors:
             st.info("No mentors available.")
         else:
+            # ✅ Extract all skills
+            all_skills = []
+            for mentor in mentors:
+                skills = mentor.get("profile", {}).get("skills", "")
+                if skills:
+                    all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
+            unique_skills = sorted(set(all_skills))
+
+            # ✅ Skill filter dropdown
+            selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
+
+            # ✅ Filter mentors based on selected skill
+            if selected_skill != "All":
+                mentors = [
+                    m for m in mentors
+                    if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
+                ]
+
+            # ✅ Display filtered mentors
             cols = st.columns(2)
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
