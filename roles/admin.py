@@ -33,16 +33,17 @@ def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard: manage users, mentorship matches, and sessions.")
 
-    tabs = st.tabs(["📝 Register", "👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions"])
+    tabs = st.tabs(["👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions", "📊 Analytics"])
 
-    # 1. Register New User
+    # --- USERS TAB--
     with tabs[0]:
         st.subheader("Register New User")
+    
         with st.form("register_user", clear_on_submit=True):
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
             role = st.selectbox("Assign Role", ["Select a role", "Mentor", "Mentee"])
             submitted = st.form_submit_button("Create")
-
+    
         if submitted:
             if not user_email or role == "Select a role":
                 st.warning("⚠️ Please fill in both email and role.")
@@ -51,10 +52,9 @@ def show():
                 st.success(f"✅ User '{user_email}' registered as {role}.")
                 time.sleep(1)
                 st.rerun()
-
-    # 2. View & Update Users
-    with tabs[1]:
+    
         st.subheader("All Users")
+    
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -62,7 +62,7 @@ def show():
         except Exception as e:
             st.error(f"❌ Failed to load users: {e}")
             users = []
-
+    
         if users:
             df = pd.DataFrame(users)
             df["created_at"] = df["created_at"].apply(format_datetime)
@@ -75,28 +75,28 @@ def show():
                 "created_at": "Created At",
                 "status": "Status"
             })
-
+    
             email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()
             status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
-
+    
             filtered_df = df.copy()
             if email_search:
                 filtered_df = filtered_df[filtered_df["Email"].str.lower().str.contains(email_search)]
             if status_filter != "All":
                 filtered_df = filtered_df[filtered_df["Status"] == status_filter]
-
+    
             st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
-
+    
             selected_email = st.selectbox(
                 "✏️ Select User to Update",
                 ["Select an email..."] + df["Email"].tolist()
             )
-
+    
             new_status = st.selectbox(
                 "🛠️ New Status",
                 ["Select status...", "Active", "Inactive", "Delete"]
             )
-
+    
             confirm_delete_1 = confirm_delete_2 = False
             if new_status == "Delete":
                 st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
@@ -108,14 +108,14 @@ def show():
                     "Yes, I really want to delete this user.",
                     key="confirm_delete_2"
                 )
-
+    
             if st.button("✅ Update Status"):
                 if selected_email == "Select an email..." or new_status == "Select status...":
                     st.warning("⚠️ Please select both a valid user and a status.")
                 else:
                     user_row = df[df["Email"] == selected_email].iloc[0]
                     user_id = user_row["User ID"]
-
+    
                     try:
                         if new_status == "Delete":
                             if confirm_delete_1 and confirm_delete_2:
@@ -130,14 +130,14 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
-
-            # Promote Mentee to Mentor — Only for Active Mentees with Completed Profile
+    
+            # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
                 user_row = df[df["Email"] == selected_email].iloc[0]
                 current_role = user_row["Role"]
                 current_status = user_row["Status"]
                 profile_completed = user_row["Profile Completed"]
-            
+    
                 if current_role == "Mentee":
                     if current_status == "Active" and profile_completed:
                         promote = st.checkbox("🚀 Promote this *Active Mentee* (Profile Completed) to Mentor")
@@ -150,9 +150,11 @@ def show():
                                 st.error(f"❌ Failed to promote user: {e}")
                     else:
                         st.info("⚠️ Only *Active Mentees* with a **completed profile** can be promoted to Mentors.")
+        else:
+            st.info("No users found.")
 
-    # 3. Mentorship Requests
-    with tabs[2]:
+    # Mentorship Requests
+    with tabs[1]:
         st.subheader("Mentorship Requests")
         try:
             requests = supabase.table("mentorshiprequest").select("""
@@ -176,8 +178,8 @@ def show():
         else:
             st.info("No mentorship requests found.")
 
-    # 4. Match Mentees to Mentors
-    with tabs[3]:
+    # Match Mentees to Mentors
+    with tabs[2]:
         st.subheader("Match Mentee to Mentor")
         try:
             users = supabase.table("users").select("userid, email, role, status") \
@@ -232,8 +234,8 @@ def show():
                             st.warning(msg)
                         st.rerun()
 
-    # 5. Sessions
-    with tabs[4]:
+    # Sessions
+    with tabs[3]:
         st.subheader("All Sessions")
         try:
             sessions = supabase.table("session").select("""
@@ -256,3 +258,8 @@ def show():
                 """)
         else:
             st.info("No sessions found.")
+
+    # Insights
+    with tabs[4]:
+        st.subheader("Analytics")
+        
