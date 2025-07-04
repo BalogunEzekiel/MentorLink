@@ -24,8 +24,8 @@ def sidebar():
                     profile = profile_result.data
                     if profile and profile.get("name"):
                         full_name = profile["name"]
-                 except Exception as e:
-                     st.warning("")
+                except Exception as e:
+                    st.warning("")
                     # Optionally, log error e
 
             st.success(f"👋 Welcome, {full_name}!")
@@ -63,7 +63,7 @@ def sidebar():
 * _Full-Stack Developer_  
 * _Data Scientist / Analyst_  
 * _AI / Machine Learning Engineer_  
-* _Automation / BI Expert_
+* _Automation / BI Expert_  
 
 📧 [ezekiel4true@yahoo.com](mailto:ezekiel4true@yahoo.com)  
 🔗 [LinkedIn](https://www.linkedin.com/in/ezekiel-balogun-39a14438)  
