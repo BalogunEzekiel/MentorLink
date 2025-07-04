@@ -12,20 +12,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database import supabase
 from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
-from utils.helpers import format_datetime_safe  # Should handle tz-aware formatting
+from utils.helpers import format_datetime_safe  # Handles timezone-safe formatting
 
-# West Africa Timezone (UTC+1)
+# Set timezone
 WAT = pytz.timezone("Africa/Lagos")
 
 def format_datetime(dt):
-    """Format datetime object or ISO string to WAT-aware human readable string."""
+    """Convert datetime string or object to WAT-formatted string."""
     if not dt:
         return "Unknown"
     if isinstance(dt, datetime):
-        # Convert to WAT timezone
         return dt.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     try:
-        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))  # Parse ISO string with UTC
+        parsed = datetime.fromisoformat(dt.replace("Z", "+00:00"))
         return parsed.astimezone(WAT).strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
         return str(dt)
@@ -36,13 +35,12 @@ def show():
 
     tabs = st.tabs(["📝 Register", "👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions"])
 
-    # Register new users
+    # ------------------- Register New User -------------------
     with tabs[0]:
         st.subheader("Register New User")
         with st.form("register_user", clear_on_submit=True):
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
-            roles = ["Select a role", "Mentor", "Mentee"]
-            role = st.selectbox("Assign Role", roles)
+            role = st.selectbox("Assign Role", ["Select a role", "Mentor", "Mentee"])
             submitted = st.form_submit_button("Create")
 
         if submitted:
@@ -54,7 +52,7 @@ def show():
                 time.sleep(1)
                 st.rerun()
 
-    # List all users with filtering and status update
+    # ------------------- Users Table -------------------
     with tabs[1]:
         st.subheader("All Users")
         try:
@@ -62,64 +60,58 @@ def show():
                 userid, email, role, must_change_password, profile_completed, created_at, status
             """).neq("status", "Delete").execute().data
         except Exception as e:
-            st.error(f"Failed to load users: {e}")
+            st.error(f"❌ Failed to load users: {e}")
             users = []
 
         if users:
-            email_search = st.text_input("Search by Email").lower()
-            status_filter = st.selectbox("Filter by Status", ["All", "Active", "Inactive"])
+            df = pd.DataFrame(users)
+            df["created_at"] = df["created_at"].apply(format_datetime)
+            df = df.rename(columns={
+                "userid": "User ID",
+                "email": "Email",
+                "role": "Role",
+                "must_change_password": "Must Change Password",
+                "profile_completed": "Profile Completed",
+                "created_at": "Created At",
+                "status": "Status"
+            })
 
-            st.markdown("#### User Table")
-            for i, user in enumerate(users, 1):
-                email = user.get("email", "").lower()
-                status = user.get("status", "Active")
-                if email_search and email_search not in email:
-                    continue
-                if status_filter != "All" and status != status_filter:
-                    continue
+            email_search = st.text_input("🔍 Search by Email").lower()
+            status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
 
-                is_admin = email == "admin@theincubatorhub.com"
-                user_id = user.get("userid")
+            filtered_df = df.copy()
+            if email_search:
+                filtered_df = filtered_df[filtered_df["Email"].str.lower().str.contains(email_search)]
+            if status_filter != "All":
+                filtered_df = filtered_df[filtered_df["Status"] == status_filter]
 
-                cols = st.columns([0.3, 2.2, 1.5, 1.2, 1.2, 2.5, 1.5, 1])
-                cols[0].markdown(f"{i}")
-                cols[1].markdown(user["email"])
-                cols[2].markdown(user["role"])
-                cols[3].markdown("N/A" if is_admin else str(user["must_change_password"]))
-                cols[4].markdown("N/A" if is_admin else str(user["profile_completed"]))
-                cols[5].markdown(format_datetime(user.get("created_at")) if user.get("created_at") else "-")
+            st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
 
-                if is_admin:
-                    cols[6].markdown("N/A")
-                    cols[7].markdown("🚫")
-                    continue
+            selected_email = st.selectbox("✏️ Select User to Update", df["Email"].tolist())
+            new_status = st.selectbox("🛠️ New Status", ["Active", "Inactive", "Delete"])
+            confirm_delete = st.checkbox("⚠️ Confirm Deletion") if new_status == "Delete" else False
 
-                new_status = cols[6].selectbox(
-                    "", ["Active", "Inactive", "Delete"],
-                    index=["Active", "Inactive", "Delete"].index(user["status"]),
-                    key=f"status_{user_id}"
-                )
-                confirm_key = f"confirm_delete_{user_id}"
-                confirm_delete = cols[6].checkbox("⚠️ Confirm delete", key=confirm_key) if new_status == "Delete" else False
+            if st.button("✅ Update Status"):
+                user_row = df[df["Email"] == selected_email].iloc[0]
+                user_id = user_row["User ID"]
 
-                if cols[7].button("Update", key=f"update_{user_id}"):
-                    try:
-                        if new_status == "Delete":
-                            if confirm_delete:
-                                supabase.table("users").delete().eq("userid", user_id).execute()
-                                st.success(f"✅ Deleted user: {user['email']}")
-                            else:
-                                st.warning("☑️ Please confirm deletion.")
+                try:
+                    if new_status == "Delete":
+                        if confirm_delete:
+                            supabase.table("users").delete().eq("userid", user_id).execute()
+                            st.success(f"✅ Deleted user: {selected_email}")
                         else:
-                            supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
-                            st.success(f"Updated {user['email']} to {new_status}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Failed to update user: {e}")
+                            st.warning("Please confirm deletion.")
+                    else:
+                        supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
+                        st.success(f"✅ Updated {selected_email} to {new_status}")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to update user: {e}")
         else:
             st.info("No users found.")
 
-    # Mentorship requests tab
+    # ------------------- Mentorship Requests -------------------
     with tabs[2]:
         st.subheader("Mentorship Requests")
         try:
@@ -128,14 +120,14 @@ def show():
                    mentor:users!mentorshiprequest_mentorid_fkey(email)
             """).neq("status", "ACCEPTED").execute().data
         except Exception as e:
-            st.error(f"Could not fetch mentorship requests: {e}")
+            st.error(f"❌ Could not fetch mentorship requests: {e}")
             requests = []
 
         if requests:
             for req in requests:
-                status = req.get("status", "Unknown")
                 mentee_email = req['mentee']['email']
                 mentor_email = req['mentor']['email']
+                status = req.get("status", "Unknown")
                 st.markdown(f"""
                 - 🧑 Mentee: **{mentee_email}**  
                 - 🧑‍🏫 Mentor: **{mentor_email}**  
@@ -144,14 +136,18 @@ def show():
         else:
             st.info("No mentorship requests found.")
 
-    # Match mentees to mentors
+    # ------------------- Matches -------------------
     with tabs[3]:
         st.subheader("Match Mentee to Mentor")
 
-        users = supabase.table("users").select("userid, email, role, status") \
-            .neq("status", "Delete").execute().data or []
-        mentees = [u for u in users if u["role"] == "Mentee"]
-        mentors = [u for u in users if u["role"] == "Mentor"]
+        try:
+            users = supabase.table("users").select("userid, email, role, status") \
+                .neq("status", "Delete").execute().data or []
+            mentees = [u for u in users if u["role"] == "Mentee"]
+            mentors = [u for u in users if u["role"] == "Mentor"]
+        except Exception as e:
+            st.error(f"❌ Failed to fetch users: {e}")
+            mentees, mentors = [], []
 
         if not mentees or not mentors:
             st.warning("No available mentees or mentors.")
@@ -189,7 +185,6 @@ def show():
 
                         now = datetime.now(tz=WAT)
                         end = now + pd.Timedelta(minutes=30)
-
                         success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
 
                         if success:
@@ -198,7 +193,7 @@ def show():
                             st.warning(msg)
                         st.rerun()
 
-    # Show all sessions
+    # ------------------- All Sessions -------------------
     with tabs[4]:
         st.subheader("All Sessions")
 
@@ -208,7 +203,7 @@ def show():
                    mentee:users!session_menteeid_fkey(email)
             """).execute().data
         except Exception as e:
-            st.error(f"Could not fetch sessions: {e}")
+            st.error(f"❌ Could not fetch sessions: {e}")
             sessions = []
 
         if sessions:
