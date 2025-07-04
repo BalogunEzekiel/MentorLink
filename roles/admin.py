@@ -339,7 +339,7 @@ def show():
                     df_emails = df_requests[["menteeid", "users"]].drop_duplicates()
                     df_emails["email"] = df_emails["users"].apply(lambda u: u.get("email", "Unknown"))
                     requests_per_mentee = requests_per_mentee.merge(df_emails, on="menteeid", how="left")
-        
+
                 # Sort and display top mentees
                 top_mentees = requests_per_mentee.sort_values(by="RequestCount", ascending=False).head(5)
                 st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
