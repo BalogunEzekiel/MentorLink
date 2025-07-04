@@ -462,24 +462,37 @@ def show():
 
         # --- Session Completion and Feedback ---
         st.markdown("### 📅 Session Completion and Feedback")
+        
         if not df_sessions.empty:
             now = datetime.now(WAT)
-            df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+            
+            # Clean & filter valid datetime entries
+            def safe_to_datetime(val):
+                try:
+                    return pd.to_datetime(val)
+                except Exception:
+                    return pd.NaT
+            
+            df_sessions["date"] = df_sessions["date"].apply(safe_to_datetime)
             df_sessions = df_sessions.dropna(subset=["date"])
-            df_sessions = df_sessions[df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp))]
-            completed_sessions = df_sessions[df_sessions["date"] < now]
-            completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
             
-            col1, col2 = st.columns(2)
-            col1.metric("📅 Completed Sessions", len(completed_sessions))
-            col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")  # From Mentee Engagement
-            
-            # Visualization: Completion vs. Feedback
-            feedback_data = [
-                {"Category": "Completed Sessions", "Count": len(completed_sessions)},
-                {"Category": "Rated Sessions", "Count": rated_sessions}
-            ]
-            df_feedback = pd.DataFrame(feedback_data)
+            # Confirm all are datetime
+            if df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp)).all():
+                completed_sessions = df_sessions[df_sessions["date"] < now]
+                completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
+        
+                col1, col2 = st.columns(2)
+                col1.metric("📅 Completed Sessions", len(completed_sessions))
+                col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")  # From Mentee Engagement
+        
+                feedback_data = [
+                    {"Category": "Completed Sessions", "Count": len(completed_sessions)},
+                    {"Category": "Rated Sessions", "Count": rated_sessions}
+                ]
+                df_feedback = pd.DataFrame(feedback_data)
+                # (Optional visualization goes here)
+            else:
+                st.warning("⚠️ Some session dates are still invalid after cleaning.")
 
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
