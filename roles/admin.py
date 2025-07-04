@@ -62,7 +62,7 @@ def show():
         except Exception as e:
             st.error(f"❌ Failed to load users: {e}")
             users = []
-
+    
         if users:
             df = pd.DataFrame(users)
             df["created_at"] = df["created_at"].apply(format_datetime)
@@ -75,37 +75,49 @@ def show():
                 "created_at": "Created At",
                 "status": "Status"
             })
-
+    
             email_search = st.text_input("🔍 Search by Email").lower()
             status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
-
+    
             filtered_df = df.copy()
             if email_search:
                 filtered_df = filtered_df[filtered_df["Email"].str.lower().str.contains(email_search)]
             if status_filter != "All":
                 filtered_df = filtered_df[filtered_df["Status"] == status_filter]
-
+    
             st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
-
+    
             selected_email = st.selectbox("✏️ Select User to Update", df["Email"].tolist())
             new_status = st.selectbox("🛠️ New Status", ["Active", "Inactive", "Delete"])
-            confirm_delete = st.checkbox("⚠️ Confirm Deletion") if new_status == "Delete" else False
-
+    
+            confirm_delete_1 = confirm_delete_2 = False
+            if new_status == "Delete":
+                st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
+                confirm_delete_1 = st.checkbox(
+                    "I understand that deleting this user is permanent and cannot be undone.",
+                    key="confirm_delete_1"
+                )
+                confirm_delete_2 = st.checkbox(
+                    "✅ Yes, I really want to delete this user.",
+                    key="confirm_delete_2"
+                )
+    
             if st.button("✅ Update Status"):
                 user_row = df[df["Email"] == selected_email].iloc[0]
                 user_id = user_row["User ID"]
-
+    
                 try:
                     if new_status == "Delete":
-                        if confirm_delete:
+                        if confirm_delete_1 and confirm_delete_2:
                             supabase.table("users").delete().eq("userid", user_id).execute()
                             st.success(f"✅ Deleted user: {selected_email}")
+                            st.rerun()
                         else:
-                            st.warning("Please confirm deletion.")
+                            st.warning("☑️ You must confirm both checkboxes to proceed with deletion.")
                     else:
                         supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
                         st.success(f"✅ Updated {selected_email} to {new_status}")
-                    st.rerun()
+                        st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to update user: {e}")
         else:
