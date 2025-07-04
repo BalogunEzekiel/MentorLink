@@ -131,21 +131,25 @@ def show():
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
 
-            # Promote Mentee to Mentor
+            # Promote Mentee to Mentor — Only for Active Mentees with Completed Profile
             if selected_email != "Select an email...":
                 user_row = df[df["Email"] == selected_email].iloc[0]
-                if user_row["Role"] == "Mentee":
-                    promote = st.checkbox("🚀 Promote this user to Mentor")
-                    if promote and st.button("✅ Promote to Mentor"):
-                        try:
-                            supabase.table("users").update({"role": "Mentor"}).eq("userid", user_row["User ID"]).execute()
-                            st.success(f"✅ {selected_email} promoted to Mentor!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Failed to promote user: {e}")
-
-        else:
-            st.info("No users found.")
+                current_role = user_row["Role"]
+                current_status = user_row["Status"]
+                profile_completed = user_row["Profile Completed"]
+            
+                if current_role == "Mentee":
+                    if current_status == "Active" and profile_completed:
+                        promote = st.checkbox("🚀 Promote this *Active Mentee* (Profile Completed) to Mentor")
+                        if promote and st.button("✅ Promote to Mentor"):
+                            try:
+                                supabase.table("users").update({"role": "Mentor"}).eq("userid", user_row["User ID"]).execute()
+                                st.success(f"✅ {selected_email} promoted to Mentor!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Failed to promote user: {e}")
+                    else:
+                        st.info("⚠️ Only *Active Mentees* with a **completed profile** can be promoted to Mentors.")
 
     # 3. Mentorship Requests
     with tabs[2]:
