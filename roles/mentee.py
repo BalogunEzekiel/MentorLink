@@ -42,6 +42,11 @@ def show():
         st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
 
         st.markdown("### 🙍‍♀️ Update Profile")
+
+        # Display profile picture
+        avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
+        st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
+        
         with st.form("mentee_profile_form"):
             name = st.text_input("Name", value=profile.get("name", ""))
             bio = st.text_area("Bio", value=profile.get("bio", ""))
