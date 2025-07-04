@@ -322,9 +322,8 @@ def show():
             fig4 = px.pie(request_counts, names="Status", values="Count", title="Request Status Distribution")
             st.plotly_chart(fig4, use_container_width=True)
 
-        # --- Top Requesting Mentees ---
         st.markdown("### 📬 Top Requesting Mentees")
-        
+
         try:
             # Fetch mentorship requests with user email via foreign key
             requests = supabase.table("mentorshiprequest") \
@@ -333,17 +332,16 @@ def show():
         
             df_requests = pd.DataFrame(requests)
         
-            # Ensure 'menteeid' is hashable (not a dict)
-            if "menteeid" in df_requests.columns and not df_requests.empty:
-                if isinstance(df_requests["menteeid"].iloc[0], dict):
-                    df_requests["menteeid"] = df_requests["menteeid"].apply(
-                        lambda x: x.get("id") if isinstance(x, dict) else x
-                    )
+            if not df_requests.empty and "menteeid" in df_requests.columns:
+                # 🔧 Normalize all menteeid values to be hashable
+                df_requests["menteeid"] = df_requests["menteeid"].apply(
+                    lambda x: x.get("id") if isinstance(x, dict) else x
+                )
         
-                # Group by mentee and count requests
+                # 📊 Group by mentee ID and count requests
                 requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
         
-                # Safely extract emails if 'users' column exists and is valid
+                # 📧 Extract emails safely
                 if "users" in df_requests.columns:
                     df_emails = df_requests[["menteeid", "users"]].drop_duplicates()
                     df_emails["email"] = df_emails["users"].apply(
@@ -351,11 +349,12 @@ def show():
                     )
                     requests_per_mentee = requests_per_mentee.merge(df_emails[["menteeid", "email"]], on="menteeid", how="left")
         
-                # Display top 5
+                # 📋 Display Top 5
                 top_mentees = requests_per_mentee.sort_values(by="RequestCount", ascending=False).head(5)
                 st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
             else:
                 st.info("No mentorship requests found or 'menteeid' is missing.")
+        
         except Exception as e:
             st.error(f"Error loading mentorship request stats: {e}")
 
