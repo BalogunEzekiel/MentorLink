@@ -322,6 +322,32 @@ def show():
             fig4 = px.pie(request_counts, names="Status", values="Count", title="Request Status Distribution")
             st.plotly_chart(fig4, use_container_width=True)
 
+        # --- Top Requesting Mentees ---
+        st.markdown("### 📬 Top Requesting Mentees")
+        
+        # Get mentorship requests with mentee email
+        try:
+            requests = supabase.table("mentorshiprequest").select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)").execute().data or []
+            df_requests = pd.DataFrame(requests)
+        
+            if not df_requests.empty and "menteeid" in df_requests.columns:
+                # Group by mentee and count
+                requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
+        
+                # Merge mentee emails (if available)
+                if "users" in df_requests.columns:
+                    df_emails = df_requests[["menteeid", "users"]].drop_duplicates()
+                    df_emails["email"] = df_emails["users"].apply(lambda u: u.get("email", "Unknown"))
+                    requests_per_mentee = requests_per_mentee.merge(df_emails, on="menteeid", how="left")
+        
+                # Sort and display top mentees
+                top_mentees = requests_per_mentee.sort_values(by="RequestCount", ascending=False).head(5)
+                st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
+            else:
+                st.info("No mentorship requests found or 'menteeid' is missing.")
+        except Exception as e:
+            st.error(f"Error loading mentorship request stats: {e}")
+
         # --- Mentee Engagement ---
         st.markdown("### 🧑 Mentee Engagement")
         if not df_users.empty and not df_requests.empty and not df_sessions.empty:
