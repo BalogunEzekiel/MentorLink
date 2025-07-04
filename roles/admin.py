@@ -86,6 +86,18 @@ def show():
                 filtered_df = filtered_df[filtered_df["Status"] == status_filter]
     
             st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
+
+            # Placeholder for selecting email
+            selected_email = st.selectbox(
+                "✏️ Select User to Update",
+                ["Select an email..."] + df["Email"].tolist()
+            )
+            
+            # Placeholder for selecting status
+            new_status = st.selectbox(
+                "🛠️ New Status",
+                ["Select status...", "Active", "Inactive", "Delete"]
+            )
     
             selected_email = st.selectbox("✏️ Select User to Update", df["Email"].tolist())
             new_status = st.selectbox("🛠️ New Status", ["Active", "Inactive", "Delete"])
@@ -98,12 +110,12 @@ def show():
                     key="confirm_delete_1"
                 )
                 confirm_delete_2 = st.checkbox(
-                    "✅ Yes, I really want to delete this user.",
+                    "Yes, I really want to delete this user.",
                     key="confirm_delete_2"
                 )
     
             if st.button("✅ Update Status"):
-                user_row = df[df["Email"] == selected_email].iloc[0]
+                user_]row = df[df["Email"] == selected_email].iloc[0]
                 user_id = user_row["User ID"]
     
                 try:
