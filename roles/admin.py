@@ -466,28 +466,29 @@ def show():
         if not df_sessions.empty:
             now = datetime.now(WAT)
         
-            # Convert 'date' safely to datetime
+            # Convert to datetime
             df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
         
-            # Drop any rows where date is not a valid datetime
-            df_sessions = df_sessions.dropna(subset=["date"])
+            # Filter out invalid datetime values
+            df_sessions = df_sessions[df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp))]
         
-            # Ensure date column is of datetime64[ns] dtype
+            # Re-check dtype
             if pd.api.types.is_datetime64_any_dtype(df_sessions["date"]):
                 completed_sessions = df_sessions[df_sessions["date"] < now]
                 completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
         
                 col1, col2 = st.columns(2)
                 col1.metric("📅 Completed Sessions", len(completed_sessions))
-                col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")  # From Mentee Engagement
+                col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")
         
                 feedback_data = [
                     {"Category": "Completed Sessions", "Count": len(completed_sessions)},
                     {"Category": "Rated Sessions", "Count": rated_sessions}
                 ]
                 df_feedback = pd.DataFrame(feedback_data)
+        
             else:
-                st.warning("⚠️ Session dates are not valid datetime format.")
+                st.warning("⚠️ 'date' column is not fully converted to datetime.")
 
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
