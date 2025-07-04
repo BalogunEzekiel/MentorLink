@@ -76,7 +76,7 @@ def show():
                 "status": "Status"
             })
 
-            email_search = st.text_input("🔍 Search by Email").lower()
+            email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()
             status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
 
             filtered_df = df.copy()
