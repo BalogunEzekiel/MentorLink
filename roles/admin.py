@@ -265,8 +265,8 @@ def show():
         st.subheader("📊 Platform Insights")
 
         try:
-            users = supabase.table("users").select("created_at, role, status").execute().data or []
-            sessions = supabase.table("session").select("date, rating").execute().data or []
+            users = supabase.table("users").select("userid, email, created_at, role, status").execute().data or []
+            sessions = supabase.table("session").select("date, rating, mentorid, menteeid").execute().data or []
             requests = supabase.table("mentorshiprequest").select("status").execute().data or []
         except Exception as e:
             st.error(f"❌ Failed to load analytics data: {e}")
