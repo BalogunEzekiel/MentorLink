@@ -493,12 +493,12 @@ def show():
         
             # Time-based trends
             try:
-                requests_with_time = supabase.table("mentorshiprequest").select("status, created_at").execute().data or []
+                requests_with_time = supabase.table("mentorshiprequest").select("status, createdat").execute().data or []
                 df_requests_time = pd.DataFrame(requests_with_time)
         
                 if not df_requests_time.empty:
-                    df_requests_time["created_at"] = pd.to_datetime(df_requests_time["created_at"], errors="coerce")
-                    df_requests_time["Month"] = df_requests_time["created_at"].dt.to_period("M").astype(str)
+                    df_requests_time["createdat"] = pd.to_datetime(df_requests_time["createdat"], errors="coerce")
+                    df_requests_time["Month"] = df_requests_time["createdat"].dt.to_period("M").astype(str)
         
                     # Group by month and status
                     request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
