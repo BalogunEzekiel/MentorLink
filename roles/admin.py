@@ -322,10 +322,11 @@ def show():
             fig4 = px.pie(request_counts, names="Status", values="Count", title="Request Status Distribution")
             st.plotly_chart(fig4, use_container_width=True)
 
+        #======================Top Requesting Mentees=================================
         st.markdown("### 📬 Top Requesting Mentees")
 
         try:
-            # Fetch mentorship requests with user email via foreign key
+            # Get mentorship requests + user emails
             requests = supabase.table("mentorshiprequest") \
                 .select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)") \
                 .execute().data or []
@@ -333,26 +334,22 @@ def show():
             df_requests = pd.DataFrame(requests)
         
             if not df_requests.empty and "menteeid" in df_requests.columns:
-                # 🔧 Normalize all menteeid values to be hashable
-                df_requests["menteeid"] = df_requests["menteeid"].apply(
-                    lambda x: x.get("id") if isinstance(x, dict) else x
-                )
-
-                st.write(df_requests["menteeid"].head())
-                
-                # 📊 Group by mentee ID and count requests
+                # Group by mentee and count requests
                 requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
         
-                # 📧 Extract emails safely
-                if "users" in df_requests.columns:
-                    df_emails = df_requests[["menteeid", "users"]].drop_duplicates()
-                    df_emails["email"] = df_emails["users"].apply(
-                        lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown"
-                    )
-                    requests_per_mentee = requests_per_mentee.merge(df_emails[["menteeid", "email"]], on="menteeid", how="left")
+                # Extract email from the 'users' dict (avoid drop_duplicates on dicts!)
+                df_requests["email"] = df_requests["users"].apply(
+                    lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown"
+                )
         
-                # 📋 Display Top 5
-                top_mentees = requests_per_mentee.sort_values(by="RequestCount", ascending=False).head(5)
+                # Use only menteeid and email (now flat)
+                df_emails = df_requests[["menteeid", "email"]].drop_duplicates()
+        
+                # Merge request counts with emails
+                top_mentees = requests_per_mentee.merge(df_emails, on="menteeid", how="left") \
+                                                 .sort_values(by="RequestCount", ascending=False) \
+                                                 .head(5)
+        
                 st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
             else:
                 st.info("No mentorship requests found or 'menteeid' is missing.")
