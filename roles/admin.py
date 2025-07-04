@@ -322,7 +322,138 @@ def show():
             fig4 = px.pie(request_counts, names="Status", values="Count", title="Request Status Distribution")
             st.plotly_chart(fig4, use_container_width=True)
 
-    # Insights
-    #with tabs[4]:
-    #    st.subheader("Analytics")
+        # --- Mentee Engagement ---
+        st.markdown("### 🧑 Mentee Engagement")
+        if not df_users.empty and not df_requests.empty and not df_sessions.empty:
+            mentees = df_users[df_users["role"] == "Mentee"]
+            mentee_count = len(mentees)
+            
+            # Requests per mentee
+            requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
+            avg_requests = requests_per_mentee["RequestCount"].mean() if not requests_per_mentee.empty else 0
+            col1, col2, col3 = st.columns(3)
+            col1.metric("📩 Avg. Requests per Mentee", f"{avg_requests:.2f}")
+            
+            # Mentees with sessions
+            mentees_with_sessions = df_sessions["menteeid"].nunique()
+            session_percentage = (mentees_with_sessions / mentee_count * 100) if mentee_count > 0 else 0
+            col2.metric("📅 Mentees with Sessions", f"{session_percentage:.1f}%")
+            
+            # Feedback rate
+            rated_sessions = df_sessions["rating"].notna().sum()
+            feedback_rate = (rated_sessions / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
+            col3.metric("⭐ Feedback Submission Rate", f"{feedback_rate:.1f}%")
+            
+            # Visualization: Distribution of requests per mentee
+            request_dist = requests_per_mentee["RequestCount"].value_counts().reset_index()
+            request_dist.columns = ["Requests", "Mentees"]
+            request_dist = request_dist.sort_values("Requests")
+
+        # --- Mentor Performance ---
+        st.markdown("### 🧑‍🏫 Mentor Performance")
+        if not df_users.empty and not df_sessions.empty:
+            mentors = df_users[df_users["role"] == "Mentor"]
+            mentor_count = len(mentors)
+            
+            # Availability slots
+            availability = supabase.table("availability").select("mentorid").execute().data or []
+            df_availability = pd.DataFrame(availability)
+            slots_per_mentor = df_availability.groupby("mentorid").size().reset_index(name="SlotCount")
+            avg_slots = slots_per_mentor["SlotCount"].mean() if not slots_per_mentor.empty else 0
+            
+            # Sessions per mentor
+            sessions_per_mentor = df_sessions.groupby("mentorid").size().reset_index(name="SessionCount")
+            avg_sessions = sessions_per_mentor["SessionCount"].mean() if not sessions_per_mentor.empty else 0
+            
+            # Average rating per mentor
+            ratings_per_mentor = df_sessions.groupby("mentorid")["rating"].mean().reset_index(name="AvgRating")
+            avg_rating = ratings_per_mentor["AvgRating"].mean() if not ratings_per_mentor.empty else 0
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🕒 Avg. Availability Slots", f"{avg_slots:.2f}")
+            col2.metric("📅 Avg. Sessions per Mentor", f"{avg_sessions:.2f}")
+            col3.metric("⭐ Avg. Rating per Mentor", f"{avg_rating:.1f}")
+            
+            # Visualization: Top mentors by session count
+            top_mentors = sessions_per_mentor.merge(df_users[["userid", "email"]], left_on="mentorid", right_on="userid")
+            top_mentors = top_mentors.sort_values("SessionCount", ascending=False).head(5)
+
+        # --- Admin Actions ---
+        st.markdown("### 👑 Admin Actions")
+        if not df_users.empty and not df_requests.empty:
+            # Admin-registered users (all users, assuming admin-driven registration)
+            admin_registrations = len(df_users)
+            
+            # Promotions (mentees who became mentors)
+            promotions = supabase.table("users").select("userid").eq("role", "Mentor").execute().data or []
+            promotion_count = len(promotions)  # Simplification; ideally, track role changes in a log table
+            
+            # Admin-created matches
+            admin_matches = df_requests[df_requests["status"] == "ACCEPTED"].shape[0]
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("👥 Admin-Registered Users", admin_registrations)
+            col2.metric("🚀 Mentees Promoted", promotion_count)
+            col3.metric("🔁 Admin-Created Matches", admin_matches)
+            
+            # Visualization: Admin actions over time (registrations)
+            admin_growth = df_users.groupby("Month").size().reset_index(name="Registrations")
+
+        # --- Skill-Based Insights ---
+        st.markdown("### 🎯 Popular Skills")
+        try:
+            profiles = supabase.table("profile").select("skills, userid").execute().data or []
+            user_roles = supabase.table("users").select("userid, role").execute().data or []
+            df_profiles = pd.DataFrame(profiles).merge(pd.DataFrame(user_roles), on="userid")
+        except Exception as e:
+            st.error(f"❌ Failed to load profile data: {e}")
+            df_profiles = pd.DataFrame()
         
+        if not df_profiles.empty:
+            all_skills = []
+            for _, row in df_profiles.iterrows():
+                skills = row["skills"]
+                if skills:
+                    all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
+            skill_counts = pd.Series(all_skills).value_counts().reset_index().head(5)
+            skill_counts.columns = ["Skill", "Count"]
+            
+            # Metrics
+            col1, col2 = st.columns(2)
+            col1.metric("🎯 Unique Skills", len(set(all_skills)))
+            col2.metric("📊 Top Skill", skill_counts.iloc[0]["Skill"] if not skill_counts.empty else "N/A")
+            
+            # Visualization: Top 5 skills
+
+        # --- Session Completion and Feedback ---
+        st.markdown("### 📅 Session Completion and Feedback")
+        if not df_sessions.empty:
+            now = datetime.now(WAT)
+            df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+            completed_sessions = df_sessions[df_sessions["date"] < now]
+            completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
+            
+            col1, col2 = st.columns(2)
+            col1.metric("📅 Completed Sessions", len(completed_sessions))
+            col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")  # From Mentee Engagement
+            
+            # Visualization: Completion vs. Feedback
+            feedback_data = [
+                {"Category": "Completed Sessions", "Count": len(completed_sessions)},
+                {"Category": "Rated Sessions", "Count": rated_sessions}
+            ]
+            df_feedback = pd.DataFrame(feedback_data)
+
+        # --- Mentorship Success Rate ---
+        st.markdown("### 🔁 Mentorship Success Rate")
+        if not df_requests.empty:
+            acceptance_rate = (df_requests["status"] == "ACCEPTED").mean() * 100
+            st.metric("✅ Acceptance Rate", f"{acceptance_rate:.1f}%")
+            
+            # If created_at is available in mentorshiprequest
+            try:
+                requests_with_time = supabase.table("mentorshiprequest").select("status, created_at").execute().data or []
+                df_requests_time = pd.DataFrame(requests_with_time)
+                df_requests_time["created_at"] = pd.to_datetime(df_requests_time["created_at"], errors="coerce")
+                df_requests_time["Month"] = df_requests_time["created_at"].dt.to_period("M").astype(str)
+                request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
