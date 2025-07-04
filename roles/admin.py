@@ -446,14 +446,37 @@ def show():
 
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
+        
         if not df_requests.empty:
+            # Acceptance rate
             acceptance_rate = (df_requests["status"] == "ACCEPTED").mean() * 100
             st.metric("✅ Acceptance Rate", f"{acceptance_rate:.1f}%")
-            
-            # If created_at is available in mentorshiprequest
+        
+            # Time-based trends
             try:
                 requests_with_time = supabase.table("mentorshiprequest").select("status, created_at").execute().data or []
                 df_requests_time = pd.DataFrame(requests_with_time)
-                df_requests_time["created_at"] = pd.to_datetime(df_requests_time["created_at"], errors="coerce")
-                df_requests_time["Month"] = df_requests_time["created_at"].dt.to_period("M").astype(str)
-                request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
+        
+                if not df_requests_time.empty:
+                    df_requests_time["created_at"] = pd.to_datetime(df_requests_time["created_at"], errors="coerce")
+                    df_requests_time["Month"] = df_requests_time["created_at"].dt.to_period("M").astype(str)
+        
+                    # Group by month and status
+                    request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
+        
+                    # Plotting
+                    fig = px.bar(
+                        request_trend,
+                        x="Month",
+                        y="Count",
+                        color="status",
+                        barmode="group",
+                        title="📈 Monthly Mentorship Request Status Trends"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No mentorship request data available for trend analysis.")
+            except Exception as e:
+                st.error(f"Error fetching mentorship request trends: {e}")
+        else:
+            st.info("No mentorship requests available for analysis.")
