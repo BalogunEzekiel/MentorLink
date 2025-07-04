@@ -259,7 +259,69 @@ def show():
         else:
             st.info("No sessions found.")
 
-    # Insights
+    # --- Analytics Tab ---
     with tabs[4]:
-        st.subheader("Analytics")
+        st.subheader("📊 Platform Insights")
+
+        try:
+            users = supabase.table("users").select("created_at, role, status").execute().data or []
+            sessions = supabase.table("session").select("date, rating").execute().data or []
+            requests = supabase.table("mentorshiprequest").select("status").execute().data or []
+        except Exception as e:
+            st.error(f"❌ Failed to load analytics data: {e}")
+            return
+
+        df_users = pd.DataFrame(users)
+        df_sessions = pd.DataFrame(sessions)
+        df_requests = pd.DataFrame(requests)
+
+        # --- Metrics ---
+        st.markdown("### 📌 Key Metrics")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("👥 Total Users", len(df_users))
+        col2.metric("🧑‍🏫 Mentors", len(df_users[df_users.role == "Mentor"]))
+        col3.metric("🧑 Mentees", len(df_users[df_users.role == "Mentee"]))
+
+        col4, col5 = st.columns(2)
+        col4.metric("📅 Total Sessions", len(df_sessions))
+        col5.metric("📩 Total Requests", len(df_requests))
+
+        # --- Users Over Time ---
+        st.markdown("### 📈 User Registrations Over Time")
+        if "created_at" in df_users:
+            df_users["created_at"] = pd.to_datetime(df_users["created_at"], errors='coerce')
+            df_users = df_users.dropna(subset=["created_at"])
+            df_users["Month"] = df_users["created_at"].dt.to_period("M").astype(str)
+            user_growth = df_users.groupby(["Month", "role"]).size().reset_index(name="Count")
+            fig = px.bar(user_growth, x="Month", y="Count", color="role", barmode="group", title="User Growth by Role")
+            st.plotly_chart(fig, use_container_width=True)
+
+        # --- Sessions Trend ---
+        st.markdown("### 📆 Sessions Trend")
+        if not df_sessions.empty:
+            df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors='coerce')
+            df_sessions = df_sessions.dropna(subset=["date"])
+            df_sessions["Month"] = df_sessions["date"].dt.to_period("M").astype(str)
+            monthly_sessions = df_sessions.groupby("Month").size().reset_index(name="Sessions")
+            fig2 = px.line(monthly_sessions, x="Month", y="Sessions", markers=True, title="Monthly Sessions")
+            st.plotly_chart(fig2, use_container_width=True)
+
+        # --- Ratings Summary ---
+        st.markdown("### ⭐ Session Ratings Distribution")
+        if "rating" in df_sessions:
+            df_ratings = df_sessions.dropna(subset=["rating"])
+            fig3 = px.histogram(df_ratings, x="rating", nbins=5, title="Ratings Given by Mentees")
+            st.plotly_chart(fig3, use_container_width=True)
+
+        # --- Requests Status ---
+        st.markdown("### 📩 Request Status Breakdown")
+        if not df_requests.empty:
+            request_counts = df_requests["status"].value_counts().reset_index()
+            request_counts.columns = ["Status", "Count"]
+            fig4 = px.pie(request_counts, names="Status", values="Count", title="Request Status Distribution")
+            st.plotly_chart(fig4, use_container_width=True)
+
+    # Insights
+    #with tabs[4]:
+    #    st.subheader("Analytics")
         
