@@ -16,9 +16,9 @@ def show():
 
     tabs = st.tabs([
         "🏠 Dashboard",
-        "📅 My Sessions",
-        "📌 Add Availability",
-        "📥 Requests"
+        "📌 Availability",
+        "📥 Requests",
+        "📅 Sessions"
     ])
 
     # --- Dashboard ---
@@ -72,7 +72,7 @@ def show():
                 st.rerun()
 
     # --- My Sessions ---
-    with tabs[1]:
+    with tabs[3]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
             .eq("mentorid", mentor_id).execute().data or []
@@ -102,7 +102,7 @@ def show():
             st.info("No sessions yet.")
 
     # --- Add Availability ---
-    with tabs[2]:
+    with tabs[1]:
         st.subheader("Add Availability Slot")
 
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
@@ -150,7 +150,7 @@ def show():
             st.info("No availability slots added yet.")
 
     # --- Incoming Requests ---
-    with tabs[3]:
+    with tabs[2]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
             .select("*, mentee:users!mentorshiprequest_menteeid_fkey(email, userid)") \
