@@ -130,6 +130,20 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
+
+            # Promote Mentee to Mentor
+            if selected_email != "Select an email...":
+                user_row = df[df["Email"] == selected_email].iloc[0]
+                if user_row["Role"] == "Mentee":
+                    promote = st.checkbox("🚀 Promote this user to Mentor")
+                    if promote and st.button("✅ Promote to Mentor"):
+                        try:
+                            supabase.table("users").update({"role": "Mentor"}).eq("userid", user_row["User ID"]).execute()
+                            st.success(f"✅ {selected_email} promoted to Mentor!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to promote user: {e}")
+
         else:
             st.info("No users found.")
 
