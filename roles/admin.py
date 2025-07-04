@@ -465,6 +465,8 @@ def show():
         if not df_sessions.empty:
             now = datetime.now(WAT)
             df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+            df_sessions = df_sessions.dropna(subset=["date"])
+            df_sessions = df_sessions[df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp))]
             completed_sessions = df_sessions[df_sessions["date"] < now]
             completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
             
