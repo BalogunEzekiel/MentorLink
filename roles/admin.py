@@ -462,12 +462,10 @@ def show():
 
         # --- Session Completion and Feedback ---
         st.markdown("### 📅 Session Completion and Feedback")
-#        st.markdown("### 📅 Session Completion and Feedback")
 
         if not df_sessions.empty:
-            now = datetime.now(WAT)
+            now = datetime.now(WAT).replace(tzinfo=None)  # ✅ Make timezone-naive
         
-            # Convert and enforce datetime
             df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
             df_sessions = df_sessions.dropna(subset=["date"])
             df_sessions["date"] = df_sessions["date"].astype("datetime64[ns]")
@@ -484,7 +482,7 @@ def show():
                 {"Category": "Rated Sessions", "Count": rated_sessions}
             ]
             df_feedback = pd.DataFrame(feedback_data)
-
+    
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
         
