@@ -465,19 +465,15 @@ def show():
         
         if not df_sessions.empty:
             now = datetime.now(WAT)
-            
-            # Clean & filter valid datetime entries
-            def safe_to_datetime(val):
-                try:
-                    return pd.to_datetime(val)
-                except Exception:
-                    return pd.NaT
-            
-            df_sessions["date"] = df_sessions["date"].apply(safe_to_datetime)
+        
+            # Convert 'date' safely to datetime
+            df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+        
+            # Drop any rows where date is not a valid datetime
             df_sessions = df_sessions.dropna(subset=["date"])
-            
-            # Confirm all are datetime
-            if df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp)).all():
+        
+            # Ensure date column is of datetime64[ns] dtype
+            if pd.api.types.is_datetime64_any_dtype(df_sessions["date"]):
                 completed_sessions = df_sessions[df_sessions["date"] < now]
                 completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
         
@@ -490,9 +486,8 @@ def show():
                     {"Category": "Rated Sessions", "Count": rated_sessions}
                 ]
                 df_feedback = pd.DataFrame(feedback_data)
-                # (Optional visualization goes here)
             else:
-                st.warning("⚠️ Some session dates are still invalid after cleaning.")
+                st.warning("⚠️ Session dates are not valid datetime format.")
 
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
