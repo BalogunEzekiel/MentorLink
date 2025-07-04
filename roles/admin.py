@@ -462,33 +462,28 @@ def show():
 
         # --- Session Completion and Feedback ---
         st.markdown("### 📅 Session Completion and Feedback")
-        
+#        st.markdown("### 📅 Session Completion and Feedback")
+
         if not df_sessions.empty:
             now = datetime.now(WAT)
         
-            # Convert to datetime
+            # Convert and enforce datetime
             df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+            df_sessions = df_sessions.dropna(subset=["date"])
+            df_sessions["date"] = df_sessions["date"].astype("datetime64[ns]")
         
-            # Filter out invalid datetime values
-            df_sessions = df_sessions[df_sessions["date"].apply(lambda x: isinstance(x, pd.Timestamp))]
+            completed_sessions = df_sessions[df_sessions["date"] < now]
+            completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
         
-            # Re-check dtype
-            if pd.api.types.is_datetime64_any_dtype(df_sessions["date"]):
-                completed_sessions = df_sessions[df_sessions["date"] < now]
-                completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
+            col1, col2 = st.columns(2)
+            col1.metric("📅 Completed Sessions", len(completed_sessions))
+            col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")
         
-                col1, col2 = st.columns(2)
-                col1.metric("📅 Completed Sessions", len(completed_sessions))
-                col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")
-        
-                feedback_data = [
-                    {"Category": "Completed Sessions", "Count": len(completed_sessions)},
-                    {"Category": "Rated Sessions", "Count": rated_sessions}
-                ]
-                df_feedback = pd.DataFrame(feedback_data)
-        
-            else:
-                st.warning("⚠️ 'date' column is not fully converted to datetime.")
+            feedback_data = [
+                {"Category": "Completed Sessions", "Count": len(completed_sessions)},
+                {"Category": "Rated Sessions", "Count": rated_sessions}
+            ]
+            df_feedback = pd.DataFrame(feedback_data)
 
         # --- Mentorship Success Rate ---
         st.markdown("### 🔁 Mentorship Success Rate")
