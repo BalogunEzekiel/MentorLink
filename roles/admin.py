@@ -327,7 +327,7 @@ def show():
         
         # Get mentorship requests with mentee email
         try:
-#            requests = supabase.table("mentorshiprequest").select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)").execute().data or []
+            requests = supabase.table("mentorshiprequest").select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)").execute().data or []
             requests = supabase.table("mentorshiprequest").select("mentorshiprequestid, menteeid, status, created_at").execute().data or []
             mentees = supabase.table("users").select("userid, email").eq("role", "Mentee").execute().data or []
             df_mentees = pd.DataFrame(mentees)
