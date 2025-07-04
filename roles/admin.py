@@ -76,14 +76,7 @@ def show():
                 "status": "Status"
             })
 
-            # Create a horizontal layout with columns
-            col1, col2 = st.columns([4, 1])            
-            with col1:
-                email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()            
-            with col2:
-                if st.button("❌ Clear"):
-                    st.rerun()  # This will reset the input field
-#            email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()
+            email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()
             status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
 
             filtered_df = df.copy()
