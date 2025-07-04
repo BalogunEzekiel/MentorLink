@@ -325,26 +325,33 @@ def show():
         # --- Top Requesting Mentees ---
         st.markdown("### 📬 Top Requesting Mentees")
         
-        # Get mentorship requests with mentee email
         try:
-            requests = supabase.table("mentorshiprequest").select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)").execute().data or []
-#            requests = supabase.table("mentorshiprequest").select("mentorshiprequestid, menteeid, status, created_at").execute().data or []
-#            mentees = supabase.table("users").select("userid, email").eq("role", "Mentee").execute().data or []
-#            df_mentees = pd.DataFrame(mentees)
-
+            # Fetch mentorship requests with user email via foreign key
+            requests = supabase.table("mentorshiprequest") \
+                .select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)") \
+                .execute().data or []
+        
             df_requests = pd.DataFrame(requests)
         
-            if not df_requests.empty and "menteeid" in df_requests.columns:
-                # Group by mentee and count
+            # Ensure 'menteeid' is hashable (not a dict)
+            if "menteeid" in df_requests.columns and not df_requests.empty:
+                if isinstance(df_requests["menteeid"].iloc[0], dict):
+                    df_requests["menteeid"] = df_requests["menteeid"].apply(
+                        lambda x: x.get("id") if isinstance(x, dict) else x
+                    )
+        
+                # Group by mentee and count requests
                 requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
         
-                # Merge mentee emails (if available)
+                # Safely extract emails if 'users' column exists and is valid
                 if "users" in df_requests.columns:
                     df_emails = df_requests[["menteeid", "users"]].drop_duplicates()
-                    df_emails["email"] = df_emails["users"].apply(lambda u: u.get("email", "Unknown"))
-                    requests_per_mentee = requests_per_mentee.merge(df_emails, on="menteeid", how="left")
-
-                # Sort and display top mentees
+                    df_emails["email"] = df_emails["users"].apply(
+                        lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown"
+                    )
+                    requests_per_mentee = requests_per_mentee.merge(df_emails[["menteeid", "email"]], on="menteeid", how="left")
+        
+                # Display top 5
                 top_mentees = requests_per_mentee.sort_values(by="RequestCount", ascending=False).head(5)
                 st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
             else:
