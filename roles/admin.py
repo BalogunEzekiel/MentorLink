@@ -337,7 +337,9 @@ def show():
                 df_requests["menteeid"] = df_requests["menteeid"].apply(
                     lambda x: x.get("id") if isinstance(x, dict) else x
                 )
-        
+
+                st.write(df_requests["menteeid"].head())
+                
                 # 📊 Group by mentee ID and count requests
                 requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
         
