@@ -42,13 +42,15 @@ def show():
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, track bookings, and give feedback.")
 
-    # ✅ Robust session check
     user = st.session_state.get("user")
-    user_id = user.get("userid") if user else None
+    user_id = user.get("userid") if user and isinstance(user, dict) else None
 
     if not user_id:
-        st.error("⚠️ User session not found. Please log in again.")
+        st.error("⚠️ User session not found or invalid. Please log in again.")
         st.stop()
+
+    # Uncomment for debugging session issues
+    # st.write("🔍 Debug Info:", {"user": user, "user_id": user_id})
 
     tabs = st.tabs([
         "🏠 Dashboard",
@@ -61,10 +63,15 @@ def show():
     # --- Dashboard Tab ---
     with tabs[0]:
         st.subheader("Welcome to your Mentee Dashboard")
-        profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
-        profile = profile_data[0] if profile_data else {}
-        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
-        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
+        try:
+            profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
+            profile = profile_data[0] if profile_data else {}
+
+            total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
+            total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
+        except Exception as e:
+            st.error(f"🚫 Failed to fetch profile or summary data: {e}")
+            return
 
         st.markdown("### 📊 Summary")
         st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
@@ -107,15 +114,22 @@ def show():
                         st.warning(f"❗ Image upload failed: {e}")
                         update_data["profile_image_url"] = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
 
-                supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
-                st.success("✅ Profile updated successfully!")
-                st.rerun()
+                try:
+                    supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
+                    st.success("✅ Profile updated successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to update profile: {e}")
 
     # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
-        mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
-            .eq("role", "Mentor").eq("status", "Active").execute().data or []
+        try:
+            mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
+                .eq("role", "Mentor").eq("status", "Active").execute().data or []
+        except Exception as e:
+            st.error(f"Failed to load mentors: {e}")
+            mentors = []
 
         if not mentors:
             st.info("No mentors available.")
@@ -176,9 +190,13 @@ def show():
     # --- My Requests Tab ---
     with tabs[2]:
         st.subheader("Your Mentorship Requests")
-        requests = supabase.table("mentorshiprequest") \
-            .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).neq("status", "ACCEPTED").execute().data or []
+        try:
+            requests = supabase.table("mentorshiprequest") \
+                .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
+                .eq("menteeid", user_id).neq("status", "ACCEPTED").execute().data or []
+        except Exception as e:
+            st.error(f"Could not fetch requests: {e}")
+            requests = []
 
         if requests:
             for req in requests:
@@ -191,9 +209,13 @@ def show():
     # --- My Sessions Tab ---
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
-        sessions = supabase.table("session") \
-            .select("*, users!session_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
+        try:
+            sessions = supabase.table("session") \
+                .select("*, users!session_mentorid_fkey(email)") \
+                .eq("menteeid", user_id).execute().data or []
+        except Exception as e:
+            st.error(f"Could not fetch sessions: {e}")
+            sessions = []
 
         if sessions:
             for s in sessions:
@@ -232,9 +254,13 @@ def show():
     # --- Feedback Tab ---
     with tabs[4]:
         st.subheader("Rate Mentors & Provide Feedback")
-        sessions = supabase.table("session") \
-            .select("sessionid, start, end, rating, feedback, users!session_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
+        try:
+            sessions = supabase.table("session") \
+                .select("sessionid, start, end, rating, feedback, users!session_mentorid_fkey(email)") \
+                .eq("menteeid", user_id).execute().data or []
+        except Exception as e:
+            st.error(f"Could not fetch sessions for feedback: {e}")
+            sessions = []
 
         if not sessions:
             st.info("No sessions to give feedback for.")
