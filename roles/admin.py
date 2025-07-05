@@ -193,67 +193,67 @@ def show():
             st.info("No mentorship requests found.")
 
     # Match Mentees to Mentors
-with tabs[2]:
-    st.subheader("Match Mentee to Mentor")
-
-    try:
-        users = supabase.table("users").select("userid, email, role, status") \
-            .neq("status", "Delete").execute().data or []
-        mentees = [u for u in users if u["role"] == "Mentee"]
-        mentors = [u for u in users if u["role"] == "Mentor"]
-    except Exception as e:
-        st.error(f"❌ Failed to fetch users: {e}")
-        mentees, mentors = [], []
-
-    if not mentees or not mentors:
-        st.warning("No available mentees or mentors.")
-    else:
-        mentee_options = ["-- Select Mentee --"] + [m["email"] for m in mentees]
-        mentor_options = ["-- Select Mentor --"] + [m["email"] for m in mentors]
-
-        mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select_box")
-        mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select_box")
-
-        if st.button("✅ Create Match", key="match_button_uniq"):
-            if mentee_email == "-- Select Mentee --" or mentor_email == "-- Select Mentor --":
-                st.warning("⚠️ Please select both a valid mentee and mentor.")
-            elif mentee_email == mentor_email:
-                st.warning("Mentee and Mentor cannot be the same.")
-            else:
-                mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
-                mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
-
-                existing = supabase.table("mentorshiprequest") \
-                    .select("mentorshiprequestid") \
-                    .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
-                    .execute().data
-
-                if existing:
-                    st.warning("⚠️ This mentorship request already exists.")
+    with tabs[2]:
+        st.subheader("Match Mentee to Mentor")
+    
+        try:
+            users = supabase.table("users").select("userid, email, role, status") \
+                .neq("status", "Delete").execute().data or []
+            mentees = [u for u in users if u["role"] == "Mentee"]
+            mentors = [u for u in users if u["role"] == "Mentor"]
+        except Exception as e:
+            st.error(f"❌ Failed to fetch users: {e}")
+            mentees, mentors = [], []
+    
+        if not mentees or not mentors:
+            st.warning("No available mentees or mentors.")
+        else:
+            mentee_options = ["-- Select Mentee --"] + [m["email"] for m in mentees]
+            mentor_options = ["-- Select Mentor --"] + [m["email"] for m in mentors]
+    
+            mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select")
+            mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select")
+    
+            if st.button("✅ Create Match", key="create_match_btn"):
+                if mentee_email == "-- Select Mentee --" or mentor_email == "-- Select Mentor --":
+                    st.warning("⚠️ Please select both a valid mentee and mentor.")
+                elif mentee_email == mentor_email:
+                    st.warning("Mentee and Mentor cannot be the same.")
                 else:
-                    availability = supabase.table("availability") \
-                        .select("availabilityid") \
-                        .eq("mentorid", mentor_id).execute().data
-
-                    if not availability:
-                        st.warning("⚠️ This mentor has no availability slots set.")
+                    mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
+                    mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
+    
+                    existing = supabase.table("mentorshiprequest") \
+                        .select("mentorshiprequestid") \
+                        .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
+                        .execute().data
+    
+                    if existing:
+                        st.warning("⚠️ This mentorship request already exists.")
                     else:
-                        supabase.table("mentorshiprequest").insert({
-                            "menteeid": mentee_id,
-                            "mentorid": mentor_id,
-                            "status": "ACCEPTED"
-                        }).execute()
-
-                        now = datetime.now(tz=WAT)
-                        end = now + timedelta(minutes=30)
-                        success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
-
-                        if success:
-                            st.success("✅ Match created and session booked!")
+                        availability = supabase.table("availability") \
+                            .select("availabilityid") \
+                            .eq("mentorid", mentor_id).execute().data
+    
+                        if not availability:
+                            st.warning("⚠️ This mentor has no availability slots set.")
                         else:
-                            st.warning(msg)
-
-                        st.rerun()
+                            supabase.table("mentorshiprequest").insert({
+                                "menteeid": mentee_id,
+                                "mentorid": mentor_id,
+                                "status": "ACCEPTED"
+                            }).execute()
+    
+                            now = datetime.now(tz=WAT)
+                            end = now + timedelta(minutes=30)
+                            success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
+    
+                            if success:
+                                st.success("✅ Match created and session booked!")
+                            else:
+                                st.warning(msg)
+    
+                            st.rerun()
 
     # Sessions
     with tabs[3]:
@@ -528,4 +528,3 @@ with tabs[2]:
                 st.info("No mentorship request data available for trend analysis.")
         except Exception as e:
             st.error(f"Error fetching mentorship request trends: {e}")
-        `
