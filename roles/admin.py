@@ -30,6 +30,19 @@ def format_datetime(dt):
     except Exception:
         return str(dt)
 
+def session_status_label(date_str):
+    try:
+        now = datetime.now(WAT)
+        session_time = datetime.fromisoformat(date_str.replace("Z", "+00:00")).astimezone(WAT)
+        if session_time.date() < now.date() or session_time < now:
+            return "🟥 Past"
+        elif session_time.date() == now.date() and abs((session_time - now).total_seconds()) < 3600:
+            return "🟨 Ongoing"
+        else:
+            return "🟩 Upcoming"
+    except:
+        return "❓ Unknown"
+
 def show():
     st.title("Admin Dashboard")
     st.info("Admin dashboard: manage users, mentorship matches, and sessions.")
@@ -249,17 +262,21 @@ def show():
 
         if sessions:
             for s in sessions:
+                start_time = s.get("date")
+                status = session_status_label(start_time)
+
                 st.markdown(f"""
                 - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
                 - 🧑 Mentee: **{s['mentee']['email']}**  
-                - 📅 Date: {format_datetime_safe(s.get('date'))}  
+                - 📅 Start Time: {format_datetime_safe(s.get('date'))}  
+                - 🕒 Status: {status}  
                 - ⭐ Rating: {s.get('rating', 'Not rated')}  
                 - 💬 Feedback: {s.get('feedback', 'No feedback')}  
                 - 🔗 [Join Meet]({s.get('meet_link', '#')})
                 """)
         else:
             st.info("No sessions found.")
-
+            
     # --- Analytics Tab ---
     with tabs[4]:
         st.subheader("📊 Platform Insights")
