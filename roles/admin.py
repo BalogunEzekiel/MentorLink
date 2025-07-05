@@ -294,8 +294,11 @@ def show():
             
     # --- Analytics Tab ---
     with tabs[4]:
-        st.subheader("📊 Platform Insights")
-    
+        st.markdown(
+            "<h2 style='text-align: center;'>📊 Platform Insights</h2>",
+            unsafe_allow_html=True
+        ) 
+
         try:
             users = supabase.table("users").select("userid, email, created_at, role, status").execute().data or []
             sessions = supabase.table("session").select("date, rating, mentorid, menteeid").execute().data or []
