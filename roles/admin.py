@@ -13,13 +13,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database import supabase
 from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
-from utils.helpers import format_datetime_safe  # Handles timezone-safe formatting
+from utils.helpers import format_datetime_safe, format_session_card, categorize_session
 
 # Set West Africa Time
 WAT = pytz.timezone("Africa/Lagos")
 
 def format_datetime(dt):
-    """Convert datetime string or object to WAT-formatted string."""
     if not dt:
         return "Unknown"
     if isinstance(dt, datetime):
@@ -36,6 +35,7 @@ def show():
 
     tabs = st.tabs(["👥 Users", "📩 Requests", "🔁 Matches", "🗓️ Sessions", "📊 Analytics"])
 
+    # USERS TAB -- unchanged code remains here
     # --- USERS TAB--
     with tabs[0]:
         st.subheader("Register New User")
@@ -249,13 +249,18 @@ def show():
 
         if sessions:
             for s in sessions:
+                start_time = s.get("date")
+                end_time = s.get("endtime")
+                st.markdown(format_session_card({
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "users": {"email": s['mentee']['email']},
+                    "meet_link": s.get("meet_link")
+                }, role_label=f"Mentor: {s['mentor']['email']}"), unsafe_allow_html=True)
+
                 st.markdown(f"""
-                - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
-                - 🧑 Mentee: **{s['mentee']['email']}**  
-                - 📅 Date: {format_datetime_safe(s.get('date'))}  
                 - ⭐ Rating: {s.get('rating', 'Not rated')}  
-                - 💬 Feedback: {s.get('feedback', 'No feedback')}  
-                - 🔗 [Join Meet]({s.get('meet_link', '#')})
+                - 💬 Feedback: {s.get('feedback', 'No feedback')}
                 """)
         else:
             st.info("No sessions found.")
