@@ -63,3 +63,45 @@ def format_datetime(dt_string: str) -> str:
     dt_utc = pytz.utc.localize(dt)
     dt_local = dt_utc.astimezone(WAT)
     return dt_local.strftime("%d %b %Y %H:%M")
+
+def get_session_status(start: Union[str, datetime], end: Union[str, datetime], tz=WAT) -> str:
+    """
+    Determine session status (Past, Current, Upcoming) based on current time and start/end times.
+    
+    Args:
+        start: start datetime string or object
+        end: end datetime string or object
+        tz: timezone to compare against (default: WAT)
+    
+    Returns:
+        Status string: '🟥 Past', '🟨 Ongoing', or '🟩 Upcoming'
+    """
+    def to_datetime(dt):
+        if isinstance(dt, datetime):
+            return dt
+        try:
+            return datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        except Exception:
+            return datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
+
+    try:
+        start_dt = to_datetime(start)
+        end_dt = to_datetime(end)
+
+        if start_dt.tzinfo is None:
+            start_dt = pytz.utc.localize(start_dt)
+        if end_dt.tzinfo is None:
+            end_dt = pytz.utc.localize(end_dt)
+
+        now = datetime.now(pytz.utc).astimezone(tz)
+        start_local = start_dt.astimezone(tz)
+        end_local = end_dt.astimezone(tz)
+
+        if now < start_local:
+            return "🟩 Upcoming"
+        elif start_local <= now <= end_local:
+            return "🟨 Ongoing"
+        else:
+            return "🟥 Past"
+    except Exception:
+        return "Unknown"
