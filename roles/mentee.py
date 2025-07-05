@@ -1,6 +1,6 @@
 import streamlit as st
 from database import supabase
-from utils.helpers import format_datetime_safe, format_session_card, categorize_session
+from utils.helpers import format_datetime_safe
 from utils.session_creator import create_session_if_available
 from emailer import send_email
 from datetime import datetime, timedelta
@@ -47,7 +47,7 @@ def show():
         # Display profile picture
         avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
         st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
-
+        
         with st.form("mentee_profile_form"):
             name = st.text_input("Name", value=profile.get("name", ""))
             bio = st.text_area("Bio", value=profile.get("bio", ""))
@@ -69,19 +69,22 @@ def show():
                 if profile_image:
                     file_extension = profile_image.name.split(".")[-1]
                     file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
-
+                
                     try:
+                        # ✅ Read file content
                         file_bytes = profile_image.getvalue()
-
+                
+                        # ✅ Upload to Supabase Storage
                         supabase.storage.from_("profilepics").upload(
                             path=file_name,
                             file=file_bytes,
                             file_options={"content-type": profile_image.type, "x-upsert": "true"}
                         )
-
+                
+                        # ✅ Get public URL
                         public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
                         update_data["profile_image_url"] = public_url
-
+                
                     except Exception as e:
                         st.warning(f"❗ Image upload failed: {e}")
                         update_data["profile_image_url"] = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
@@ -100,6 +103,7 @@ def show():
         if not mentors:
             st.info("No mentors available.")
         else:
+            # ✅ Extract all skills
             all_skills = []
             for mentor in mentors:
                 skills = mentor.get("profile", {}).get("skills", "")
@@ -107,14 +111,17 @@ def show():
                     all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
             unique_skills = sorted(set(all_skills))
 
+            # ✅ Skill filter dropdown
             selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
 
+            # ✅ Filter mentors based on selected skill
             if selected_skill != "All":
                 mentors = [
                     m for m in mentors
                     if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
                 ]
 
+            # ✅ Display filtered mentors
             cols = st.columns(2)
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
@@ -184,13 +191,21 @@ def show():
 
         if sessions:
             for s in sessions:
-                st.markdown(format_session_card(s, is_admin=False))
+                mentor_email = s.get("users", {}).get("email", "Unknown")
+                session_date = format_datetime_safe(s.get("date"), tz=WAT)
+                rating = s.get("rating", "Pending")
+                feedback = s.get("feedback", "Not submitted")
+                meet_link = s.get("meet_link", "#")
+
+                st.markdown(f"""
+                #### With: {mentor_email}
+                - 📅 Date: {session_date}
+                - ⭐ Rating: {rating}
+                - 💬 Feedback: {feedback}
+                - 🔗 [Join Meet]({meet_link})
+                """)
 
                 if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
-                    mentor_email = s.get("users", {}).get("email", "Unknown")
-                    session_date = format_datetime_safe(s.get("date"), tz=WAT)
-                    meet_link = s.get("meet_link", "#")
-
                     if send_email(
                         to_email=mentor_email,
                         subject="📅 Session Reminder",
@@ -214,6 +229,7 @@ def show():
             st.info("No sessions to give feedback for.")
         else:
             for session in sessions:
+                # Skip sessions already rated and with feedback
                 if session.get("rating") and session.get("feedback"):
                     continue
 
