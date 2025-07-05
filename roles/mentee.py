@@ -70,22 +70,23 @@ def show():
                     file_extension = profile_image.name.split(".")[-1]
                     file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
                 
-                    # ✅ Read file content as bytes
-                    file_bytes = profile_image.getvalue()
+                    try:
+                        # ✅ Read file content
+                        file_bytes = profile_image.getvalue()
                 
-                    # ✅ Upload to Supabase Storage
-                    upload_response = supabase.storage.from_("profilepics").upload(
-                        path=file_name,
-                        file=file_bytes,
-                        file_options={"content-type": profile_image.type, "x-upsert": "true"}
-                    )
+                        # ✅ Upload to Supabase Storage
+                        supabase.storage.from_("profilepics").upload(
+                            path=file_name,
+                            file=file_bytes,
+                            file_options={"content-type": profile_image.type, "x-upsert": "true"}
+                        )
                 
-                    if upload_response.status_code == 200:
                         # ✅ Get public URL
                         public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
                         update_data["profile_image_url"] = public_url
-                    else:
-                        st.warning("❗ Image upload failed. Using default avatar.")
+                
+                    except Exception as e:
+                        st.warning(f"❗ Image upload failed: {e}")
                         update_data["profile_image_url"] = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
 
                 supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
