@@ -1,3 +1,5 @@
+# roles/mentor.py
+
 import streamlit as st
 from database import supabase
 from datetime import datetime, timedelta
@@ -9,11 +11,23 @@ import pytz
 
 WAT = pytz.timezone("Africa/Lagos")
 
+def parse_datetime_safe(dt):
+    if isinstance(dt, datetime):
+        return dt.astimezone(WAT)
+    if isinstance(dt, str):
+        try:
+            return datetime.fromisoformat(dt).astimezone(WAT)
+        except ValueError:
+            return None
+    return None
+
 def classify_session(start_time_str, end_time_str):
     now = datetime.now(WAT)
-    start = datetime.fromisoformat(start_time_str).astimezone(WAT)
-    end = datetime.fromisoformat(end_time_str).astimezone(WAT)
+    start = parse_datetime_safe(start_time_str)
+    end = parse_datetime_safe(end_time_str)
 
+    if not start or not end:
+        return "Invalid", "❌"
     if end < now:
         return "Past", "🟥"
     elif start <= now <= end:
