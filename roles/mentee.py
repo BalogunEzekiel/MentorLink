@@ -49,9 +49,6 @@ def show():
         st.error("⚠️ User session not found or invalid. Please log in again.")
         st.stop()
 
-    # Uncomment for debugging session issues
-    # st.write("🔍 Debug Info:", {"user": user, "user_id": user_id})
-
     tabs = st.tabs([
         "🏠 Dashboard",
         "🧑‍🏫 Browse Mentors",
@@ -185,7 +182,7 @@ def show():
                                 st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
                                 st.rerun()
                     else:
-                    st.warning("This mentor has no availability yet.")
+                        st.warning("This mentor has no availability yet.")
 
     # --- My Requests Tab ---
     with tabs[2]:
@@ -230,13 +227,13 @@ def show():
                 end_fmt = format_datetime_safe(end_str, tz=WAT)
 
                 st.markdown(f"""
-                ### {emoji} {status} Session
-                - 👤 With: **{mentor_email}**
-                - 🕒 Start: {start_fmt}
-                - 🕔 End: {end_fmt}
-                - ⭐ Rating: {rating}
-                - 💬 Feedback: {feedback}
-                - 🔗 [Join Meet]({meet_link})
+                    ### {emoji} {status} Session
+                    - 👤 With: **{mentor_email}**
+                    - 🕒 Start: {start_fmt}
+                    - 🕔 End: {end_fmt}
+                    - ⭐ Rating: {rating}
+                    - 💬 Feedback: {feedback}
+                    - 🔗 [Join Meet]({meet_link})
                 """)
 
                 if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
