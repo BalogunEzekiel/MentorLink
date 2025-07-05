@@ -41,7 +41,7 @@ st.markdown("""
 
     .custom-header {
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 60px;
+        font-size: 80px;
         color: #4B8BBE;
         font-weight: bold;
         text-align: center;
