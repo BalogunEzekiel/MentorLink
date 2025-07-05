@@ -208,7 +208,7 @@ def show():
         st.subheader("Your Mentorship Sessions")
         try:
             sessions = supabase.table("session") \
-                .select("*, users!session_mentorid_fkey(email)") \
+                .select("sessionid, rating, feedback, meet_link, availability:availabilityid(start, end), users!session_mentorid_fkey(email)") \
                 .eq("menteeid", user_id).execute().data or []
         except Exception as e:
             st.error(f"Could not fetch sessions: {e}")
@@ -217,8 +217,9 @@ def show():
         if sessions:
             for s in sessions:
                 mentor_email = s.get("users", {}).get("email", "Unknown")
-                start_str = s.get("start")
-                end_str = s.get("end")
+                availability = s.get("availability") or {}
+                start_str = availability.get("start")
+                end_str = availability.get("end")
                 rating = s.get("rating", "Pending")
                 feedback = s.get("feedback", "Not submitted")
                 meet_link = s.get("meet_link", "#")
@@ -253,7 +254,7 @@ def show():
         st.subheader("Rate Mentors & Provide Feedback")
         try:
             sessions = supabase.table("session") \
-                .select("sessionid, start, end, rating, feedback, users!session_mentorid_fkey(email)") \
+                .select("sessionid, rating, feedback, availability:availabilityid(start), users!session_mentorid_fkey(email)") \
                 .eq("menteeid", user_id).execute().data or []
         except Exception as e:
             st.error(f"Could not fetch sessions for feedback: {e}")
@@ -267,7 +268,7 @@ def show():
                     continue
 
                 mentor_email = session.get("users", {}).get("email", "Unknown")
-                date_str = format_datetime_safe(session.get("start"), tz=WAT)
+                date_str = format_datetime_safe(session.get("availability", {}).get("start"), tz=WAT)
 
                 with st.expander(f"Session with {mentor_email} on {date_str}"):
                     rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
