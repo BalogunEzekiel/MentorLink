@@ -295,19 +295,54 @@ def show():
     # --- Analytics Tab ---
     with tabs[4]:
         st.subheader("📊 Platform Insights")
-
+    
         try:
             users = supabase.table("users").select("userid, email, created_at, role, status").execute().data or []
             sessions = supabase.table("session").select("date, rating, mentorid, menteeid").execute().data or []
-            requests = supabase.table("mentorshiprequest").select("status").execute().data or []
+            requests = supabase.table("mentorshiprequest").select("status, createdat, menteeid").execute().data or []
         except Exception as e:
             st.error(f"❌ Failed to load analytics data: {e}")
             return
-
+    
         df_users = pd.DataFrame(users)
         df_sessions = pd.DataFrame(sessions)
         df_requests = pd.DataFrame(requests)
-
+    
+        # --- Date Filters ---
+        st.markdown("### 🗂️ Filter by Month and Year")
+        date_pool = pd.concat([
+            pd.to_datetime(df_users.get("created_at"), errors="coerce"),
+            pd.to_datetime(df_sessions.get("date"), errors="coerce"),
+            pd.to_datetime(df_requests.get("createdat"), errors="coerce")
+        ]).dropna()
+    
+        filter_df = pd.DataFrame({"datetime": date_pool})
+        filter_df["Year"] = filter_df["datetime"].dt.year
+        filter_df["Month"] = filter_df["datetime"].dt.strftime("%B")
+    
+        years = sorted(filter_df["Year"].dropna().unique().tolist())
+        months = filter_df["Month"].dropna().unique().tolist()
+    
+        selected_year = st.selectbox("📅 Select Year", years, index=len(years) - 1)
+        selected_month = st.selectbox("🗓️ Select Month", months)
+    
+        # --- Apply Filters ---
+        if "created_at" in df_users:
+            df_users["created_at"] = pd.to_datetime(df_users["created_at"], errors="coerce")
+            df_users["Year"] = df_users["created_at"].dt.year
+            df_users["Month"] = df_users["created_at"].dt.strftime("%B")
+            df_users = df_users[(df_users["Year"] == selected_year) & (df_users["Month"] == selected_month)]
+    
+        df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
+        df_sessions["Year"] = df_sessions["date"].dt.year
+        df_sessions["Month"] = df_sessions["date"].dt.strftime("%B")
+        df_sessions = df_sessions[(df_sessions["Year"] == selected_year) & (df_sessions["Month"] == selected_month)]
+    
+        df_requests["createdat"] = pd.to_datetime(df_requests["createdat"], errors="coerce")
+        df_requests["Year"] = df_requests["createdat"].dt.year
+        df_requests["Month"] = df_requests["createdat"].dt.strftime("%B")
+        df_requests = df_requests[(df_requests["Year"] == selected_year) & (df_requests["Month"] == selected_month)]
+    
         # --- Metrics ---
         st.markdown("### 📌 Key Metrics")
         col1, col2, col3 = st.columns(3)
