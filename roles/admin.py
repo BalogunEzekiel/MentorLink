@@ -211,10 +211,12 @@ def show():
             mentee_options = ["-- Select Mentee --"] + [m["email"] for m in mentees]
             mentor_options = ["-- Select Mentor --"] + [m["email"] for m in mentors]
     
-            mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select")
-            mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select")
+            with st.form("match_form", clear_on_submit=True):
+                mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select_form")
+                mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select_form")
+                submit_match = st.form_submit_button("✅ Create Match")
     
-            if st.button("✅ Create Match", key="create_match_btn"):
+            if submit_match:
                 if mentee_email == "-- Select Mentee --" or mentor_email == "-- Select Mentor --":
                     st.warning("⚠️ Please select both a valid mentee and mentor.")
                 elif mentee_email == mentor_email:
@@ -253,6 +255,7 @@ def show():
                             else:
                                 st.warning(msg)
     
+                            time.sleep(1)
                             st.rerun()
 
     # Sessions
