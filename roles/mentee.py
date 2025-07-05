@@ -8,12 +8,27 @@ import pytz
 import time
 import uuid
 
-WAT = pytz.timezone("Africa/Lagos")  # West Africa Time
+WAT = pytz.timezone("Africa/Lagos")
 
+# --- Fix applied here ---
 def classify_session(start_time_str, end_time_str):
     now = datetime.now(WAT)
-    start = datetime.fromisoformat(start_time_str).astimezone(WAT)
-    end = datetime.fromisoformat(end_time_str).astimezone(WAT)
+
+    def parse_datetime_safe(dt):
+        if isinstance(dt, datetime):
+            return dt.astimezone(WAT)
+        if isinstance(dt, str):
+            try:
+                return datetime.fromisoformat(dt).astimezone(WAT)
+            except ValueError:
+                pass
+        return None
+
+    start = parse_datetime_safe(start_time_str)
+    end = parse_datetime_safe(end_time_str)
+
+    if not start or not end:
+        return "Invalid", "❌"
 
     if end < now:
         return "Past", "🟥"
@@ -22,6 +37,7 @@ def classify_session(start_time_str, end_time_str):
     else:
         return "Upcoming", "🟩"
 
+# --- Main Show Function ---
 def show():
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state.pop("mentor_request_success_message"))
@@ -38,6 +54,7 @@ def show():
         "✅ Session Feedback"
     ])
 
+    # --- Dashboard Tab ---
     with tabs[0]:
         st.subheader("Welcome to your Mentee Dashboard")
         profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
@@ -59,7 +76,6 @@ def show():
             skills = st.text_area("Skills", value=profile.get("skills", ""))
             goals = st.text_area("Goals", value=profile.get("goals", ""))
             profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
-
             submit_btn = st.form_submit_button("Update Profile")
 
             if submit_btn:
@@ -91,6 +107,7 @@ def show():
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
+    # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
         mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
@@ -152,6 +169,7 @@ def show():
                     else:
                         st.warning("This mentor has no availability yet.")
 
+    # --- My Requests Tab ---
     with tabs[2]:
         st.subheader("Your Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
@@ -166,6 +184,7 @@ def show():
         else:
             st.info("You have not made any mentorship requests yet.")
 
+    # --- My Sessions Tab ---
     with tabs[3]:
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
@@ -206,6 +225,7 @@ def show():
         else:
             st.info("You don’t have any sessions yet.")
 
+    # --- Feedback Tab ---
     with tabs[4]:
         st.subheader("Rate Mentors & Provide Feedback")
         sessions = supabase.table("session") \
