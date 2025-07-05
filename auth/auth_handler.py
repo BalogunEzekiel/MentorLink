@@ -67,12 +67,12 @@ def login():
                     "timezone": "WAT"
                 }).execute()
             except Exception as e:
-                # Optional: Log this error or just pass silently
-                pass
+                pass  # Optional: log the error
 
             # Redirect logic
             if user.get("role") == "Admin":
-                
+                # TODO: Redirect to admin dashboard or perform specific logic
+                pass
             elif user.get("must_change_password"):
                 st.session_state.force_change_password = True
             elif not user.get("profile_completed"):
