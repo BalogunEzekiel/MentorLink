@@ -10,7 +10,6 @@ import uuid
 
 WAT = pytz.timezone("Africa/Lagos")
 
-# --- Fix applied here ---
 def classify_session(start_time_str, end_time_str):
     now = datetime.now(WAT)
 
@@ -29,7 +28,6 @@ def classify_session(start_time_str, end_time_str):
 
     if not start or not end:
         return "Invalid", "❌"
-
     if end < now:
         return "Past", "🟥"
     elif start <= now <= end:
@@ -37,16 +35,17 @@ def classify_session(start_time_str, end_time_str):
     else:
         return "Upcoming", "🟩"
 
-# --- Main Show Function ---
 def show():
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state.pop("mentor_request_success_message"))
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, track bookings, and give feedback.")
+
+    # ✅ Robust session check
     user = st.session_state.get("user")
     user_id = user.get("userid") if user else None
-    
+
     if not user_id:
         st.error("⚠️ User session not found. Please log in again.")
         st.stop()
