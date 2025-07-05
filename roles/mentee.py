@@ -44,7 +44,12 @@ def show():
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, track bookings, and give feedback.")
-    user_id = st.session_state.user["userid"]
+    user = st.session_state.get("user")
+    user_id = user.get("userid") if user else None
+    
+    if not user_id:
+        st.error("⚠️ User session not found. Please log in again.")
+        st.stop()
 
     tabs = st.tabs([
         "🏠 Dashboard",
