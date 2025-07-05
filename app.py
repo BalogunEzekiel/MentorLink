@@ -27,34 +27,42 @@ st.markdown("""
         src: local("Script MT Bold");
     }
 
-    /* Main block container full width for header clarity */
-    .main .block-container {
-        max-width: 100% !important;
-        padding-left: 1rem;
-        padding-right: 1rem;
+    /* Make the header fixed at the top */
+    .custom-header-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+        background-color: white;
+        padding: 0.5rem 1rem;
+        border-bottom: 2px solid #ccc;
     }
 
     .custom-header {
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 80px;
+        font-size: 60px;
         color: #4B8BBE;
         font-weight: bold;
         text-align: center;
-        margin-bottom: 0.1rem;
-        margin-top: -3.2rem;
-        line-height: 1.1;
-        white-space: normal;
+        margin: 0;
+        line-height: 1.2;
         word-wrap: break-word;
     }
 
-    /* Fix for Streamlit's default spacing */
+    /* Push the body content down to avoid overlapping with fixed header */
+    .main .block-container {
+        padding-top: 6.5rem !important;
+    }
+
     header[data-testid="stHeader"] {
-        background-color: white;
+        background-color: transparent;
     }
     </style>
 
-    <div class='custom-header'>MentorLink</div>
-    <hr style='margin: 0.2rem 0 0.5rem 0;'>
+    <div class='custom-header-container'>
+        <div class='custom-header'>MentorLink</div>
+    </div>
 """, unsafe_allow_html=True)
 
 # ✅ Setup and initialize
