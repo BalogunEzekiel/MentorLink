@@ -297,8 +297,8 @@ def show():
         st.markdown(
             "<h2 style='text-align: center;'>📊 Platform Insights</h2>",
             unsafe_allow_html=True
-        ) 
-
+        )
+    
         try:
             users = supabase.table("users").select("userid, email, created_at, role, status").execute().data or []
             sessions = supabase.table("session").select("date, rating, mentorid, menteeid").execute().data or []
@@ -328,27 +328,61 @@ def show():
         years = sorted(filter_df["Year"].dropna().unique().tolist())
         months = filter_df["Month"].dropna().unique().tolist()
     
-        selected_year = st.selectbox("📅 Select Year", years, index=len(years) - 1)
-        selected_month = st.selectbox("🗓️ Select Month", months)
+        years_with_all = ["All"] + years
+        months_with_all = ["All"] + months
+    
+        selected_year = st.selectbox("📅 Select Year", years_with_all, index=len(years_with_all) - 1)
+        selected_month = st.selectbox("🗓️ Select Month", months_with_all)
     
         # --- Apply Filters ---
-        df_users["created_at"] = pd.to_datetime(df_users["created_at"], errors="coerce")
-        df_users = df_users.dropna(subset=["created_at"])
-        df_users["Year"] = df_users["created_at"].dt.year
-        df_users["Month"] = df_users["created_at"].dt.strftime("%B")
-        df_users = df_users[(df_users["Year"] == selected_year) & (df_users["Month"] == selected_month)]
+        for df, date_col in [(df_users, "created_at"), (df_sessions, "date"), (df_requests, "createdat")]:
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+            df.dropna(subset=[date_col], inplace=True)
+            df["Year"] = df[date_col].dt.year
+            df["Month"] = df[date_col].dt.strftime("%B")
     
-        df_sessions["date"] = pd.to_datetime(df_sessions["date"], errors="coerce")
-        df_sessions = df_sessions.dropna(subset=["date"])
-        df_sessions["Year"] = df_sessions["date"].dt.year
-        df_sessions["Month"] = df_sessions["date"].dt.strftime("%B")
-        df_sessions = df_sessions[(df_sessions["Year"] == selected_year) & (df_sessions["Month"] == selected_month)]
+        if selected_year != "All":
+            df_users = df_users[df_users["Year"] == selected_year]
+            df_sessions = df_sessions[df_sessions["Year"] == selected_year]
+            df_requests = df_requests[df_requests["Year"] == selected_year]
     
-        df_requests["createdat"] = pd.to_datetime(df_requests["createdat"], errors="coerce")
-        df_requests = df_requests.dropna(subset=["createdat"])
-        df_requests["Year"] = df_requests["createdat"].dt.year
-        df_requests["Month"] = df_requests["createdat"].dt.strftime("%B")
-        df_requests = df_requests[(df_requests["Year"] == selected_year) & (df_requests["Month"] == selected_month)]
+        if selected_month != "All":
+            df_users = df_users[df_users["Month"] == selected_month]
+            df_sessions = df_sessions[df_sessions["Month"] == selected_month]
+            df_requests = df_requests[df_requests["Month"] == selected_month]
+    
+        # --- Mentor & Mentee Filters ---
+        mentor_options = df_users[df_users["role"] == "Mentor"]["email"].dropna().unique().tolist()
+        mentee_options = df_users[df_users["role"] == "Mentee"]["email"].dropna().unique().tolist()
+    
+        selected_mentor_email = st.selectbox("👨‍🏫 Filter by Mentor", ["All"] + mentor_options)
+        selected_mentee_email = st.selectbox("🧑‍🎓 Filter by Mentee", ["All"] + mentee_options)
+    
+        mentor_lookup = df_users[df_users["role"] == "Mentor"][["userid", "email"]]
+        mentee_lookup = df_users[df_users["role"] == "Mentee"]["userid"].to_frame().merge(df_users, on="userid")
+    
+        df_sessions_merged = df_sessions.copy()
+        df_sessions_merged = df_sessions_merged.merge(mentor_lookup, left_on="mentorid", right_on="userid", how="left", suffixes=("", "_mentor"))
+        df_sessions_merged = df_sessions_merged.merge(mentee_lookup[["userid", "email"]], left_on="menteeid", right_on="userid", how="left", suffixes=("", "_mentee"))
+    
+        if selected_mentor_email != "All":
+            df_sessions_merged = df_sessions_merged[df_sessions_merged["email"] == selected_mentor_email]
+    
+        if selected_mentee_email != "All":
+            df_sessions_merged = df_sessions_merged[df_sessions_merged["email_mentee"] == selected_mentee_email]
+    
+        # View filtered sessions
+        st.markdown("### ⭐ Filtered Sessions View")
+        st.dataframe(df_sessions_merged, use_container_width=True)
+    
+        # Note: Replace all references to df_sessions with df_sessions_merged from here onward
+    
+        # Example:
+        # df_sessions = df_sessions_merged
+    
+        # Continue with metrics, charts, etc.
+        # Your downstream logic and visualizations continue here as normal using the filtered data.
+
     
         # --- Metrics ---
         st.markdown("### 📌 Key Metrics")
@@ -358,7 +392,7 @@ def show():
         col3.metric("🧑 Mentees", len(df_users[df_users.role == "Mentee"]))
     
         col4, col5 = st.columns(2)
-        col4.metric("📅 Total Sessions", len(df_sessions))
+        col4.metric("📅 Total Sessions", len(df_sessions_merged))
         col5.metric("📩 Total Requests", len(df_requests))
     
         # --- Users Over Time ---
@@ -372,8 +406,8 @@ def show():
     
         # --- Sessions Trend ---
         st.markdown("### 📆 Sessions Trend")
-        df_sessions["Month"] = df_sessions["date"].dt.to_period("M").astype(str)
-        monthly_sessions = df_sessions.groupby("Month").size().reset_index(name="Sessions")
+        df_sessions_merged["Month"] = df_sessions_merged["date"].dt.to_period("M").astype(str)
+        monthly_sessions = df_sessions_merged.groupby("Month").size().reset_index(name="Sessions")
         fig2 = px.line(monthly_sessions, x="Month", y="Sessions", markers=True, title="Monthly Sessions")
         st.plotly_chart(fig2, use_container_width=True)
     
@@ -478,8 +512,8 @@ def show():
         # --- Session Completion and Feedback ---
         st.markdown("### 📅 Session Completion and Feedback")
         now = datetime.now(WAT).replace(tzinfo=None)
-        completed_sessions = df_sessions[df_sessions["date"] < now]
-        completion_rate = (len(completed_sessions) / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
+        completed_sessions = df_sessions_merged[df_sessions_merged["date"] < now]
+        completion_rate = (len(completed_sessions) / len(df_sessions_merged) * 100) if len(df_sessions_merged) > 0 else 0
         col1, col2 = st.columns(2)
         col1.metric("📅 Completed Sessions", len(completed_sessions))
         col2.metric("⭐ Feedback Rate", f"{feedback_rate:.1f}%")
