@@ -6,6 +6,7 @@ from emailer import send_email
 from datetime import datetime, timedelta
 import pytz
 import time
+import uuid
 
 WAT = pytz.timezone("Africa/Lagos")  # West Africa Time
 
@@ -66,10 +67,24 @@ def show():
                 }
 
                 if profile_image:
-                    # You might want to upload the file somewhere. 
-                    # For now, generate avatar url based on name
-                    avatar_url = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
-                    update_data["profile_image_url"] = avatar_url
+                    # Generate a unique filename
+                    file_extension = profile_image.name.split(".")[-1]
+                    file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
+                
+                    # Upload to Supabase Storage (bucket: profilepics)
+                    upload_response = supabase.storage.from_("profilepics").upload(
+                        path=file_name,
+                        file=profile_image,
+                        file_options={"content-type": profile_image.type, "upsert": True}
+                    )
+                
+                    if upload_response.status_code == 200:
+                        # Get the public URL of the uploaded image
+                        public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
+                        update_data["profile_image_url"] = public_url
+                    else:
+                        st.warning("❗ Image upload failed. Using default avatar.")
+                        update_data["profile_image_url"] = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
 
                 supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
                 st.success("✅ Profile updated successfully!")
