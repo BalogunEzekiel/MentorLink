@@ -195,6 +195,7 @@ def show():
     # Match Mentees to Mentors
     with tabs[2]:
         st.subheader("Match Mentee to Mentor")
+    
         try:
             users = supabase.table("users").select("userid, email, role, status") \
                 .neq("status", "Delete").execute().data or []
@@ -213,57 +214,46 @@ def show():
             mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select")
             mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select")
     
-            if st.button("Create Match"):
+            if st.button("✅ Create Match", key="create_match_btn"):
                 if mentee_email == "-- Select Mentee --" or mentor_email == "-- Select Mentor --":
                     st.warning("⚠️ Please select both a valid mentee and mentor.")
+                elif mentee_email == mentor_email:
+                    st.warning("Mentee and Mentor cannot be the same.")
                 else:
-                    st.session_state["selected_mentee_email"] = mentee_email
-                    st.session_state["selected_mentor_email"] = mentor_email
-                    st.success(f"✅ Mentee: {mentee_email}, Mentor: {mentor_email} are matched.")
-                    time.sleep(1)
-                    st.rerun()
+                    mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
+                    mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
     
-            if "selected_mentee_email" in st.session_state and "selected_mentor_email" in st.session_state:
-                if st.button("Create Match"):
-                    mentee_email = st.session_state["selected_mentee_email"]
-                    mentor_email = st.session_state["selected_mentor_email"]
+                    existing = supabase.table("mentorshiprequest") \
+                        .select("mentorshiprequestid") \
+                        .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
+                        .execute().data
     
-                    if mentee_email == mentor_email:
-                        st.warning("Mentee and Mentor cannot be the same.")
+                    if existing:
+                        st.warning("⚠️ This mentorship request already exists.")
                     else:
-                        mentee_id = next((m["userid"] for m in mentees if m["email"] == mentee_email), None)
-                        mentor_id = next((m["userid"] for m in mentors if m["email"] == mentor_email), None)
+                        availability = supabase.table("availability") \
+                            .select("availabilityid") \
+                            .eq("mentorid", mentor_id).execute().data
     
-                        existing = supabase.table("mentorshiprequest") \
-                            .select("mentorshiprequestid") \
-                            .eq("menteeid", mentee_id).eq("mentorid", mentor_id) \
-                            .execute().data
-    
-                        if existing:
-                            st.warning("⚠️ This mentorship request already exists.")
+                        if not availability:
+                            st.warning("⚠️ This mentor has no availability slots set.")
                         else:
-                            availability = supabase.table("availability") \
-                                .select("availabilityid") \
-                                .eq("mentorid", mentor_id).execute().data
+                            supabase.table("mentorshiprequest").insert({
+                                "menteeid": mentee_id,
+                                "mentorid": mentor_id,
+                                "status": "ACCEPTED"
+                            }).execute()
     
-                            if not availability:
-                                st.warning("⚠️ This mentor has no availability slots set.")
+                            now = datetime.now(tz=WAT)
+                            end = now + timedelta(minutes=30)
+                            success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
+    
+                            if success:
+                                st.success("✅ Match created and session booked!")
                             else:
-                                supabase.table("mentorshiprequest").insert({
-                                    "menteeid": mentee_id,
-                                    "mentorid": mentor_id,
-                                    "status": "ACCEPTED"
-                                }).execute()
+                                st.warning(msg)
     
-                                now = datetime.now(tz=WAT)
-                                end = now + timedelta(minutes=30)
-                                success, msg = create_session_if_available(supabase, mentor_id, mentee_id, now, end)
-    
-                                if success:
-                                    st.success("✅ Match created and session booked!")
-                                else:
-                                    st.warning(msg)
-                                st.rerun()
+                            st.rerun()
 
     # Sessions
     with tabs[3]:
@@ -538,3 +528,4 @@ def show():
                 st.info("No mentorship request data available for trend analysis.")
         except Exception as e:
             st.error(f"Error fetching mentorship request trends: {e}")
+        `
