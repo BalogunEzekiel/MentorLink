@@ -255,8 +255,8 @@ def show():
                             else:
                                 st.warning(msg)
     
-                        time.sleep(1)
-                        st.rerun()
+                    time.sleep(1)
+                    st.rerun()
 
     # Sessions
     with tabs[3]:
