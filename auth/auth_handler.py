@@ -72,7 +72,7 @@ def login():
 
             # Redirect logic
             if user.get("role") == "Admin":
-                st.success("Welcome Admin! Redirecting...")
+                
             elif user.get("must_change_password"):
                 st.session_state.force_change_password = True
             elif not user.get("profile_completed"):
