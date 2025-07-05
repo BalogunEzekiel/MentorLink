@@ -184,8 +184,8 @@ def show():
                                 }).execute()
                                 st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
                                 st.rerun()
-                    else:
-                        st.warning("This mentor has no availability yet.")
+                            else:
+                                st.warning("This mentor has no availability yet.")
 
     # --- My Requests Tab ---
     with tabs[2]:
