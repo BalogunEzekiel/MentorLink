@@ -329,7 +329,7 @@ def show():
         selected_year = st.selectbox("📅 Select Year", years_with_all, index=len(years_with_all) - 1)
         selected_month = st.selectbox("🗓️ Select Month", months_with_all)
     
-        # --- Apply Filters ---
+        # --- Apply Date Filters ---
         for df, date_col in [(df_users, "created_at"), (df_sessions, "date"), (df_requests, "createdat")]:
             df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
             df.dropna(subset=[date_col], inplace=True)
@@ -346,37 +346,47 @@ def show():
             df_sessions = df_sessions[df_sessions["Month"] == selected_month]
             df_requests = df_requests[df_requests["Month"] == selected_month]
     
-        # --- Mentor & Mentee Filters ---
-        mentor_options = df_users[df_users["role"] == "Mentor"]["email"].dropna().unique().tolist()
-        mentee_options = df_users[df_users["role"] == "Mentee"]["email"].dropna().unique().tolist()
-    
-        selected_mentor_email = st.selectbox("👨‍🏫 Filter by Mentor", ["All"] + mentor_options)
-        selected_mentee_email = st.selectbox("🧑‍🎓 Filter by Mentee", ["All"] + mentee_options)
+        # --- Filter by Role (radio) ---
+        st.markdown("### 🧑‍💼 Filter Sessions By Role")
+        role_filter = st.radio("Filter By:", ["All", "Mentor", "Mentee"], horizontal=True)
     
         mentor_lookup = df_users[df_users["role"] == "Mentor"][["userid", "email"]]
         mentee_lookup = df_users[df_users["role"] == "Mentee"]["userid"].to_frame().merge(df_users, on="userid")
     
         df_sessions_merged = df_sessions.copy()
-        df_sessions_merged = df_sessions_merged.merge(mentor_lookup, left_on="mentorid", right_on="userid", how="left", suffixes=("", "_mentor"))
-        df_sessions_merged = df_sessions_merged.merge(mentee_lookup[["userid", "email"]], left_on="menteeid", right_on="userid", how="left", suffixes=("", "_mentee"))
+        df_sessions_merged = df_sessions_merged.merge(
+            mentor_lookup,
+            left_on="mentorid",
+            right_on="userid",
+            how="left",
+            suffixes=("", "_mentor")
+        )
+        df_sessions_merged = df_sessions_merged.merge(
+            mentee_lookup[["userid", "email"]],
+            left_on="menteeid",
+            right_on="userid",
+            how="left",
+            suffixes=("", "_mentee")
+        )
     
-        if selected_mentor_email != "All":
-            df_sessions_merged = df_sessions_merged[df_sessions_merged["email"] == selected_mentor_email]
+        if role_filter == "Mentor":
+            mentor_emails = mentor_lookup["email"].dropna().unique().tolist()
+            selected_mentor_email = st.selectbox("👨‍🏫 Select Mentor", ["All"] + mentor_emails)
+            if selected_mentor_email != "All":
+                df_sessions_merged = df_sessions_merged[df_sessions_merged["email"] == selected_mentor_email]
     
-        if selected_mentee_email != "All":
-            df_sessions_merged = df_sessions_merged[df_sessions_merged["email_mentee"] == selected_mentee_email]
+        elif role_filter == "Mentee":
+            mentee_emails = mentee_lookup["email"].dropna().unique().tolist()
+            selected_mentee_email = st.selectbox("🧑‍🎓 Select Mentee", ["All"] + mentee_emails)
+            if selected_mentee_email != "All":
+                df_sessions_merged = df_sessions_merged[df_sessions_merged["email_mentee"] == selected_mentee_email]
     
         # View filtered sessions
         st.markdown("### ⭐ Filtered Sessions View")
         st.dataframe(df_sessions_merged, use_container_width=True)
     
-        # Note: Replace all references to df_sessions with df_sessions_merged from here onward
-    
-        # Example:
-        # df_sessions = df_sessions_merged
-    
-        # Continue with metrics, charts, etc.
-        # Your downstream logic and visualizations continue here as normal using the filtered data.
+        # Continue with downstream metrics and charts using df_sessions_merged
+        # (Leave the rest of your existing code unchanged, just make sure df_sessions_merged is used instead of df_sessions)
 
     
         # --- Metrics ---
