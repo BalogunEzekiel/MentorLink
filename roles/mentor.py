@@ -71,6 +71,36 @@ def show():
                 st.success("✅ Profile updated successfully!")
                 st.rerun()
 
+    # --- My Sessions ---
+    with tabs[3]:
+        st.subheader("Your Mentorship Sessions")
+        sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
+            .eq("mentorid", mentor_id).execute().data or []
+
+        if sessions:
+            for s in sessions:
+                mentee_email = s.get("users", {}).get("email", "Unknown")
+                session_date = format_datetime_safe(s.get("date"), tz=WAT)
+                meet_link = s.get("meet_link", "#")
+
+                st.markdown(f"""
+                #### With: {mentee_email}
+                - 📅 Date: {session_date}
+                - 🔗 [Join Meet]({meet_link})
+                """)
+
+                if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
+                    if send_email(
+                        to_email=mentee_email,
+                        subject="📅 Mentorship Session Reminder",
+                        body=f"This is a reminder for your session scheduled on {session_date}.\n\nJoin via Meet: {meet_link}"
+                    ):
+                        st.success("Reminder email sent!")
+                    else:
+                        st.error("Failed to send reminder.")
+        else:
+            st.info("No sessions yet.")
+
     # --- Add Availability ---
     with tabs[1]:
         st.subheader("Add Availability Slot")
@@ -135,13 +165,16 @@ def show():
                 mentee_id = mentee.get("userid")
                 req_id = req["mentorshiprequestid"]
 
+                # Fetch mentee profile details
                 mentee_profile_data = supabase.table("profile").select("*").eq("userid", mentee_id).execute().data
                 mentee_profile = mentee_profile_data[0] if mentee_profile_data else {}
 
                 with st.expander(f"Request from {mentee_email}"):
+                    # Show profile picture if available
                     if mentee_profile.get("profile_image_url"):
                         st.image(mentee_profile["profile_image_url"], width=100)
 
+                    # Show other profile info
                     st.markdown(f"""
                     **Name:** {mentee_profile.get("name", "N/A")}  
                     **Bio:** {mentee_profile.get("bio", "N/A")}  
@@ -172,33 +205,3 @@ def show():
                             .eq("mentorshiprequestid", req_id).execute()
                         st.info("Request rejected.")
                         st.rerun()
-
-    # --- Sessions ---
-    with tabs[3]:
-        st.subheader("Your Mentorship Sessions")
-        sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
-            .eq("mentorid", mentor_id).execute().data or []
-
-        if sessions:
-            for s in sessions:
-                mentee_email = s.get("users", {}).get("email", "Unknown")
-                session_date = format_datetime_safe(s.get("date"), tz=WAT)
-                meet_link = s.get("meet_link", "#")
-
-                st.markdown(f"""
-                #### With: {mentee_email}
-                - 📅 Date: {session_date}
-                - 🔗 [Join Meet]({meet_link})
-                """)
-
-                if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
-                    if send_email(
-                        to_email=mentee_email,
-                        subject="📅 Mentorship Session Reminder",
-                        body=f"This is a reminder for your session scheduled on {session_date}.\n\nJoin via Meet: {meet_link}"
-                    ):
-                        st.success("Reminder email sent!")
-                    else:
-                        st.error("Failed to send reminder.")
-        else:
-            st.info("No sessions yet.")
