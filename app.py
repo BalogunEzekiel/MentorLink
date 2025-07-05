@@ -26,6 +26,14 @@ st.markdown("""
         font-family: 'ScriptMTBold';
         src: local("Script MT Bold");
     }
+
+    /* Main block container full width for header clarity */
+    .main .block-container {
+        max-width: 100% !important;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
     .custom-header {
         font-family: 'ScriptMTBold', cursive, serif;
         font-size: 80px;
@@ -34,11 +42,17 @@ st.markdown("""
         text-align: center;
         margin-bottom: 0.1rem;
         margin-top: -1rem;
+        line-height: 1.1;
+        white-space: normal;
+        word-wrap: break-word;
     }
-    .block-container {
-        padding-top: 0.5rem !important;
+
+    /* Fix for Streamlit's default spacing */
+    header[data-testid="stHeader"] {
+        background-color: white;
     }
     </style>
+
     <div class='custom-header'>MentorLink</div>
     <hr style='margin: 0.2rem 0 0.5rem 0;'>
 """, unsafe_allow_html=True)
