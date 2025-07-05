@@ -44,7 +44,7 @@ def show():
 
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, track bookings, and give feedback.")
-    user_id = st.session_state.user["userid"]
+    userid = st.session_state.user["userid"]
 
     tabs = st.tabs([
         "🏠 Dashboard",
@@ -57,10 +57,10 @@ def show():
     # --- Dashboard Tab ---
     with tabs[0]:
         st.subheader("Welcome to your Mentee Dashboard")
-        profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
+        profile_data = supabase.table("profile").select("*").eq("userid", userid).execute().data
         profile = profile_data[0] if profile_data else {}
-        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
-        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
+        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", userid).execute().data or []
+        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", userid).execute().data or []
 
         st.markdown("### 📊 Summary")
         st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
@@ -80,7 +80,7 @@ def show():
 
             if submit_btn:
                 update_data = {
-                    "userid": user_id,
+                    "userid": userid,
                     "name": name,
                     "bio": bio,
                     "skills": skills,
@@ -89,7 +89,7 @@ def show():
 
                 if profile_image:
                     file_extension = profile_image.name.split(".")[-1]
-                    file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
+                    file_name = f"{userid}_{uuid.uuid4()}.{file_extension}"
                     try:
                         file_bytes = profile_image.getvalue()
                         supabase.storage.from_("profilepics").upload(
@@ -151,7 +151,7 @@ def show():
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             existing = supabase.table("mentorshiprequest") \
                                 .select("mentorshiprequestid", "status") \
-                                .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
+                                .eq("menteeid", userid).eq("mentorid", mentor["userid"]) \
                                 .in_("status", ["PENDING", "ACCEPTED"]).execute().data
 
                             if existing:
@@ -161,7 +161,7 @@ def show():
                             else:
                                 supabase.table("mentorshiprequest").insert({
                                     "mentorid": mentor["userid"],
-                                    "menteeid": user_id,
+                                    "menteeid": userid,
                                     "status": "PENDING"
                                 }).execute()
                                 st.session_state["mentor_request_success_message"] = f"✅ Request sent to {mentor['email']}!"
@@ -174,7 +174,7 @@ def show():
         st.subheader("Your Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
             .select("*, users!mentorshiprequest_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).neq("status", "ACCEPTED").execute().data or []
+            .eq("menteeid", userid).neq("status", "ACCEPTED").execute().data or []
 
         if requests:
             for req in requests:
@@ -189,7 +189,7 @@ def show():
         st.subheader("Your Mentorship Sessions")
         sessions = supabase.table("session") \
             .select("*, users!session_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
+            .eq("menteeid", userid).execute().data or []
 
         if sessions:
             for s in sessions:
@@ -230,7 +230,7 @@ def show():
         st.subheader("Rate Mentors & Provide Feedback")
         sessions = supabase.table("session") \
             .select("sessionid, start, end, rating, feedback, users!session_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
+            .eq("menteeid", userid).execute().data or []
 
         if not sessions:
             st.info("No sessions to give feedback for.")
