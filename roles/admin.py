@@ -213,7 +213,7 @@ def show():
             mentee_email = st.selectbox("Mentee Email", mentee_options, index=0, key="mentee_select")
             mentor_email = st.selectbox("Mentor Email", mentor_options, index=0, key="mentor_select")
     
-            if st.button("Submit Selection"):
+            if st.button("Create Match"):
                 if mentee_email == "-- Select Mentee --" or mentor_email == "-- Select Mentor --":
                     st.warning("⚠️ Please select both a valid mentee and mentor.")
                 else:
