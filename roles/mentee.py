@@ -208,7 +208,7 @@ def show():
         st.subheader("Your Mentorship Sessions")
         try:
             sessions = supabase.table("session") \
-                .select("sessionid, rating, feedback, meet_link, availability:availabilityid(start, end), users!session_mentorid_fkey(email)") \
+                .select("sessionid, rating, feedback, meet_link, availability:availabilityid(start, end), users!session_menteeid_fkey(email)") \
                 .eq("menteeid", user_id).execute().data or []
         except Exception as e:
             st.error(f"Could not fetch sessions: {e}")
@@ -224,8 +224,8 @@ def show():
                 feedback = s.get("feedback", "Not submitted")
                 meet_link = s.get("meet_link", "#")
                 status, emoji = classify_session(start_str, end_str)
-                start_fmt = format_datetime_safe(start_str, tz=WAT)
-                end_fmt = format_datetime_safe(end_str, tz=WAT)
+                start_fmt = format_datetime_safe(start_str, tz=WAT) if start_str else "N/A"
+                end_fmt = format_datetime_safe(end_str, tz=WAT) if end_str else "N/A"
 
                 st.markdown(f"""
                     ### {emoji} {status} Session
@@ -268,7 +268,9 @@ def show():
                     continue
 
                 mentor_email = session.get("users", {}).get("email", "Unknown")
-                date_str = format_datetime_safe(session.get("availability", {}).get("start"), tz=WAT)
+                availability = session.get("availability")
+                start_str = availability.get("start") if availability else None
+                date_str = format_datetime_safe(start_str, tz=WAT) if start_str else "Unavailable"
 
                 with st.expander(f"Session with {mentor_email} on {date_str}"):
                     rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
