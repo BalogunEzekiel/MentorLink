@@ -220,6 +220,8 @@ def show():
                     st.session_state["selected_mentee_email"] = mentee_email
                     st.session_state["selected_mentor_email"] = mentor_email
                     st.success(f"✅ Mentee: {mentee_email}, Mentor: {mentor_email} are matched.")
+                    time.sleep(1)
+                    st.rerun()
     
             if "selected_mentee_email" in st.session_state and "selected_mentor_email" in st.session_state:
                 if st.button("Create Match"):
