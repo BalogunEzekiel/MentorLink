@@ -67,19 +67,21 @@ def show():
                 }
 
                 if profile_image:
-                    # Generate a unique filename
                     file_extension = profile_image.name.split(".")[-1]
                     file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
                 
-                    # Upload to Supabase Storage (bucket: profilepics)
+                    # ✅ Read file content as bytes
+                    file_bytes = profile_image.getvalue()
+                
+                    # ✅ Upload to Supabase Storage
                     upload_response = supabase.storage.from_("profilepics").upload(
                         path=file_name,
-                        file=profile_image,
-                        file_options={"content-type": profile_image.type, "upsert": True}
+                        file=file_bytes,
+                        file_options={"content-type": profile_image.type, "x-upsert": "true"}
                     )
                 
                     if upload_response.status_code == 200:
-                        # Get the public URL of the uploaded image
+                        # ✅ Get public URL
                         public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
                         update_data["profile_image_url"] = public_url
                     else:
