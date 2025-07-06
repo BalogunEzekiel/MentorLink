@@ -70,7 +70,7 @@ st.markdown("""
 
     <div class='custom-header-container'>
         <div class='custom-header'>
-            <img src="https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//mentorlink_logo1.png" alt="MentorLink Logo">
+            <img src="https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//logo%20(1).png" alt="MentorLink Logo">
             MentorLink
         </div>
     </div>
