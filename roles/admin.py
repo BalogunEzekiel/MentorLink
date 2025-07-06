@@ -272,28 +272,32 @@ def show():
             sessions = []
     
         if sessions:
-            session_df = pd.DataFrame(sessions)
-    
-            # Button to delete all sessions
+            # Delete All Button
             if st.button("🚨 Delete ALL Sessions", type="primary"):
-                confirm = st.warning("⚠️ Are you sure you want to delete ALL sessions? This action cannot be undone.", icon="⚠️")
-                if st.button("✅ Confirm Delete All"):
+                st.warning("⚠️ Are you sure you want to delete ALL sessions? This cannot be undone.")
+                if st.button("✅ Confirm Delete All", key="confirm_delete_all"):
                     try:
-                        for s in session_df["id"]:
-                            supabase.table("session").delete().eq("id", s).execute()
+                        for s in sessions:
+                            supabase.table("session").delete().eq("id", s["id"]).execute()
                         st.success("✅ All sessions deleted successfully.")
                         st.experimental_rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to delete all sessions: {e}")
     
+            # Show each session
             st.markdown("### 📋 Individual Session Controls")
-            for index, s in session_df.iterrows():
-                with st.expander(f"Session: {s['id']} - {s['mentor']['email']} ↔ {s['mentee']['email']}"):
+            for s in sessions:
+                mentor_email = s.get("mentor", {}).get("email", "N/A")
+                mentee_email = s.get("mentee", {}).get("email", "N/A")
+                start_time = s.get("date")
+                status = session_status_label(start_time)
+    
+                with st.expander(f"Session: {s.get('id')} - {mentor_email} ↔ {mentee_email}"):
                     st.markdown(f"""
-                    - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
-                    - 🧑 Mentee: **{s['mentee']['email']}**  
-                    - 📅 Start Time: {format_datetime_safe(s.get('date'))}  
-                    - 🕒 Status: {session_status_label(s.get('date'))}  
+                    - 🧑‍🏫 Mentor: **{mentor_email}**  
+                    - 🧑 Mentee: **{mentee_email}**  
+                    - 📅 Start Time: {format_datetime_safe(start_time)}  
+                    - 🕒 Status: {status}  
                     - ⭐ Rating: {s.get('rating', 'Not rated')}  
                     - 💬 Feedback: {s.get('feedback', 'No feedback')}  
                     - 🔗 [Join Meet]({s.get('meet_link', '#')})
