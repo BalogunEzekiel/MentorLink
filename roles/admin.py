@@ -198,15 +198,15 @@ def show():
     #         st.error(f"❌ Failed to delete session: {e}")
 
 # The rest of your admin.py remains unchanged...
-    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
+    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"delete_{s['sessionid']}"):
         try:
             # 🚨 CASCADE DELETE LOGIC 🚨
-            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
-            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
-            supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
-            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
+            supabase.table("feedback").delete().eq("sessionid", s['sessionid']).execute()
+            supabase.table("activitylog").delete().eq("sessionid", s['sessionid']).execute()
+            supabase.table("mentorshiprequest").delete().eq("sessionid", s['sessionid']).execute()
+            supabase.table("session").delete().eq("sessionid", s['sessionid']).execute()
     
-            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
+            st.success(f"✅ Session {s['sessionid']} and related records deleted successfully.")
             st.rerun()
         except Exception as e:
             st.error(f"❌ Failed to delete session: {e}")
