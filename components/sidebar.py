@@ -46,7 +46,7 @@ def sidebar():
         st.info("_...unlocking success through purposeful mentorship connections._")
 
         st.markdown("### 📞 Contact Us")
-        st.markdown("[💬 Chat with Support](https://wa.me/2348062529172)")
+        st.markdown("[💬 Chat with Support Team](https://wa.me/2348062529172)")
 
         st.markdown("---")
 
