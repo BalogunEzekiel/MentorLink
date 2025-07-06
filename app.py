@@ -35,7 +35,7 @@ st.markdown("""
         width: 100%;
         z-index: 9999;
         background-color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.3rem 1rem;
         border-bottom: 2px solid #ccc;
     }
 
@@ -55,12 +55,12 @@ st.markdown("""
 
     .custom-header img {
         height: 150px;
-        margin-top: -8px;
+        margin-top: -5px;
     }
 
     /* Push content down */
     .main .block-container {
-        padding-top: 6.5rem !important;
+        padding-top: 5.5rem !important;
     }
 
     header[data-testid="stHeader"] {
