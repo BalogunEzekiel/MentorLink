@@ -260,63 +260,63 @@ def show():
 
     # Sessions
     with tabs[3]:
-    st.subheader("🔍 Admin Session Management")
-
-    try:
-        sessions = supabase.table("session").select("""
-            sessionid, date, rating, feedback, meet_link,
-            mentor:users!session_mentorid_fkey(email),
-            mentee:users!session_menteeid_fkey(email)
-        """).execute().data or []
-    except Exception as e:
-        st.error(f"❌ Could not fetch sessions: {e}")
-        sessions = []
-
-    if sessions:
-        # --- Prepare and flatten sessions data ---
-        now = datetime.now(WAT).replace(tzinfo=None)
-        processed_sessions = []
-        for s in sessions:
-            session_time = pd.to_datetime(s.get("date"), errors="coerce")
-            if session_time < now:
-                status = "Past"
-            elif session_time > now:
-                status = "Upcoming"
-            else:
-                status = "Ongoing"
-
-            processed_sessions.append({
-                "Session ID": s.get("sessionid"),
-                "Mentor Email": s.get("mentor", {}).get("email", "N/A"),
-                "Mentee Email": s.get("mentee", {}).get("email", "N/A"),
-                "Date": session_time,
-                "Rating": s.get("rating", "Not Rated"),
-                "Feedback": s.get("feedback", "No Feedback"),
-                "Meet Link": s.get("meet_link", "#"),
-                "Status": status
-            })
-
-        df_sessions = pd.DataFrame(processed_sessions)
-
-        # --- Search by Email ---
-        search_email = st.text_input("🔎 Search Mentor or Mentee Email").strip().lower()
-        if search_email:
-            df_sessions = df_sessions[
-                df_sessions["Mentor Email"].str.lower().str.contains(search_email) |
-                df_sessions["Mentee Email"].str.lower().str.contains(search_email)
-            ]
-
-        # --- Filter by Session Status ---
-        session_statuses = ["All", "Upcoming", "Ongoing", "Past"]
-        selected_status = st.selectbox("📂 Filter by Session Status", session_statuses)
-
-        if selected_status != "All":
-            df_sessions = df_sessions[df_sessions["Status"] == selected_status]
-
-        # --- Display Spreadsheet View ---
-        st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
-    else:
-        st.warning("No sessions found.")
+        st.subheader("🔍 Admin Session Management")
+    
+        try:
+            sessions = supabase.table("session").select("""
+                sessionid, date, rating, feedback, meet_link,
+                mentor:users!session_mentorid_fkey(email),
+                mentee:users!session_menteeid_fkey(email)
+            """).execute().data or []
+        except Exception as e:
+            st.error(f"❌ Could not fetch sessions: {e}")
+            sessions = []
+    
+        if sessions:
+            # --- Prepare and flatten sessions data ---
+            now = datetime.now(WAT).replace(tzinfo=None)
+            processed_sessions = []
+            for s in sessions:
+                session_time = pd.to_datetime(s.get("date"), errors="coerce")
+                if session_time < now:
+                    status = "Past"
+                elif session_time > now:
+                    status = "Upcoming"
+                else:
+                    status = "Ongoing"
+    
+                processed_sessions.append({
+                    "Session ID": s.get("sessionid"),
+                    "Mentor Email": s.get("mentor", {}).get("email", "N/A"),
+                    "Mentee Email": s.get("mentee", {}).get("email", "N/A"),
+                    "Date": session_time,
+                    "Rating": s.get("rating", "Not Rated"),
+                    "Feedback": s.get("feedback", "No Feedback"),
+                    "Meet Link": s.get("meet_link", "#"),
+                    "Status": status
+                })
+    
+            df_sessions = pd.DataFrame(processed_sessions)
+    
+            # --- Search by Email ---
+            search_email = st.text_input("🔎 Search Mentor or Mentee Email").strip().lower()
+            if search_email:
+                df_sessions = df_sessions[
+                    df_sessions["Mentor Email"].str.lower().str.contains(search_email) |
+                    df_sessions["Mentee Email"].str.lower().str.contains(search_email)
+                ]
+    
+            # --- Filter by Session Status ---
+            session_statuses = ["All", "Upcoming", "Ongoing", "Past"]
+            selected_status = st.selectbox("📂 Filter by Session Status", session_statuses)
+    
+            if selected_status != "All":
+                df_sessions = df_sessions[df_sessions["Status"] == selected_status]
+    
+            # --- Display Spreadsheet View ---
+            st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
+        else:
+            st.warning("No sessions found.")
 
             
     # --- Analytics Tab ---
