@@ -207,28 +207,6 @@ def show():
                         except Exception as e:
                             st.error(f"❌ Failed to delete session: {e}")
 
-        session_data = supabase.table("session").select("*").order("start", desc=False).execute().data
-    
-        if session_data:
-            st.subheader("All Sessions")
-            for s in session_data:
-                st.markdown(f"### 🗓️ Session ID: {s['sessionid']}")
-                confirm_delete = st.checkbox(f"Confirm delete Session {s['sessionid']}", key=f"confirm_{s['sessionid']}")
-    
-                if confirm_delete:
-                    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"delete_{s['sessionid']}"):
-                        try:
-                            # 🚨 CASCADE DELETE LOGIC 🚨
-                            supabase.table("feedback").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("activitylog").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("mentorshiprequest").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("session").delete().eq("sessionid", s['sessionid']).execute()
-    
-                            st.success(f"✅ Session {s['sessionid']} and related records deleted successfully.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Failed to delete session: {e}")
-
     # Mentorship Requests
     with tabs[1]:
         st.subheader("Mentorship Requests")
