@@ -432,15 +432,17 @@ def show():
         # --- Top Requesting Mentees ---
         st.markdown("### 📬 Top Requesting Mentees")
         try:
-            requests = supabase.table("mentorshiprequest") \
+            raw_top_requests = supabase.table("mentorshiprequest") \
                 .select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)") \
                 .execute().data or []
-            df_requests_top = pd.DataFrame(requests_top)  # ✅ separate variable
-#            df_requests = pd.DataFrame(requests)
-            if not df_requests.empty and "menteeid" in df_requests.columns:
-                requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
-                df_requests["email"] = df_requests["users"].apply(lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown")
-                df_emails = df_requests[["menteeid", "email"]].drop_duplicates()
+            df_requests_top = pd.DataFrame(raw_top_requests)
+        
+            if not df_requests_top.empty and "menteeid" in df_requests_top.columns:
+                df_requests_top["email"] = df_requests_top["users"].apply(
+                    lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown"
+                )
+                requests_per_mentee = df_requests_top.groupby("menteeid").size().reset_index(name="RequestCount")
+                df_emails = df_requests_top[["menteeid", "email"]].drop_duplicates()
                 top_mentees = requests_per_mentee.merge(df_emails, on="menteeid", how="left") \
                     .sort_values(by="RequestCount", ascending=False).head(5)
                 st.dataframe(top_mentees[["email", "RequestCount"]], use_container_width=True)
@@ -530,15 +532,12 @@ def show():
         st.metric("✅ Acceptance Rate", f"{acceptance_rate:.1f}%")
         
         try:
-            # Use the already filtered df_requests
             df_requests_time = df_requests.copy()
             df_requests_time["createdat"] = pd.to_datetime(df_requests_time["createdat"], errors="coerce")
             df_requests_time = df_requests_time.dropna(subset=["createdat"])
-            
-            # Group by Month and Status for trend
             df_requests_time["Month"] = df_requests_time["createdat"].dt.to_period("M").astype(str)
-            request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
         
+            request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
             fig = px.bar(
                 request_trend,
                 x="Month",
