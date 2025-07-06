@@ -347,15 +347,21 @@ def show():
             df_requests = df_requests[df_requests["Month"] == selected_month]
     
         # --- Filter by Role (radio) ---
+        # --- Filter by Role (radio) ---
         st.markdown("### 🧑‍💼 Filter Sessions By Role")
-        role_filter = st.radio("Filter By:", ["All", "Mentor", "Mentee"], horizontal=True)
+        role_filter = st.radio("Filter By:", ["All", "Mentors", "Mentees"], horizontal=True)
         
-        mentor_lookup = df_users[df_users["role"] == "Mentor"][["userid", "email"]]
-        mentee_lookup = df_users[df_users["role"] == "Mentee"][["userid", "email"]]
+        # Original copies for safe filtering
+        df_users_all = df_users.copy()
+        df_sessions_all = df_sessions.copy()
+        df_requests_all = df_requests.copy()
         
-        df_sessions_merged = df_sessions.copy()
+        # Prepare lookups
+        mentor_lookup = df_users_all[df_users_all["role"] == "Mentor"][["userid", "email"]]
+        mentee_lookup = df_users_all[df_users_all["role"] == "Mentee"][["userid", "email"]]
         
-        # Merge mentor email
+        # Merge mentor and mentee emails
+        df_sessions_merged = df_sessions_all.copy()
         df_sessions_merged = df_sessions_merged.merge(
             mentor_lookup,
             left_on="mentorid",
@@ -363,8 +369,6 @@ def show():
             how="left",
             suffixes=("", "_mentor")
         )
-        
-        # Merge mentee email
         df_sessions_merged = df_sessions_merged.merge(
             mentee_lookup,
             left_on="menteeid",
@@ -373,21 +377,19 @@ def show():
             suffixes=("", "_mentee")
         )
         
-        # Apply role-based filter across all analytics
-        if role_filter == "Mentor":
+        # Role-based filters
+        if role_filter == "Mentors":
+            df_users = df_users_all[df_users_all["role"] == "Mentor"]
             df_sessions_merged = df_sessions_merged[df_sessions_merged["email"].notna()]
-        elif role_filter == "Mentee":
+            df_requests = df_requests_all[df_requests_all["menteeid"].isin(df_users_all["userid"])]
+        elif role_filter == "Mentees":
+            df_users = df_users_all[df_users_all["role"] == "Mentee"]
             df_sessions_merged = df_sessions_merged[df_sessions_merged["email_mentee"].notna()]
-        
-        # View filtered sessions
-        st.markdown("### ⭐ Filtered Sessions View")
-        st.dataframe(df_sessions_merged, use_container_width=True)
-        
-        # ⚠️ Make sure to use `df_sessions_merged` for all downstream analytics (charts, KPIs, etc.)
-
-    
-        # Continue with downstream metrics and charts using df_sessions_merged
-        # (Leave the rest of your existing code unchanged, just make sure df_sessions_merged is used instead of df_sessions)
+            df_requests = df_requests_all[df_requests_all["menteeid"].isin(df_users["userid"])]
+        else:
+            df_users = df_users_all
+            df_sessions_merged = df_sessions_merged
+            df_requests = df_requests_all
 
     
         # --- Metrics ---
