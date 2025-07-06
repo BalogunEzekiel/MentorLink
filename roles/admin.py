@@ -181,7 +181,7 @@ def show():
             st.info("No users found.")
     
         # ✅ Session deletion with CASCADE
-        session_data = supabase.table("session").select("*").order("starttime", desc=False).execute().data
+        session_data = supabase.table("session").select("*").order("start", desc=False).execute().data
     
         if session_data:
             st.subheader("All Sessions")
