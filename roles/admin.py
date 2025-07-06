@@ -264,7 +264,7 @@ def show():
     
         try:
             sessions = supabase.table("session").select("""
-                id, date, rating, feedback, meet_link,
+                sessionid, date, rating, feedback, meet_link,
                 mentor:users!session_mentorid_fkey(email),
                 mentee:users!session_menteeid_fkey(email)
             """).execute().data or []
@@ -284,7 +284,7 @@ def show():
                 if st.button("✅ Confirm Delete All", key="confirm_delete_all"):
                     try:
                         for s in sessions:
-                            supabase.table("session").delete().eq("id", s["id"]).execute()
+                            supabase.table("session").delete().eq("sessionid", s["sessionid"]).execute()
                         st.success("✅ All sessions deleted successfully.")
                         st.experimental_rerun()
                     except Exception as e:
@@ -298,7 +298,7 @@ def show():
                 start_time = s.get("date")
                 status = session_status_label(start_time)
     
-                with st.expander(f"Session: {s.get('id')} - {mentor_email} ↔ {mentee_email}"):
+                with st.expander(f"Session: {s.get('sessionid')} - {mentor_email} ↔ {mentee_email}"):
                     st.markdown(f"""
                     - 🧑‍🏫 Mentor: **{mentor_email}**  
                     - 🧑 Mentee: **{mentee_email}**  
@@ -309,13 +309,13 @@ def show():
                     - 🔗 [Join Meet]({s.get('meet_link', '#')})
                     """)
     
-                    if st.button(f"❌ Delete Session {s['id']}", key=f"delete_{s['id']}"):
+                    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"delete_{s['sessionid']}"):
                         try:
-                            supabase.table("session").delete().eq("id", s["id"]).execute()
-                            st.success(f"✅ Session {s['id']} deleted successfully.")
-                            st.experimental_rerun()
+                            supabase.table("session").delete().eq("sessionid", s["sessionid"]).execute()
+                            st.success(f"✅ Session {s['sessionid']} deleted successfully.")
+                            st.rerun()
                         except Exception as e:
-                            st.error(f"❌ Failed to delete session {s['id']}: {e}")
+                            st.error(f"❌ Failed to delete session: {e}")
         else:
             st.info("No sessions found.")
 
