@@ -323,7 +323,7 @@ def show():
                     for s in df_sessions["Session ID"]:
                         supabase.table("session").delete().eq("sessionid", s).execute()
                     st.success("✅ All filtered sessions deleted successfully.")
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to delete all sessions: {e}")
     
@@ -344,7 +344,7 @@ def show():
                         try:
                             supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
                             st.success(f"✅ Session {s['Session ID']} deleted successfully.")
-                            st.experimental_rerun()
+                            st.rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to delete session: {e}")
         else:
