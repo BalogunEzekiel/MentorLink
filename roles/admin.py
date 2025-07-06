@@ -435,7 +435,8 @@ def show():
             requests = supabase.table("mentorshiprequest") \
                 .select("menteeid, status, users:users!mentorshiprequest_menteeid_fkey(email)") \
                 .execute().data or []
-            df_requests = pd.DataFrame(requests)
+            df_requests_top = pd.DataFrame(requests_top)  # ✅ separate variable
+#            df_requests = pd.DataFrame(requests)
             if not df_requests.empty and "menteeid" in df_requests.columns:
                 requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
                 df_requests["email"] = df_requests["users"].apply(lambda u: u.get("email", "Unknown") if isinstance(u, dict) else "Unknown")
