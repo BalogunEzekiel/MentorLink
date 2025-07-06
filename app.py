@@ -45,7 +45,7 @@ st.markdown("""
         justify-content: center;
         gap: 1rem;
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 70px;
+        font-size: 90px;
         color: #4B8BBE;
         font-weight: bold;
         margin: -2;
@@ -54,7 +54,7 @@ st.markdown("""
     }
 
     .custom-header img {
-        height: 140px;
+        height: 150px;
         margin-top: 0px;
     }
 
