@@ -273,8 +273,9 @@ def show():
             sessions = []
     
         if sessions:
-            # --- Prepare and flatten sessions data ---
             now = datetime.now(WAT).replace(tzinfo=None)
+    
+            # --- Flatten session data ---
             processed_sessions = []
             for s in sessions:
                 session_time = pd.to_datetime(s.get("date"), errors="coerce")
@@ -298,7 +299,7 @@ def show():
     
             df_sessions = pd.DataFrame(processed_sessions)
     
-            # --- Search by Email ---
+            # --- Search by email ---
             search_email = st.text_input("🔎 Search Mentor or Mentee Email").strip().lower()
             if search_email:
                 df_sessions = df_sessions[
@@ -306,15 +307,46 @@ def show():
                     df_sessions["Mentee Email"].str.lower().str.contains(search_email)
                 ]
     
-            # --- Filter by Session Status ---
-            session_statuses = ["All", "Upcoming", "Ongoing", "Past"]
-            selected_status = st.selectbox("📂 Filter by Session Status", session_statuses)
-    
+            # --- Filter by status ---
+            status_options = ["All", "Upcoming", "Ongoing", "Past"]
+            selected_status = st.selectbox("📂 Filter by Session Status", status_options)
             if selected_status != "All":
                 df_sessions = df_sessions[df_sessions["Status"] == selected_status]
     
-            # --- Display Spreadsheet View ---
+            # --- Display spreadsheet view ---
+            st.markdown("### 📊 Spreadsheet View")
             st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
+    
+            # --- Delete All Sessions Button ---
+            if st.button("🗑️ Delete All Sessions", type="primary"):
+                try:
+                    for s in df_sessions["Session ID"]:
+                        supabase.table("session").delete().eq("sessionid", s).execute()
+                    st.success("✅ All filtered sessions deleted successfully.")
+                    st.experimental_rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to delete all sessions: {e}")
+    
+            # --- Catalogue view with expanders ---
+            st.markdown("### 📦 Catalogue View")
+            for s in df_sessions.to_dict(orient="records"):
+                with st.expander(f"Session {s['Session ID']} - {s['Mentor Email']} ↔ {s['Mentee Email']}"):
+                    st.markdown(f"""
+                    - 🧑‍🏫 **Mentor:** {s['Mentor Email']}  
+                    - 🧑 **Mentee:** {s['Mentee Email']}  
+                    - 📅 **Start Time:** {format_datetime_safe(s['Date'])}  
+                    - 🕒 **Status:** {s['Status']}  
+                    - ⭐ **Rating:** {s['Rating']}  
+                    - 💬 **Feedback:** {s['Feedback']}  
+                    - 🔗 **[Join Meet]({s['Meet Link']})**
+                    """)
+                    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
+                        try:
+                            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
+                            st.success(f"✅ Session {s['Session ID']} deleted successfully.")
+                            st.experimental_rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to delete session: {e}")
         else:
             st.warning("No sessions found.")
 
