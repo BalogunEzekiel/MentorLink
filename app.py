@@ -45,11 +45,11 @@ st.markdown("""
         justify-content: center;
         gap: 1rem;
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 75px;
+        font-size: 70px;
         color: #4B8BBE;
         font-weight: bold;
         margin: -2;
-        line-height: 0.5;
+        line-height: 0;
         word-wrap: break-word;
     }
 
@@ -60,7 +60,7 @@ st.markdown("""
 
     /* Push content down */
     .main .block-container {
-        padding-top: 2.5rem !important;
+        padding-top: 2rem !important;
     }
 
     header[data-testid="stHeader"] {
