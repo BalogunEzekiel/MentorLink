@@ -37,6 +37,35 @@ def login():
 
         # Check password
         stored_hashed = user.get("password")
+
+        if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
+            # ✅ Set session authentication info
+            st.session_state.authenticated = True
+            st.session_state.logged_in = True
+            st.session_state.user = user
+            st.session_state.role = user.get("role")
+        
+            email = user["email"].lower()
+        
+            # ✅ Custom display names for Admins
+            if email == "admin01@theincubatorhub.com":
+                st.session_state["user_display_name"] = "Admin I"
+            elif email == "admin02@theincubatorhub.com":
+                st.session_state["user_display_name"] = "Admin II"
+            else:
+                # ✅ Fallback to profile name or "User"
+                try:
+                    result = supabase.table("profile").select("name").eq("userid", user["userid"]).limit(1).execute()
+                    profile_data = result.data
+                    if profile_data:
+                        st.session_state["user_display_name"] = profile_data[0]["name"]
+                    else:
+                        st.session_state["user_display_name"] = "User"
+                except Exception:
+                    st.session_state["user_display_name"] = "User"
+
+        #######
+        stored_hashed = user.get("password")
         if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
             # Store session info
             st.session_state.authenticated = True
@@ -44,8 +73,8 @@ def login():
             st.session_state.user = user
             st.session_state.role = user.get("role")
 
-            if user["email"].lower() == "admin@theincubatorhub.com":
-                st.session_state["user_display_name"] = "Admin"
+            if user["email"].lower() == "admin01@theincubatorhub.com":
+                st.session_state["user_display_name"] = "Admin I"
             else:
                 # Get profile name if exists
                 try:
