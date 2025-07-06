@@ -48,8 +48,8 @@ st.markdown("""
         font-size: 75px;
         color: #4B8BBE;
         font-weight: bold;
-        margin: 0;
-        line-height: 1.0;
+        margin: -2;
+        line-height: 0.5;
         word-wrap: break-word;
     }
 
