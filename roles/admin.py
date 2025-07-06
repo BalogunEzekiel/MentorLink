@@ -2,6 +2,7 @@ import sys
 import os
 import time
 from datetime import datetime, timedelta
+
 import streamlit as st
 import pandas as pd
 import pytz
@@ -10,6 +11,7 @@ import plotly.express as px
 # Adjust path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Local imports
 from database import supabase
 from auth.auth_handler import register_user
 from utils.session_creator import create_session_if_available
@@ -17,6 +19,7 @@ from utils.helpers import format_datetime_safe  # Handles timezone-safe formatti
 
 # Set West Africa Time
 WAT = pytz.timezone("Africa/Lagos")
+
 
 def format_datetime(dt):
     """Convert datetime string or object to WAT-formatted string."""
@@ -30,16 +33,17 @@ def format_datetime(dt):
     except Exception:
         return str(dt)
 
+
 def session_status_label(date_str):
     try:
         now = datetime.now(WAT)
         session_time = datetime.fromisoformat(date_str.replace("Z", "+00:00")).astimezone(WAT)
         if session_time.date() < now.date() or session_time < now:
-            return "🟥 Past"
+            return "🔴 Past"
         elif session_time.date() == now.date() and abs((session_time - now).total_seconds()) < 3600:
-            return "🟨 Ongoing"
+            return "🟡 Ongoing"
         else:
-            return "🟩 Upcoming"
+            return "🟢 Upcoming"
     except:
         return "❓ Unknown"
 
@@ -66,9 +70,8 @@ def show():
                 st.success(f"✅ User '{user_email}' registered as {role}.")
                 time.sleep(1)
                 st.rerun()
-    
+
         st.subheader("All Users")
-    
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -76,7 +79,7 @@ def show():
         except Exception as e:
             st.error(f"❌ Failed to load users: {e}")
             users = []
-    
+
         if users:
             df = pd.DataFrame(users)
             df["created_at"] = df["created_at"].apply(format_datetime)
@@ -89,28 +92,28 @@ def show():
                 "created_at": "Created At",
                 "status": "Status"
             })
-    
+
             email_search = st.text_input("🔍 Search by Email", placeholder="e.g. johndoe@example.com").lower()
             status_filter = st.selectbox("📂 Filter by Status", ["All", "Active", "Inactive"])
-    
+
             filtered_df = df.copy()
             if email_search:
                 filtered_df = filtered_df[filtered_df["Email"].str.lower().str.contains(email_search)]
             if status_filter != "All":
                 filtered_df = filtered_df[filtered_df["Status"] == status_filter]
-    
+
             st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
-    
+
             selected_email = st.selectbox(
                 "✏️ Select User to Update",
                 ["Select an email..."] + df["Email"].tolist()
             )
-    
+
             new_status = st.selectbox(
                 "🛠️ New Status",
                 ["Select status...", "Active", "Inactive", "Delete"]
             )
-    
+
             confirm_delete_1 = confirm_delete_2 = False
             if new_status == "Delete":
                 st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
@@ -122,20 +125,33 @@ def show():
                     "Yes, I really want to delete this user.",
                     key="confirm_delete_2"
                 )
-    
+
             if st.button("✅ Update Status"):
                 if selected_email == "Select an email..." or new_status == "Select status...":
                     st.warning("⚠️ Please select both a valid user and a status.")
                 else:
                     user_row = df[df["Email"] == selected_email].iloc[0]
                     user_id = user_row["User ID"]
-    
+
                     try:
                         if new_status == "Delete":
                             if confirm_delete_1 and confirm_delete_2:
-                                supabase.table("users").delete().eq("userid", user_id).execute()
-                                st.success(f"✅ Deleted user: {selected_email}")
-                                st.rerun()
+                                # 🚨 CASCADE DELETE LOGIC 🚨
+                                try:
+                                    supabase.table("session").delete().or_(
+                                        f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
+                                    ).execute()
+                                    supabase.table("mentorshiprequest").delete().or_(
+                                        f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
+                                    ).execute()
+                                    supabase.table("availability").delete().eq("mentorid", user_id).execute()
+                                    supabase.table("feedback").delete().eq("userid", user_id).execute()
+                                    supabase.table("activitylog").delete().eq("userid", user_id).execute()
+                                    supabase.table("users").delete().eq("userid", user_id).execute()
+                                    st.success(f"✅ Deleted user: {selected_email} and all related records")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to delete user and related records: {e}")
                             else:
                                 st.warning("☑️ You must confirm both checkboxes to proceed with deletion.")
                         else:
@@ -144,14 +160,14 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
-    
+
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
                 user_row = df[df["Email"] == selected_email].iloc[0]
                 current_role = user_row["Role"]
                 current_status = user_row["Status"]
                 profile_completed = user_row["Profile Completed"]
-    
+
                 if current_role == "Mentee":
                     if current_status == "Active" and profile_completed:
                         promote = st.checkbox("🚀 Promote this *Active Mentee* (Profile Completed) to Mentor")
@@ -166,6 +182,34 @@ def show():
                         st.info("⚠️ Only *Active Mentees* with a **completed profile** can be promoted to Mentors.")
         else:
             st.info("No users found.")
+
+    # Add CASCADE delete session logic to session deletion inside catalogue view below...
+    # Already existing in your full code from previous message - paste logic where session delete button is.
+    # Example:
+    # if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
+    #     try:
+    #         supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
+    #         supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
+    #         supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
+    #         supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
+    #         st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
+    #         st.rerun()
+    #     except Exception as e:
+    #         st.error(f"❌ Failed to delete session: {e}")
+
+# The rest of your admin.py remains unchanged...
+    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
+        try:
+            # 🚨 CASCADE DELETE LOGIC 🚨
+            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
+            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
+            supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
+            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
+    
+            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
+            st.rerun()
+        except Exception as e:
+            st.error(f"❌ Failed to delete session: {e}")
 
     # Mentorship Requests
     with tabs[1]:
