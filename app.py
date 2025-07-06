@@ -27,7 +27,7 @@ st.markdown("""
         src: local("Script MT Bold");
     }
 
-    /* Make the header fixed at the top */
+    /* Fixed header */
     .custom-header-container {
         position: fixed;
         top: 0;
@@ -40,17 +40,25 @@ st.markdown("""
     }
 
     .custom-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 80px;
+        font-size: 60px;
         color: #4B8BBE;
         font-weight: bold;
-        text-align: center;
         margin: 0;
         line-height: 1.2;
         word-wrap: break-word;
     }
 
-    /* Push the body content down to avoid overlapping with fixed header */
+    .custom-header img {
+        height: 60px;
+        margin-top: -5px;
+    }
+
+    /* Push content down */
     .main .block-container {
         padding-top: 6.5rem !important;
     }
@@ -61,7 +69,10 @@ st.markdown("""
     </style>
 
     <div class='custom-header-container'>
-        <div class='custom-header'>MentorLink</div>
+        <div class='custom-header'>
+            <img src="https://fzmmeysjrltnktlfkhye.supabase.co/storage/v1/object/public/public-assets//mentorlink_logo.png" alt="MentorLink Logo">
+            MentorLink
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
