@@ -35,7 +35,7 @@ st.markdown("""
         width: 100%;
         z-index: 9999;
         background-color: white;
-        padding: 0.3rem 1rem;
+        padding: 0.2rem 1rem;
         border-bottom: 2px solid #ccc;
     }
 
@@ -45,22 +45,22 @@ st.markdown("""
         justify-content: center;
         gap: 1rem;
         font-family: 'ScriptMTBold', cursive, serif;
-        font-size: 80px;
+        font-size: 75px;
         color: #4B8BBE;
         font-weight: bold;
         margin: 0;
-        line-height: 1.2;
+        line-height: 1.0;
         word-wrap: break-word;
     }
 
     .custom-header img {
-        height: 150px;
-        margin-top: -5px;
+        height: 140px;
+        margin-top: -8px;
     }
 
     /* Push content down */
     .main .block-container {
-        padding-top: 5.5rem !important;
+        padding-top: 3.5rem !important;
     }
 
     header[data-testid="stHeader"] {
