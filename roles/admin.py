@@ -305,7 +305,7 @@ def show():
     # Sessions
     with tabs[3]:
         st.subheader("🔍 Admin Session Management")
-    
+
         try:
             sessions = supabase.table("session").select("""
                 sessionid, date, rating, feedback, meet_link,
@@ -315,10 +315,10 @@ def show():
         except Exception as e:
             st.error(f"❌ Could not fetch sessions: {e}")
             sessions = []
-    
+
         if sessions:
             now = datetime.now(WAT).replace(tzinfo=None)
-    
+
             # --- Flatten session data ---
             processed_sessions = []
             for s in sessions:
@@ -329,7 +329,7 @@ def show():
                     status = "Upcoming"
                 else:
                     status = "Ongoing"
-    
+
                 processed_sessions.append({
                     "Session ID": s.get("sessionid"),
                     "Mentor Email": s.get("mentor", {}).get("email", "N/A"),
@@ -340,9 +340,9 @@ def show():
                     "Meet Link": s.get("meet_link", "#"),
                     "Status": status
                 })
-    
+
             df_sessions = pd.DataFrame(processed_sessions)
-    
+
             # --- Search by email ---
             search_email = st.text_input("🔎 Search Mentor or Mentee Email").strip().lower()
             if search_email:
@@ -350,27 +350,30 @@ def show():
                     df_sessions["Mentor Email"].str.lower().str.contains(search_email) |
                     df_sessions["Mentee Email"].str.lower().str.contains(search_email)
                 ]
-    
+
             # --- Filter by status ---
             status_options = ["All", "Upcoming", "Ongoing", "Past"]
             selected_status = st.selectbox("📂 Filter by Session Status", status_options)
             if selected_status != "All":
                 df_sessions = df_sessions[df_sessions["Status"] == selected_status]
-    
+
             # --- Display spreadsheet view ---
             st.markdown("### 📊 Spreadsheet View")
             st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
-    
+
             # --- Delete All Sessions Button ---
             if st.button("🗑️ Delete All Sessions", type="primary"):
                 try:
                     for s in df_sessions["Session ID"]:
+                        supabase.table("feedback").delete().eq("sessionid", s).execute()
+                        supabase.table("activitylog").delete().eq("sessionid", s).execute()
+                        supabase.table("mentorshiprequest").delete().eq("sessionid", s).execute()
                         supabase.table("session").delete().eq("sessionid", s).execute()
                     st.success("✅ All filtered sessions deleted successfully.")
                     st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to delete all sessions: {e}")
-    
+
             # --- Catalogue view with expanders ---
             st.markdown("### 📦 Catalogue View")
             for s in df_sessions.to_dict(orient="records"):
@@ -386,8 +389,11 @@ def show():
                     """)
                     if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
                         try:
+                            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
+                            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
+                            supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
-                            st.success(f"✅ Session {s['Session ID']} deleted successfully.")
+                            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
                             st.rerun()
                         except Exception as e:
                             st.error(f"❌ Failed to delete session: {e}")
