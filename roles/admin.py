@@ -264,9 +264,15 @@ def show():
     
         try:
             sessions = supabase.table("session").select("""
-                *, mentor:users!session_mentorid_fkey(email),
-                   mentee:users!session_menteeid_fkey(email)
-            """).execute().data
+                id, date, rating, feedback, meet_link,
+                mentor:users!session_mentorid_fkey(email),
+                mentee:users!session_menteeid_fkey(email)
+            """).execute().data or []
+            
+#            sessions = supabase.table("session").select("""
+#                *, mentor:users!session_mentorid_fkey(email),
+#                   mentee:users!session_menteeid_fkey(email)
+#            """).execute().data
         except Exception as e:
             st.error(f"❌ Could not fetch sessions: {e}")
             sessions = []
