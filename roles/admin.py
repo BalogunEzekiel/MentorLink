@@ -329,37 +329,35 @@ def show():
         selected_year = st.selectbox("📅 Select Year", years_with_all, index=len(years_with_all) - 1)
         selected_month = st.selectbox("🗓️ Select Month", months_with_all)
     
-        # --- Apply Date Filters ---
-        for df, date_col in [(df_users, "created_at"), (df_sessions, "date"), (df_requests, "createdat")]:
-            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-            df.dropna(subset=[date_col], inplace=True)
-            df["Year"] = df[date_col].dt.year
-            df["Month"] = df[date_col].dt.strftime("%B")
-    
-        if selected_year != "All":
-            df_users = df_users[df_users["Year"] == selected_year]
-            df_sessions = df_sessions[df_sessions["Year"] == selected_year]
-            df_requests = df_requests[df_requests["Year"] == selected_year]
-    
-        if selected_month != "All":
-            df_users = df_users[df_users["Month"] == selected_month]
-            df_sessions = df_sessions[df_sessions["Month"] == selected_month]
-            df_requests = df_requests[df_requests["Month"] == selected_month]
-    
-        # --- Filter by Role (radio) ---
         # --- Filter by Role (radio) ---
         st.markdown("### 🧑‍💼 Filter Sessions By Role")
         role_filter = st.radio("Filter By:", ["All", "Mentors", "Mentees"], horizontal=True)
-        
+    
+        # Apply date filters
+        def apply_date_filter(df, date_col):
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+            df = df.dropna(subset=[date_col])
+            df["Year"] = df[date_col].dt.year
+            df["Month"] = df[date_col].dt.strftime("%B")
+            if selected_year != "All":
+                df = df[df["Year"] == selected_year]
+            if selected_month != "All":
+                df = df[df["Month"] == selected_month]
+            return df
+    
+        df_users = apply_date_filter(df_users, "created_at")
+        df_sessions = apply_date_filter(df_sessions, "date")
+        df_requests = apply_date_filter(df_requests, "createdat")
+    
         # Original copies for safe filtering
         df_users_all = df_users.copy()
         df_sessions_all = df_sessions.copy()
         df_requests_all = df_requests.copy()
-        
+    
         # Prepare lookups
         mentor_lookup = df_users_all[df_users_all["role"] == "Mentor"][["userid", "email"]]
         mentee_lookup = df_users_all[df_users_all["role"] == "Mentee"][["userid", "email"]]
-        
+    
         # Merge mentor and mentee emails
         df_sessions_merged = df_sessions_all.copy()
         df_sessions_merged = df_sessions_merged.merge(
@@ -376,7 +374,7 @@ def show():
             how="left",
             suffixes=("", "_mentee")
         )
-        
+    
         # Role-based filters
         if role_filter == "Mentors":
             df_users = df_users_all[df_users_all["role"] == "Mentor"]
@@ -390,7 +388,6 @@ def show():
             df_users = df_users_all
             df_sessions_merged = df_sessions_merged
             df_requests = df_requests_all
-
     
         # --- Metrics ---
         st.markdown("### 📌 Key Metrics")
@@ -421,7 +418,7 @@ def show():
     
         # --- Ratings Summary ---
         st.markdown("### ⭐ Session Ratings Distribution")
-        df_ratings = df_sessions.dropna(subset=["rating"])
+        df_ratings = df_sessions_merged.dropna(subset=["rating"])
         fig3 = px.histogram(df_ratings, x="rating", nbins=5, title="Ratings Given by Mentees")
         st.plotly_chart(fig3, use_container_width=True)
     
@@ -453,16 +450,16 @@ def show():
     
         # --- Mentee Engagement ---
         st.markdown("### 🧑 Mentee Engagement")
-        rated_sessions = df_sessions["rating"].notna().sum()
-        feedback_rate = (rated_sessions / len(df_sessions) * 100) if len(df_sessions) > 0 else 0
-        if not df_users.empty and not df_requests.empty and not df_sessions.empty:
+        rated_sessions = df_sessions_merged["rating"].notna().sum()
+        feedback_rate = (rated_sessions / len(df_sessions_merged) * 100) if len(df_sessions_merged) > 0 else 0
+        if not df_users.empty and not df_requests.empty and not df_sessions_merged.empty:
             mentees = df_users[df_users["role"] == "Mentee"]
             mentee_count = len(mentees)
             requests_per_mentee = df_requests.groupby("menteeid").size().reset_index(name="RequestCount")
             avg_requests = requests_per_mentee["RequestCount"].mean() if not requests_per_mentee.empty else 0
             col1, col2, col3 = st.columns(3)
             col1.metric("📩 Avg. Requests per Mentee", f"{avg_requests:.2f}")
-            mentees_with_sessions = df_sessions["menteeid"].nunique()
+            mentees_with_sessions = df_sessions_merged["menteeid"].nunique()
             session_percentage = (mentees_with_sessions / mentee_count * 100) if mentee_count > 0 else 0
             col2.metric("📅 Mentees with Sessions", f"{session_percentage:.1f}%")
             col3.metric("⭐ Feedback Submission Rate", f"{feedback_rate:.1f}%")
@@ -474,9 +471,9 @@ def show():
         df_availability = pd.DataFrame(availability)
         slots_per_mentor = df_availability.groupby("mentorid").size().reset_index(name="SlotCount")
         avg_slots = slots_per_mentor["SlotCount"].mean() if not slots_per_mentor.empty else 0
-        sessions_per_mentor = df_sessions.groupby("mentorid").size().reset_index(name="SessionCount")
+        sessions_per_mentor = df_sessions_merged.groupby("mentorid").size().reset_index(name="SessionCount")
         avg_sessions = sessions_per_mentor["SessionCount"].mean() if not sessions_per_mentor.empty else 0
-        ratings_per_mentor = df_sessions.groupby("mentorid")["rating"].mean().reset_index(name="AvgRating")
+        ratings_per_mentor = df_sessions_merged.groupby("mentorid")["rating"].mean().reset_index(name="AvgRating")
         avg_rating = ratings_per_mentor["AvgRating"].mean() if not ratings_per_mentor.empty else 0
         col1, col2, col3 = st.columns(3)
         col1.metric("🕒 Avg. Availability Slots", f"{avg_slots:.2f}")
@@ -530,17 +527,26 @@ def show():
         st.markdown("### 🔁 Mentorship Success Rate")
         acceptance_rate = (df_requests["status"] == "ACCEPTED").mean() * 100
         st.metric("✅ Acceptance Rate", f"{acceptance_rate:.1f}%")
+        
         try:
-            requests_with_time = supabase.table("mentorshiprequest").select("status, createdat").execute().data or []
-            df_requests_time = pd.DataFrame(requests_with_time)
-            if not df_requests_time.empty:
-                df_requests_time["createdat"] = pd.to_datetime(df_requests_time["createdat"], errors="coerce")
-                df_requests_time = df_requests_time.dropna(subset=["createdat"])
-                df_requests_time["Month"] = df_requests_time["createdat"].dt.to_period("M").astype(str)
-                request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
-                fig = px.bar(request_trend, x="Month", y="Count", color="status", barmode="group", title="📈 Monthly Mentorship Request Status Trends")
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No mentorship request data available for trend analysis.")
+            # Use the already filtered df_requests
+            df_requests_time = df_requests.copy()
+            df_requests_time["createdat"] = pd.to_datetime(df_requests_time["createdat"], errors="coerce")
+            df_requests_time = df_requests_time.dropna(subset=["createdat"])
+            
+            # Group by Month and Status for trend
+            df_requests_time["Month"] = df_requests_time["createdat"].dt.to_period("M").astype(str)
+            request_trend = df_requests_time.groupby(["Month", "status"]).size().reset_index(name="Count")
+        
+            fig = px.bar(
+                request_trend,
+                x="Month",
+                y="Count",
+                color="status",
+                barmode="group",
+                title="📈 Monthly Mentorship Request Status Trends"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
         except Exception as e:
             st.error(f"Error fetching mentorship request trends: {e}")
