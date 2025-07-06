@@ -260,7 +260,8 @@ def show():
 
     # Sessions
     with tabs[3]:
-        st.subheader("All Sessions")
+        st.subheader("🗑️ Manage All Sessions (Admin)")
+    
         try:
             sessions = supabase.table("session").select("""
                 *, mentor:users!session_mentorid_fkey(email),
@@ -269,23 +270,45 @@ def show():
         except Exception as e:
             st.error(f"❌ Could not fetch sessions: {e}")
             sessions = []
-
+    
         if sessions:
-            for s in sessions:
-                start_time = s.get("date")
-                status = session_status_label(start_time)
-
-                st.markdown(f"""
-                - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
-                - 🧑 Mentee: **{s['mentee']['email']}**  
-                - 📅 Start Time: {format_datetime_safe(s.get('date'))}  
-                - 🕒 Status: {status}  
-                - ⭐ Rating: {s.get('rating', 'Not rated')}  
-                - 💬 Feedback: {s.get('feedback', 'No feedback')}  
-                - 🔗 [Join Meet]({s.get('meet_link', '#')})
-                """)
+            session_df = pd.DataFrame(sessions)
+    
+            # Button to delete all sessions
+            if st.button("🚨 Delete ALL Sessions", type="primary"):
+                confirm = st.warning("⚠️ Are you sure you want to delete ALL sessions? This action cannot be undone.", icon="⚠️")
+                if st.button("✅ Confirm Delete All"):
+                    try:
+                        for s in session_df["id"]:
+                            supabase.table("session").delete().eq("id", s).execute()
+                        st.success("✅ All sessions deleted successfully.")
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to delete all sessions: {e}")
+    
+            st.markdown("### 📋 Individual Session Controls")
+            for index, s in session_df.iterrows():
+                with st.expander(f"Session: {s['id']} - {s['mentor']['email']} ↔ {s['mentee']['email']}"):
+                    st.markdown(f"""
+                    - 🧑‍🏫 Mentor: **{s['mentor']['email']}**  
+                    - 🧑 Mentee: **{s['mentee']['email']}**  
+                    - 📅 Start Time: {format_datetime_safe(s.get('date'))}  
+                    - 🕒 Status: {session_status_label(s.get('date'))}  
+                    - ⭐ Rating: {s.get('rating', 'Not rated')}  
+                    - 💬 Feedback: {s.get('feedback', 'No feedback')}  
+                    - 🔗 [Join Meet]({s.get('meet_link', '#')})
+                    """)
+    
+                    if st.button(f"❌ Delete Session {s['id']}", key=f"delete_{s['id']}"):
+                        try:
+                            supabase.table("session").delete().eq("id", s["id"]).execute()
+                            st.success(f"✅ Session {s['id']} deleted successfully.")
+                            st.experimental_rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to delete session {s['id']}: {e}")
         else:
             st.info("No sessions found.")
+
             
     # --- Analytics Tab ---
     with tabs[4]:
