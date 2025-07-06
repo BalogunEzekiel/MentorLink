@@ -54,7 +54,7 @@ st.markdown("""
     }
 
     .custom-header img {
-        height: 130px;
+        height: 100px;
         margin-top: 0px;
     }
 
