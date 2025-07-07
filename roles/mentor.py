@@ -201,21 +201,23 @@ def show():
 
     # --- Sessions Tab ---
     with tabs[3]:
-        st.subheader("Your Mentorship Sessions")
+        st.subheader("🧑‍🏫 Your Mentorship Sessions")
+    
+        # Load sessions for this mentor
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
             .eq("mentorid", mentor_id).execute().data or []
-
+    
         if sessions:
             for s in sessions:
                 mentee_email = s.get("users", {}).get("email", "Unknown")
                 start_str = s.get("start")
                 end_str = s.get("end")
                 meet_link = s.get("meet_link", "#")
-
+    
                 status, emoji = classify_session(start_str, end_str)
                 start_fmt = format_datetime_safe(start_str, tz=WAT)
                 end_fmt = format_datetime_safe(end_str, tz=WAT)
-
+    
                 st.markdown(f"""
                 ### {emoji} {status} Session
                 - 👤 With: **{mentee_email}**
@@ -223,7 +225,7 @@ def show():
                 - 🕔 End: {end_fmt}
                 - 🔗 [Join Meet]({meet_link})
                 """)
-
+    
                 if st.button("📧 Send Reminder", key=f"reminder_{s['sessionid']}"):
                     if send_email(
                         to_email=mentee_email,
@@ -234,4 +236,28 @@ def show():
                     else:
                         st.error("Failed to send reminder.")
         else:
-            st.info("No sessions yet.")
+            st.info("No mentorship sessions scheduled yet.")
+    
+        # Separator between sessions and availability
+        st.markdown("---")
+        st.subheader("📅 Your Available Time Slots")
+    
+        # Load availability slots for this mentor
+        availability_records = supabase.table("availability").select("*") \
+            .eq("mentorid", mentor_id).execute().data or []
+    
+        if availability_records:
+            for record in availability_records:
+                start_str = record.get("start")
+                end_str = record.get("end")
+    
+                start_fmt = format_datetime_safe(start_str, tz=WAT)
+                end_fmt = format_datetime_safe(end_str, tz=WAT)
+    
+                st.markdown(f"""
+                ### 🗓️ Available Slot
+                - 🕒 Start: {start_fmt}
+                - 🕔 End: {end_fmt}
+                """)
+        else:
+            st.info("You haven’t added any availability slots.")
