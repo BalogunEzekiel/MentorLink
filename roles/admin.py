@@ -420,13 +420,11 @@ def show():
         # --- Filter by Role (radio) ---
         st.markdown("### 🧑‍💼 Filter Sessions By Role")
         role_filter = st.radio("Filter By:", ["All", "Mentors", "Mentees"], horizontal=True)
+
+        st.write("✅ df_sessions columns:", df_sessions.columns.tolist())
     
         # Apply date filters
         def apply_date_filter(df, date_col):
-            if date_col not in df.columns:
-                st.warning(f"⚠️ Column '{date_col}' not found in dataframe.")
-                return pd.DataFrame()  # Return empty DataFrame or df unchanged
-        
             df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
             df = df.dropna(subset=[date_col])
             df["Year"] = df[date_col].dt.year
@@ -435,7 +433,7 @@ def show():
                 df = df[df["Year"] == selected_year]
             if selected_month != "All":
                 df = df[df["Month"] == selected_month]
-            return df        
+            return df
     
         df_users = apply_date_filter(df_users, "created_at")
         df_sessions = apply_date_filter(df_sessions, "date")
