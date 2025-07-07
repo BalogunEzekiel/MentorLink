@@ -224,9 +224,9 @@ def show():
     
                 # If start or end is missing, use values from availability
                 if not start_str or not end_str:
-                    availability_id = s.get("availability_id")
-                    if availability_id in availability_map:
-                        start_str, end_str = availability_map[availability_id]
+                    availability_id = s.get("availabilityid")
+                    if availabilityid in availability_map:
+                        start_str, end_str = availability_map[availabilityid]
     
                 start_fmt = format_datetime_safe(start_str, tz=WAT) if start_str else "❌ Missing"
                 end_fmt = format_datetime_safe(end_str, tz=WAT) if end_str else "❌ Missing"
