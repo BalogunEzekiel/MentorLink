@@ -90,7 +90,7 @@ else:
     role = st.session_state.get("role")
     user = st.session_state.get("user", {})
 
-    if role not in ["Admin I", "Admin II"]:
+    if role != "Admin":
         if user.get("must_change_password", False):
             change_password()
         elif not user.get("profile_completed", False):
