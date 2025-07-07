@@ -8,6 +8,9 @@ import pytz
 import time
 import uuid
 
+# 🕓 Streamlit JS Eval to get local timezone
+from streamlit_js_eval import streamlit_js_eval
+
 WAT = pytz.timezone("Africa/Lagos")
 
 def classify_session(start_time_str, end_time_str):
@@ -35,6 +38,16 @@ def classify_session(start_time_str, end_time_str):
     else:
         return "Upcoming", "🟩"
 
+def convert_to_user_timezone(dt_string, user_tz_str):
+    try:
+        dt_obj = datetime.fromisoformat(dt_string.replace("Z", "+00:00"))
+        if dt_obj.tzinfo is None:
+            dt_obj = pytz.utc.localize(dt_obj)
+        user_tz = pytz.timezone(user_tz_str)
+        return dt_obj.astimezone(user_tz).strftime("%A, %d %B %Y at %I:%M %p")
+    except Exception:
+        return "❌ Invalid Date"
+
 def show():
     if "mentor_request_success_message" in st.session_state:
         st.success(st.session_state.pop("mentor_request_success_message"))
@@ -42,12 +55,16 @@ def show():
     st.title("Mentee Dashboard")
     st.info("Browse mentors, request sessions, track bookings, and give feedback.")
 
+    # 🧑 Get user ID from session
     user = st.session_state.get("user")
     user_id = user.get("userid") if user and isinstance(user, dict) else None
 
     if not user_id:
         st.error("⚠️ User session not found or invalid. Please log in again.")
         st.stop()
+
+    # 🌍 Get mentee's local timezone from browser
+    mentee_timezone = streamlit_js_eval(js_expressions="Intl.DateTimeFormat().resolvedOptions().timeZone", key="tz") or "Africa/Lagos"
 
     tabs = st.tabs([
         "🏠 Dashboard",
@@ -56,7 +73,7 @@ def show():
         "📆 My Sessions",
         "✅ Session Feedback"
     ])
-
+    
     # --- Dashboard Tab ---
     with tabs[0]:
         st.subheader("Welcome to your Mentee Dashboard")
