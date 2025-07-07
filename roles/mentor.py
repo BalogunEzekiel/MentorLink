@@ -103,14 +103,19 @@ def show():
     
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
             now_wat = datetime.now(WAT)
+    
+            # Mentor manually selects date and time (no default offsets)
             date = st.date_input("Date", value=now_wat.date())
-            start_time = st.time_input("Start Time", value=(now_wat + timedelta(hours=1)).time())
-            end_time = st.time_input("End Time", value=(now_wat + timedelta(hours=2)).time())
+            start_time = st.time_input("Start Time")
+            end_time = st.time_input("End Time")
             submitted = st.form_submit_button("➕ Add Slot")
     
             if submitted:
                 start = WAT.localize(datetime.combine(date, start_time))
                 end = WAT.localize(datetime.combine(date, end_time))
+    
+                # Extract just the date part (YYYY-MM-DD) from mentor input
+                availability_date = date.isoformat()  # e.g., "2025-07-07"
     
                 if end <= start:
                     st.warning("End time must be after start time.")
@@ -118,14 +123,15 @@ def show():
                     try:
                         supabase.table("availability").insert({
                             "mentorid": mentor_id,
-                            "start": start.isoformat(),
-                            "end": end.isoformat()
+                            "start": start.isoformat(),      # full datetime with tz
+                            "end": end.isoformat(),          # full datetime with tz
+                            "date": availability_date        # only the date (YYYY-MM-DD)
                         }).execute()
                         st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to add availability: {e}")
-    
+
         st.markdown("### Existing Availability")
     
         # Fetch all availability slots
@@ -159,7 +165,7 @@ def show():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to remove slot: {e}")
-                else:
+                else:    
                     col2.markdown("🔒")  # Locked from deletion
         else:
             st.info("No availability slots added yet.")
