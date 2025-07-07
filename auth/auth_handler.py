@@ -66,29 +66,26 @@ def login():
 
         # ✅ Validate password
         stored_hashed = user.get("password")
-        if not stored_hashed or not bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
-            st.error("Invalid password.")
-            return
+        if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
+            # Store session info
+            st.session_state.authenticated = True
+            st.session_state.logged_in = True
+            st.session_state.user = user
+            st.session_state.role = user.get("role")
 
-        # ✅ Set login session
-        st.session_state.authenticated = True
-        st.session_state.logged_in = True
-        st.session_state.user = user
-        st.session_state.role = user.get("role")
-
-        # 👤 Set display name
-        user_email = user["email"].lower()
-        if user_email == "admin01@theincubatorhub.com":
-            st.session_state["user_display_name"] = "Admin I"
-        elif user_email == "admin02@theincubatorhub.com":
-            st.session_state["user_display_name"] = "Admin II"
-        else:
-            try:
-                profile_result = supabase.table("profile").select("name").eq("userid", user["userid"]).limit(1).execute()
-                profile_data = profile_result.data
-                st.session_state["user_display_name"] = profile_data[0]["name"] if profile_data else "User"
-            except Exception:
-                st.session_state["user_display_name"] = "User"
+            if user["email"].lower() == "admin@theincubatorhub.com":
+                st.session_state["user_display_name"] = "Admin"
+            else:
+                # Get profile name if exists
+                try:
+                    result = supabase.table("profile").select("name").eq("userid", user["userid"]).limit(1).execute()
+                    profile_data = result.data
+                    if profile_data:
+                        st.session_state["user_display_name"] = profile_data[0]["name"]
+                    else:
+                        st.session_state["user_display_name"] = "User"
+                except Exception:
+                    st.session_state["user_display_name"] = "User"
 
         # 🕒 Log login
         try:
