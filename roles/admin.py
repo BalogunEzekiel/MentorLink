@@ -359,7 +359,7 @@ def show():
                     if st.button(f"❌ Delete Session {s['Session ID']}", key=f"sessions_tab_delete_{s['Session ID']}"):
                         try:
 #                            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
-                            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
+#                            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
                             st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
