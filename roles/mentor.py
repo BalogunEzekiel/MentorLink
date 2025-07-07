@@ -127,6 +127,40 @@ def show():
                         st.error(f"Failed to add availability: {e}")
 
         st.markdown("### Existing Availability")
+
+        # Fetch all availability slots
+        slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
+
+        # Fetch all sessions and build a set of used availability_ids
+        session_records = supabase.table("session").select("availability_id").execute().data or []
+        used_availability_ids = {s["availability_id"] for s in session_records if s.get("availability_id")}
+
+        if slots:
+            for slot in slots:
+                availability_id = slot.get("availabilityid")
+                start = format_datetime_safe(slot["start"], tz=WAT)
+                end = format_datetime_safe(slot["end"], tz=WAT)
+
+                is_used = availability_id in used_availability_ids
+                status_text = "✅ Matched" if is_used else "🟢 Available"
+
+                col1, col2 = st.columns([6, 1])
+                col1.markdown(f"- 🕒 {start} ➡ {end} &nbsp;&nbsp; **{status_text}**")
+
+                # Only allow deletion if not already matched to a session
+                if not is_used:
+                    if col2.button("❌", key=f"delete_slot_{availability_id}"):
+                        try:
+                            supabase.table("availability").delete().eq("availabilityid", availability_id).execute()
+                            st.success("Availability removed.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to remove slot: {e}")
+                else:
+                    col2.markdown("🔒")  # Lock icon for matched slot
+        else:
+            st.info("No availability slots added yet.")
+####
         slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
 
         if slots:
