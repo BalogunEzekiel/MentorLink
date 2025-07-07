@@ -9,14 +9,6 @@ def format_datetime_safe(dt: Optional[Union[str, datetime]], tz=WAT) -> str:
     """
     Safely formats a datetime or string date to a readable string in given timezone.
     Handles naive or aware datetime objects and common string formats gracefully.
-    
-    Args:
-        dt: datetime object or ISO/SQL string representation of date/time.
-        tz: pytz timezone object to convert to (default: WAT)
-    
-    Returns:
-        Formatted date string like: "Monday, 01 January 2024 at 03:30 PM"
-        or the string itself if unable to parse.
     """
     if not dt:
         return "Unknown"
@@ -30,12 +22,11 @@ def format_datetime_safe(dt: Optional[Union[str, datetime]], tz=WAT) -> str:
                 dt_obj = datetime.fromisoformat(dt.replace("Z", "+00:00"))
             except Exception:
                 dt_obj = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
-        
-        # Make timezone aware if naive (assume UTC)
+
+        # ✅ Fix: Assume naive datetime is in WAT, not UTC
         if dt_obj.tzinfo is None:
-            dt_obj = pytz.utc.localize(dt_obj)
-        
-        # Convert to target timezone
+            dt_obj = tz.localize(dt_obj)  # Assume it's in WAT, not UTC
+
         dt_local = dt_obj.astimezone(tz)
         return dt_local.strftime("%A, %d %B %Y at %I:%M %p")
     except Exception:
