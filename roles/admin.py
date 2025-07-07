@@ -348,15 +348,15 @@ def show():
                         st.session_state[f"show_confirm_{s['Session ID']}"] = True
             
                     if st.session_state.get(f"show_confirm_{s['Session ID']}", False):
-                        st.markdown("⚠️ This will permanently delete this session and its mentorship request if linked.")
+                        st.markdown("⚠️ This will permanently delete this session.")
             
                         confirm_delete_single = st.checkbox(
-                            f"☑️ Confirm delete of Session {s['Session ID']}",
+                            f"☑️ Confirm delete of Session",
                             key=f"confirm_delete_{s['Session ID']}"
                         )
             
                         if st.button(
-                            f"✅ Confirm Delete Session {s['Session ID']}",
+                            f"✅ Confirm Delete Session",
                             key=f"delete_{s['Session ID']}",
                             disabled=not confirm_delete_single
                         ):
