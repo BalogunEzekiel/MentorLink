@@ -194,7 +194,7 @@ def show():
                 confirm_delete = st.checkbox(f"Confirm delete Session {s['sessionid']}", key=f"confirm_{s['sessionid']}")
         
                 if confirm_delete:
-                    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"delete_{s['sessionid']}"):
+                    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"user_tab_delete_{s['sessionid']}"):
                         try:
                             # 🚨 CASCADE DELETE LOGIC 🚨
                             supabase.table("feedback").delete().eq("sessionid", s['sessionid']).execute()
@@ -383,7 +383,7 @@ def show():
                     - 💬 **Feedback:** {s['Feedback']}  
                     - 🔗 **[Join Meet]({s['Meet Link']})**
                     """)
-                    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"delete_{s['Session ID']}"):
+                    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"sessions_tab_delete_{s['Session ID']}"):
                         try:
                             supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
