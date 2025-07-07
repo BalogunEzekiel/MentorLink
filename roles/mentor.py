@@ -111,8 +111,8 @@ def show():
             submitted = st.form_submit_button("➕ Add Slot")
     
             if submitted:
-                start = WAT.localize(datetime.combine(date, start_time))
-                end = WAT.localize(datetime.combine(date, end_time))
+                start = datetime.combine(date, start_time).replace(tzinfo=WAT)
+                end = datetime.combine(date, end_time).replace(tzinfo=WAT)
     
                 # Extract just the date part (YYYY-MM-DD) from mentor input
                 availability_date = date.isoformat()  # e.g., "2025-07-07"
