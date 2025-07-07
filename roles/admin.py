@@ -320,11 +320,11 @@ def show():
             for s in sessions:
                 session_time = pd.to_datetime(s.get("date"), errors="coerce")
                 if session_time < now:
-                    status = "Past"
+                    status = "🔴 Past"
                 elif session_time > now:
-                    status = "Upcoming"
+                    status = "🟢 Upcoming"
                 else:
-                    status = "Ongoing"
+                    status = "🟡 Ongoing"
 
                 processed_sessions.append({
                     "Session ID": s.get("sessionid"),
