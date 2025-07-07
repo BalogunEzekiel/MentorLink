@@ -368,7 +368,7 @@ def show():
             
                                 supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
             
-                                st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
+                                st.success(f"✅ Session deleted successfully.")
                                 st.rerun()
             
                             except Exception as e:
