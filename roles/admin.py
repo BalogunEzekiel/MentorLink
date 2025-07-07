@@ -329,7 +329,7 @@ def show():
             # --- Display spreadsheet view ---
             st.markdown("### 📊 Spreadsheet View")
             st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
-
+#################
             # --- Delete All Sessions Button with Confirmation ---
             st.markdown("### ⚠️ Dangerous Action")
             st.warning("You are about to permanently delete all filtered sessions and their related mentorship requests.")
@@ -366,7 +366,7 @@ def show():
             
                 except Exception as e:
                     st.error(f"❌ Failed to delete all sessions: {e}")
-
+###############
                 # --- Catalogue view with expanders ---
             st.markdown("### 📦 Catalogue View")
             for s in df_sessions.to_dict(orient="records"):
@@ -380,17 +380,7 @@ def show():
                     - 💬 **Feedback:** {s['Feedback']}  
                     - 🔗 **[Join Meet]({s['Meet Link']})**
                     """)
-                    with st.expander(f"Session {s['Session ID']} - {s['Mentor Email']} ↔ {s['Mentee Email']}"):
-                        st.markdown(f"""
-                        - 🧑‍🏫 **Mentor:** {s['Mentor Email']}  
-                        - 🧑 **Mentee:** {s['Mentee Email']}  
-                        - 📅 **Start Time:** {format_datetime_safe(s['Date'])}  
-                        - 🕒 **Status:** {s['Status']}  
-                        - ⭐ **Rating:** {s['Rating']}  
-                        - 💬 **Feedback:** {s['Feedback']}  
-                        - 🔗 **[Join Meet]({s['Meet Link']})**
-                        """)
-                    
+##########                    
                         confirm_delete_single = st.checkbox(
                             f"☑️ Confirm delete of Session {s['Session ID']}",
                             key=f"confirm_delete_{s['Session ID']}"
@@ -416,7 +406,7 @@ def show():
                     
                             except Exception as e:
                                 st.error(f"❌ Failed to delete session: {e}")
-###########
+##############
     # --- Analytics Tab ---
     with tabs[4]:
         st.markdown(
