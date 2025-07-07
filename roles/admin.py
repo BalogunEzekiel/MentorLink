@@ -417,20 +417,6 @@ def show():
                             except Exception as e:
                                 st.error(f"❌ Failed to delete session: {e}")
 ###########
-                    if st.button(f"❌ Delete Session {s['Session ID']}", key=f"sessions_tab_delete_{s['Session ID']}"):
-                        try:
-                            mentorship_request_id = s.get("mentorshiprequestid")
-                            
-                            if mentorship_request_id:
-                                supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
-                    
-                            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
-                            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
-                            st.rerun()
-                    
-                        except Exception as e:
-                            st.error(f"❌ Failed to delete session: {e}")
-          
     # --- Analytics Tab ---
     with tabs[4]:
         st.markdown(
