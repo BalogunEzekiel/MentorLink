@@ -381,31 +381,32 @@ def show():
                     - 🔗 **[Join Meet]({s['Meet Link']})**
                     """)
 ##########                    
-                        confirm_delete_single = st.checkbox(
-                            f"☑️ Confirm delete of Session {s['Session ID']}",
-                            key=f"confirm_delete_{s['Session ID']}"
-                        )
+                    confirm_delete_single = st.checkbox(
+                        f"☑️ Confirm delete of Session {s['Session ID']}",
+                        key=f"confirm_delete_{s['Session ID']}"
+                    )
                     
-                        delete_button = st.button(
-                            f"❌ Delete Session {s['Session ID']}",
-                            key=f"sessions_tab_delete_{s['Session ID']}",
-                            disabled=not confirm_delete_single,
-                            help="This will permanently delete this session and its mentorship request if linked."
-                        )
+                    delete_button = st.button(
+                        f"❌ Delete Session {s['Session ID']}",
+                        key=f"sessions_tab_delete_{s['Session ID']}",
+                        disabled=not confirm_delete_single,
+                        help="This will permanently delete this session and its mentorship request if linked."
+                    )
                     
-                        if delete_button:
-                            try:
-                                mentorship_request_id = s.get("mentorshiprequestid")
+                    if delete_button:
+                        try:
+                            mentorship_request_id = s.get("mentorshiprequestid")
                     
-                                if mentorship_request_id:
-                                    supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
+                            if mentorship_request_id:
+                                supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
                     
-                                supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
-                                st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
-                                st.rerun()
+                            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
+                            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
+                            st.rerun()
                     
-                            except Exception as e:
-                                st.error(f"❌ Failed to delete session: {e}")
+                        except Exception as e:
+                            st.error(f"❌ Failed to delete session: {e}")
+
 ##############
     # --- Analytics Tab ---
     with tabs[4]:
