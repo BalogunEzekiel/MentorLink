@@ -332,40 +332,33 @@ def show():
 #################
             # --- Delete All Sessions Button with Confirmation ---
             st.markdown("### ⚠️ Dangerous Action")
-            st.warning("You are about to permanently delete all filtered sessions and their related mentorship requests.")
+            st.warning("You are about to permanently delete all filtered sessions and (optionally) their related mentorship requests.")
             
-            confirm_delete_all = st.checkbox(
-                "☑️ I understand this will permanently delete all listed sessions.",
-                key="confirm_bulk_delete"
-            )
+            confirm_delete_all = st.checkbox("☑️ I understand this will permanently delete all listed sessions.", key="confirm_bulk_delete")
             
-            delete_all_btn = st.button(
-                "🗑️ Delete All Sessions",
-                type="primary",
-                disabled=not confirm_delete_all,
-                help="This will permanently delete all filtered sessions and their mentorship links."
-            )
+            if st.button("🗑️ Delete All Sessions", type="primary"):
+                if confirm_delete_all:
+                    try:
+                        for s in df_sessions.to_dict(orient="records"):
+                            session_id = s.get("Session ID")
+                            mentorship_request_id = s.get("mentorshiprequestid")
             
-            if delete_all_btn:
-                try:
-                    for s in df_sessions.to_dict(orient="records"):
-                        session_id = s.get("Session ID")
-                        mentorship_request_id = s.get("mentorshiprequestid")
+                            if mentorship_request_id:
+                                supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
             
-                        if mentorship_request_id:
-                            supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
+                            # Uncomment if needed:
+                            # supabase.table("feedback").delete().eq("sessionid", session_id).execute()
+                            # supabase.table("activitylog").delete().eq("sessionid", session_id).execute()
             
-                        # Optional cleanup:
-                        # supabase.table("feedback").delete().eq("sessionid", session_id).execute()
-                        # supabase.table("activitylog").delete().eq("sessionid", session_id).execute()
+                            supabase.table("session").delete().eq("sessionid", session_id).execute()
             
-                        supabase.table("session").delete().eq("sessionid", session_id).execute()
+                        st.success("✅ All filtered sessions deleted successfully.")
+                        st.rerun()
             
-                    st.success("✅ All filtered sessions deleted successfully.")
-                    st.rerun()
-            
-                except Exception as e:
-                    st.error(f"❌ Failed to delete all sessions: {e}")
+                    except Exception as e:
+                        st.error(f"❌ Failed to delete all sessions: {e}")
+                else:
+                    st.warning("⚠️ Please confirm the checkbox before deleting.")
 ###############
                 # --- Catalogue view with expanders ---
             st.markdown("### 📦 Catalogue View")
