@@ -132,8 +132,8 @@ def show():
         slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
 
         # Fetch all sessions and build a set of used availability_ids
-        session_records = supabase.table("session").select("availability_id").execute().data or []
-        used_availability_ids = {s["availability_id"] for s in session_records if s.get("availability_id")}
+        session_records = supabase.table("session").select("availabilityid").execute().data or []
+        used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
 
         if slots:
             for slot in slots:
@@ -161,25 +161,7 @@ def show():
         else:
             st.info("No availability slots added yet.")
 ####
-        slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
-
-        if slots:
-            for slot in slots:
-                start = format_datetime_safe(slot["start"], tz=WAT)
-                end = format_datetime_safe(slot["end"], tz=WAT)
-                col1, col2 = st.columns([6, 1])
-                col1.markdown(f"- 🕒 {start} ➡ {end}")
-                if col2.button("❌", key=f"delete_slot_{slot['availabilityid']}"):
-                    try:
-                        supabase.table("availability").delete().eq("availabilityid", slot["availabilityid"]).execute()
-                        st.success("Availability removed.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to remove slot: {e}")
-        else:
-            st.info("No availability slots added yet.")
-
-    # --- Requests Tab ---
+        # --- Requests Tab ---
     with tabs[2]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
@@ -241,7 +223,7 @@ def show():
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
             .eq("mentorid", mentor_id).execute().data or []
     
-        # Load all availability records for this mentor
+            # Load all availability records for this mentor
         availability_records = supabase.table("availability").select("*") \
             .eq("mentorid", mentor_id).execute().data or []
     
