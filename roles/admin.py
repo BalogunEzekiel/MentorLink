@@ -329,42 +329,7 @@ def show():
             # --- Display spreadsheet view ---
             st.markdown("### 📊 Spreadsheet View")
             st.dataframe(df_sessions.sort_values(by="Date", ascending=False), use_container_width=True)
-    
-            # --- Delete All Sessions Button with Confirmation ---
-            if st.button("🗑️ Delete All Sessions", type="primary", key="show_delete_warning"):
-                st.session_state.show_delete_warning = True
-    
-            # --- Show warning and checkbox only after button click ---
-            if st.session_state.get("show_delete_warning", False):
-                st.markdown("### ⚠️ Dangerous Action")
-                st.warning("You are about to permanently delete all filtered sessions and (optionally) their related mentorship requests.")
-    
-                confirm_delete_all = st.checkbox("☑️ I understand this will permanently delete all listed sessions.", key="confirm_bulk_delete")
-    
-                if st.button("✅ Confirm Delete", type="primary", key="confirm_delete_all_sessions"):
-                    if confirm_delete_all:
-                        try:
-                            for s in df_sessions.to_dict(orient="records"):
-                                session_id = s.get("Session ID")
-                                mentorship_request_id = s.get("mentorshiprequestid")
-    
-                                if mentorship_request_id:
-                                    supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
-    
-                                # Optional deletions
-                                # supabase.table("feedback").delete().eq("sessionid", session_id).execute()
-                                # supabase.table("activitylog").delete().eq("sessionid", session_id).execute()
-    
-                                supabase.table("session").delete().eq("sessionid", session_id).execute()
-    
-                            st.success("✅ All filtered sessions deleted successfully.")
-                            st.rerun()
-    
-                        except Exception as e:
-                            st.error(f"❌ Failed to delete all sessions: {e}")
-                    else:
-                        st.warning("⚠️ Please confirm the checkbox before deleting.")
-    
+        
             # --- Catalogue view with expanders ---
             st.markdown("### 📦 Catalogue View")
             for s in df_sessions.to_dict(orient="records"):
@@ -378,33 +343,35 @@ def show():
                     - 💬 **Feedback:** {s['Feedback']}  
                     - 🔗 **[Join Meet]({s['Meet Link']})**
                     """)
-    
-                    confirm_delete_single = st.checkbox(
-                        f"☑️ Confirm delete of Session {s['Session ID']}",
-                        key=f"confirm_delete_{s['Session ID']}"
-                    )
-    
-                    delete_button = st.button(
-                        f"❌ Delete Session {s['Session ID']}",
-                        key=f"sessions_tab_delete_{s['Session ID']}",
-                        disabled=not confirm_delete_single,
-                        help="This will permanently delete this session and its mentorship request if linked."
-                    )
-    
-                    if delete_button:
-                        try:
-                            mentorship_request_id = s.get("mentorshiprequestid")
-    
-                            if mentorship_request_id:
-                                supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
-    
-                            supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
-                            st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
-                            st.rerun()
-    
-                        except Exception as e:
-                            st.error(f"❌ Failed to delete session: {e}")
 
+                    if st.button(f"❌ Delete Session", key=f"show_delete_{session_key}"):
+                        st.session_state[f"show_confirm_{session_key}"] = True
+            
+                    # Step 2: If clicked, show warning and checkbox
+                    if st.session_state.get(f"show_confirm_{session_key}", False):
+                        st.markdown("⚠️ This will permanently delete this session and its mentorship request if linked.")
+                        
+                        confirm_delete_single = st.checkbox(
+                            f"☑️ Confirm delete of Session {session_key}",
+                            key=f"confirm_delete_{session_key}"
+                        )
+            
+                        # Step 3: Final confirm button to actually delete
+                        if st.button(f"✅ Confirm Delete Session {session_key}", key=f"delete_{session_key}", disabled=not confirm_delete_single):
+                            try:
+                                mentorship_request_id = s.get("mentorshiprequestid")
+            
+                                if mentorship_request_id:
+                                    supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", mentorship_request_id).execute()
+            
+                                supabase.table("session").delete().eq("sessionid", session_key).execute()
+            
+                                st.success(f"✅ Session {session_key} and related records deleted successfully.")
+                                st.rerun()
+            
+                            except Exception as e:
+                                st.error(f"❌ Failed to delete session: {e}")
+                                
 ##############
     # --- Analytics Tab ---
     with tabs[4]:
