@@ -360,7 +360,8 @@ def show():
                         try:
 #                            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
 #                            supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
-                            supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
+                            supabase.table("mentorshiprequest").delete().eq("mentorshiprequestid", s['mentorshiprequestid']).execute()
+#                            supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
                             st.success(f"✅ Session {s['Session ID']} and related records deleted successfully.")
                             st.rerun()
