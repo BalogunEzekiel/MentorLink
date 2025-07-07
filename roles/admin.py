@@ -179,34 +179,7 @@ def show():
                         st.info("⚠️ Only *Active Mentees* with a **completed profile** can be promoted to Mentors.")
         else:
             st.info("No users found.")
-    
-        # ✅ Session deletion with CASCADE
-        try:
-            session_data = supabase.table("session").select("*").order("date", desc=False).execute().data
-        except Exception as e:
-            st.error(f"❌ Failed to load sessions: {e}")
-            session_data = []
-        
-        if session_data:
-            st.subheader("All Sessions")
-            for s in session_data:
-                st.markdown(f"### 🗓️ Session ID: {s['sessionid']}")
-                confirm_delete = st.checkbox(f"Confirm delete Session {s['sessionid']}", key=f"confirm_{s['sessionid']}")
-        
-                if confirm_delete:
-                    if st.button(f"❌ Delete Session {s['sessionid']}", key=f"user_tab_delete_{s['sessionid']}"):
-                        try:
-                            # 🚨 CASCADE DELETE LOGIC 🚨
-                            supabase.table("feedback").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("activitylog").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("mentorshiprequest").delete().eq("sessionid", s['sessionid']).execute()
-                            supabase.table("session").delete().eq("sessionid", s['sessionid']).execute()
-        
-                            st.success(f"✅ Session {s['sessionid']} and related records deleted successfully.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Failed to delete session: {e}")
-
+  
     # Mentorship Requests
     with tabs[1]:
         st.subheader("Mentorship Requests")
@@ -385,7 +358,7 @@ def show():
                     """)
                     if st.button(f"❌ Delete Session {s['Session ID']}", key=f"sessions_tab_delete_{s['Session ID']}"):
                         try:
-                            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
+#                            supabase.table("feedback").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("activitylog").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("mentorshiprequest").delete().eq("sessionid", s['Session ID']).execute()
                             supabase.table("session").delete().eq("sessionid", s['Session ID']).execute()
