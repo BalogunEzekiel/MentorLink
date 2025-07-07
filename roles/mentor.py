@@ -111,21 +111,20 @@ def show():
             submitted = st.form_submit_button("➕ Add Slot")
     
             if submitted:
-                now = datetime.now(WAT)
-                start = WAT.localize(datetime.combine(date, start_time))
-                end = WAT.localize(datetime.combine(date, end_time))
+                start = datetime.combine(date, start_time).replace(tzinfo=WAT)
+                end = datetime.combine(date, end_time).replace(tzinfo=WAT)
             
-                if start < now:
-                    st.warning("Start time cannot be in the past.")
-                elif end <= start:
+                if end <= start:
                     st.warning("End time must be after start time.")
                 else:
+                    availability_date = date.isoformat()  # ✅ define before insert
+            
                     try:
                         supabase.table("availability").insert({
                             "mentorid": mentor_id,
-                            "start": start.isoformat(),      # full datetime with tz
-                            "end": end.isoformat(),          # full datetime with tz
-                            "date": availability_date        # only the date
+                            "start": start.isoformat(),
+                            "end": end.isoformat(),
+                            "date": availability_date  # ✅ now defined
                         }).execute()
                         st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
                         st.rerun()
