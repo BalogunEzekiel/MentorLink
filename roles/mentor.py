@@ -229,7 +229,7 @@ def show():
     
         # Create a lookup dict: availability_id → (start, end)
         availability_map = {
-            a["id"]: (a.get("start"), a.get("end")) for a in availability_records
+            a["availabilityid"]: (a.get("start"), a.get("end")) for a in availability_records
         }
     
         if sessions:
