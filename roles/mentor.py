@@ -100,18 +100,18 @@ def show():
     # --- Availability Tab ---
     with tabs[1]:
         st.subheader("Add Availability Slot")
-
+    
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
             now_wat = datetime.now(WAT)
             date = st.date_input("Date", value=now_wat.date())
             start_time = st.time_input("Start Time", value=(now_wat + timedelta(hours=1)).time())
             end_time = st.time_input("End Time", value=(now_wat + timedelta(hours=2)).time())
             submitted = st.form_submit_button("➕ Add Slot")
-
+    
             if submitted:
                 start = WAT.localize(datetime.combine(date, start_time))
                 end = WAT.localize(datetime.combine(date, end_time))
-
+    
                 if end <= start:
                     st.warning("End time must be after start time.")
                 else:
@@ -125,29 +125,32 @@ def show():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to add availability: {e}")
-
+    
         st.markdown("### Existing Availability")
-
+    
         # Fetch all availability slots
         slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
-
-        # Fetch all sessions and build a set of used availability_ids
-        session_records = supabase.table("session").select("availabilityid").execute().data or []
-        used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
-
+    
+        # Fetch all sessions and build a set of used availabilityids
+        try:
+            session_records = supabase.table("session").select("availabilityid").execute().data or []
+            used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
+        except Exception as e:
+            used_availability_ids = set()
+            st.error(f"Failed to fetch session data: {e}")
+    
         if slots:
             for slot in slots:
                 availability_id = slot.get("availabilityid")
-                start = format_datetime_safe(slot["start"], tz=WAT)
-                end = format_datetime_safe(slot["end"], tz=WAT)
-
+                start = format_datetime_safe(slot.get("start"), tz=WAT)
+                end = format_datetime_safe(slot.get("end"), tz=WAT)
+    
                 is_used = availability_id in used_availability_ids
                 status_text = "✅ Matched" if is_used else "🟢 Available"
-
+    
                 col1, col2 = st.columns([6, 1])
                 col1.markdown(f"- 🕒 {start} ➡ {end} &nbsp;&nbsp; **{status_text}**")
-
-                # Only allow deletion if not already matched to a session
+    
                 if not is_used:
                     if col2.button("❌", key=f"delete_slot_{availability_id}"):
                         try:
@@ -157,9 +160,10 @@ def show():
                         except Exception as e:
                             st.error(f"Failed to remove slot: {e}")
                 else:
-                    col2.markdown("🔒")  # Lock icon for matched slot
+                    col2.markdown("🔒")  # Locked from deletion
         else:
             st.info("No availability slots added yet.")
+
 ####
         # --- Requests Tab ---
     with tabs[2]:
