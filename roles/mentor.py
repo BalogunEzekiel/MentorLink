@@ -203,20 +203,36 @@ def show():
     with tabs[3]:
         st.subheader("🧑‍🏫 Your Mentorship Sessions")
     
-        # Load sessions for this mentor
+        # Load all sessions for this mentor
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
             .eq("mentorid", mentor_id).execute().data or []
+    
+        # Load all availability records for this mentor
+        availability_records = supabase.table("availability").select("*") \
+            .eq("mentorid", mentor_id).execute().data or []
+    
+        # Create a lookup dict: availability_id → (start, end)
+        availability_map = {
+            a["id"]: (a.get("start"), a.get("end")) for a in availability_records
+        }
     
         if sessions:
             for s in sessions:
                 mentee_email = s.get("users", {}).get("email", "Unknown")
                 start_str = s.get("start")
                 end_str = s.get("end")
-                meet_link = s.get("meet_link", "#")
     
+                # If start or end is missing, use values from availability
+                if not start_str or not end_str:
+                    availability_id = s.get("availability_id")
+                    if availability_id in availability_map:
+                        start_str, end_str = availability_map[availability_id]
+    
+                start_fmt = format_datetime_safe(start_str, tz=WAT) if start_str else "❌ Missing"
+                end_fmt = format_datetime_safe(end_str, tz=WAT) if end_str else "❌ Missing"
+    
+                meet_link = s.get("meet_link", "#")
                 status, emoji = classify_session(start_str, end_str)
-                start_fmt = format_datetime_safe(start_str, tz=WAT)
-                end_fmt = format_datetime_safe(end_str, tz=WAT)
     
                 st.markdown(f"""
                 ### {emoji} {status} Session
@@ -236,28 +252,4 @@ def show():
                     else:
                         st.error("Failed to send reminder.")
         else:
-            st.info("No mentorship sessions scheduled yet.")
-    
-        # Separator between sessions and availability
-        st.markdown("---")
-        st.subheader("📅 Your Available Time Slots")
-    
-        # Load availability slots for this mentor
-        availability_records = supabase.table("availability").select("*") \
-            .eq("mentorid", mentor_id).execute().data or []
-    
-        if availability_records:
-            for record in availability_records:
-                start_str = record.get("start")
-                end_str = record.get("end")
-    
-                start_fmt = format_datetime_safe(start_str, tz=WAT)
-                end_fmt = format_datetime_safe(end_str, tz=WAT)
-    
-                st.markdown(f"""
-                ### 🗓️ Available Slot
-                - 🕒 Start: {start_fmt}
-                - 🕔 End: {end_fmt}
-                """)
-        else:
-            st.info("You haven’t added any availability slots.")
+            st.info("No mentorship sessions yet.")
