@@ -111,13 +111,13 @@ def show():
             submitted = st.form_submit_button("➕ Add Slot")
     
             if submitted:
-                # 🛠️ FIX: Proper timezone handling
+                now = datetime.now(WAT)
                 start = WAT.localize(datetime.combine(date, start_time))
                 end = WAT.localize(datetime.combine(date, end_time))
             
-                availability_date = date.isoformat()  # e.g., "2025-07-07"
-            
-                if end <= start:
+                if start < now:
+                    st.warning("Start time cannot be in the past.")
+                elif end <= start:
                     st.warning("End time must be after start time.")
                 else:
                     try:
