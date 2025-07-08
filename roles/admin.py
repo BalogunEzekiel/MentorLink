@@ -144,7 +144,7 @@ def show():
                                     f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
                                 ).execute()
                                 supabase.table("availability").delete().eq("mentorid", user_id).execute()
-                                supabase.table("feedback").delete().eq("userid", user_id).execute()
+                                supabase.table("session").delete().eq("userid", user_id).execute()
                                 supabase.table("activitylog").delete().eq("userid", user_id).execute()
                                 supabase.table("users").delete().eq("userid", user_id).execute()
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
