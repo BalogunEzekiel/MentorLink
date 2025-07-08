@@ -427,6 +427,10 @@ def show():
     
         # Apply date filters
         def apply_date_filter(df, date_col):
+            if date_col not in df.columns:
+                st.warning(f"⚠️ Column '{date_col}' not found in DataFrame. Available columns: {df.columns.tolist()}")
+                return df
+        
             df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
             df = df.dropna(subset=[date_col])
             df["Year"] = df[date_col].dt.year
