@@ -104,6 +104,14 @@ def show():
         # Fetch slots early so it's available for overlap checks
         slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
     
+        # Fetch all sessions and build a set of used availabilityids
+        try:
+            session_records = supabase.table("session").select("availabilityid").execute().data or []
+            used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
+        except Exception as e:
+            used_availability_ids = set()
+            st.error(f"Failed to fetch session data: {e}")
+    
         with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
             now_wat = datetime.now(WAT)
     
@@ -143,14 +151,6 @@ def show():
     
         st.markdown("### Existing Availability")
     
-        # Fetch all sessions and build a set of used availabilityids
-        try:
-            session_records = supabase.table("session").select("availabilityid, date").execute().data or []
-            used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
-        except Exception as e:
-            used_availability_ids = set()
-            st.error(f"Failed to fetch session data: {e}")
-    
         if slots:
             for slot in slots:
                 availability_id = slot.get("availabilityid")
@@ -175,6 +175,32 @@ def show():
                     col2.markdown("🔒")
         else:
             st.info("No availability slots added yet.")
+    
+        # === Accept Request (Create Session with Available Slot) ===
+        st.markdown("### 🔁 Accept Mentorship Request")
+    
+        # Assume 'mentee_id' and 'request_id' are provided/selected elsewhere
+        try:
+            available_slots = [s for s in slots if s["availabilityid"] not in used_availability_ids]
+    
+            if not available_slots:
+                st.warning("❌ No available slots left for this mentor.")
+            else:
+                selected_slot = available_slots[0]  # Auto pick first slot, or add dropdown to choose
+                if st.button("✅ Accept Request and Create Session"):
+                    try:
+                        supabase.table("session").insert({
+                            "mentorid": mentor_id,
+                            "menteeid": mentee_id,
+                            "mentorshiprequestid": request_id,
+                            "availabilityid": selected_slot["availabilityid"]
+                        }).execute()
+                        st.success("✅ Session successfully scheduled.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to save session to database: {e}")
+        except Exception as e:
+            st.error(f"Unexpected error while accepting request: {e}")
 
 ####
         # --- Requests Tab ---
