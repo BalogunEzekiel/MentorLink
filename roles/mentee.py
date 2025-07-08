@@ -171,6 +171,7 @@ def show():
                 used_ids = {s.get("availabilityid") for s in matched_sessions if s.get("availabilityid")}
             except Exception as e:
                 used_ids = set()
+                st.error(f"Could not load matched sessions: {e}")
     
             now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
     
@@ -193,32 +194,30 @@ def show():
                             .select("availabilityid, start, end").eq("mentorid", mentor["userid"]).execute().data or []
                     except Exception as e:
                         availability = []
+                        st.warning(f"Could not fetch availability for {name}: {e}")
     
-                    # Filter out matched or past slots
+                    # Filter and display valid upcoming slots
                     upcoming_free_slots = []
                     for slot in availability:
-                        slot_start_str = slot.get("start")
                         availability_id = slot.get("availabilityid")
-                        
-                        if not slot_start_str or not availability_id:
-                            continue  # skip if key data is missing
-                        
-                        try:
-                            # Handle possible 'Z' suffix for UTC
-                            if slot_start_str.endswith("Z"):
-                                slot_start = datetime.fromisoformat(slot_start_str.replace("Z", "+00:00"))
-                            else:
-                                slot_start = datetime.fromisoformat(slot_start_str)
-                        except Exception as e:
-                            st.warning(f"⚠️ Skipping invalid slot due to bad date: {e}")
+                        slot_start_str = slot.get("start")
+                        slot_end_str = slot.get("end")
+    
+                        if not availability_id or not slot_start_str or not slot_end_str:
                             continue
-                        
+    
+                        try:
+                            slot_start = datetime.fromisoformat(slot_start_str.replace("Z", "+00:00"))
+                            slot_end = datetime.fromisoformat(slot_end_str.replace("Z", "+00:00"))
+                        except Exception as e:
+                            st.warning(f"⚠️ Invalid slot datetime: {e}")
+                            continue
+    
                         if availability_id not in used_ids and slot_start > now_utc:
-                          
                             local_start = slot_start.astimezone()
-                            local_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00")).astimezone()
+                            local_end = slot_end.astimezone()
                             label = f"{local_start.strftime('%A %d %b %Y %I:%M %p')} ➡ {local_end.strftime('%I:%M %p')}"
-                            upcoming_free_slots.append((label, slot["availabilityid"]))
+                            upcoming_free_slots.append((label, availability_id))
     
                     if upcoming_free_slots:
                         slot_labels = [label for label, _ in upcoming_free_slots]
@@ -231,24 +230,27 @@ def show():
                         )
     
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                            existing = supabase.table("mentorshiprequest") \
-                                .select("mentorshiprequestid", "status") \
-                                .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
-                                .in_("status", ["PENDING", "ACCEPTED"]).execute().data
+                            try:
+                                existing = supabase.table("mentorshiprequest") \
+                                    .select("mentorshiprequestid", "status") \
+                                    .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
+                                    .in_("status", ["PENDING", "ACCEPTED"]).execute().data
     
-                            if existing:
-                                st.warning("❗ You already have a pending or accepted request with this mentor.")
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                supabase.table("mentorshiprequest").insert({
-                                    "mentorid": mentor["userid"],
-                                    "menteeid": user_id,
-                                    "status": "PENDING",
-                                    "availabilityid": slot_mapping[selected_slot]
-                                }).execute()
-                                st.success(f"✅ Request sent to {mentor['email']}!")
-                                st.rerun()
+                                if existing:
+                                    st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    supabase.table("mentorshiprequest").insert({
+                                        "mentorid": mentor["userid"],
+                                        "menteeid": user_id,
+                                        "status": "PENDING",
+                                        "availabilityid": slot_mapping[selected_slot]
+                                    }).execute()
+                                    st.success(f"✅ Request sent to {mentor['email']}!")
+                                    st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Failed to request mentorship: {e}")
                     else:
                         st.warning("This mentor has no upcoming free slots.")
 
