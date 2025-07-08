@@ -141,8 +141,11 @@ def show():
     # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
+    
+        # Load all mentors
         try:
-            mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
+            mentors = supabase.table("users") \
+                .select("*, profile(name, bio, skills, goals, profile_image_url)") \
                 .eq("role", "Mentor").eq("status", "Active").execute().data or []
         except Exception as e:
             st.error(f"Failed to load mentors: {e}")
@@ -151,12 +154,14 @@ def show():
         if not mentors:
             st.info("No mentors available.")
         else:
+            # Build skill filter
             all_skills = []
             for mentor in mentors:
                 skills = mentor.get("profile", {}).get("skills", "")
                 if skills:
                     all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
             unique_skills = sorted(set(all_skills))
+    
             selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
     
             if selected_skill != "All":
@@ -165,7 +170,7 @@ def show():
                     if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
                 ]
     
-            # Fetch used availability slots
+            # Fetch used availability slots from session table
             try:
                 matched_sessions = supabase.table("session").select("availabilityid").execute().data or []
                 used_ids = {s.get("availabilityid") for s in matched_sessions if s.get("availabilityid")}
@@ -175,6 +180,7 @@ def show():
     
             now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
     
+            # Display mentor cards
             cols = st.columns(2)
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
@@ -189,6 +195,7 @@ def show():
                     st.image(avatar_url, width=120, caption=name)
                     st.markdown(f"**Bio:** {bio}  \n**Skills:** {skills}  \n**Goals:** {goals}")
     
+                    # Load mentor's availability
                     try:
                         availability = supabase.table("availability") \
                             .select("availabilityid, start, end").eq("mentorid", mentor["userid"]).execute().data or []
@@ -196,7 +203,7 @@ def show():
                         availability = []
                         st.warning(f"Could not fetch availability for {name}: {e}")
     
-                    # Filter and display valid upcoming slots
+                    # Filter upcoming, unmatched slots
                     upcoming_free_slots = []
                     for slot in availability:
                         availability_id = slot.get("availabilityid")
@@ -219,6 +226,7 @@ def show():
                             label = f"{local_start.strftime('%A %d %b %Y %I:%M %p')} ➡ {local_end.strftime('%I:%M %p')}"
                             upcoming_free_slots.append((label, availability_id))
     
+                    # Show slot selector and request button
                     if upcoming_free_slots:
                         slot_labels = [label for label, _ in upcoming_free_slots]
                         slot_mapping = {label: aid for label, aid in upcoming_free_slots}
@@ -231,6 +239,7 @@ def show():
     
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             try:
+                                # Check if existing request
                                 existing = supabase.table("mentorshiprequest") \
                                     .select("mentorshiprequestid", "status") \
                                     .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
