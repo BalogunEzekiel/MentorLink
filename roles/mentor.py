@@ -147,7 +147,7 @@ def show():
     
         # Fetch all sessions and build a set of used availabilityids
         try:
-            session_records = supabase.table("session").select("availabilityid").execute().data or []
+            session_records = supabase.table("session").select("availabilityid, date").execute().data or []
             used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
         except Exception as e:
             used_availability_ids = set()
