@@ -113,24 +113,33 @@ def show():
             if submitted:
                 start = datetime.combine(date, start_time).replace(tzinfo=WAT)
                 end = datetime.combine(date, end_time).replace(tzinfo=WAT)
-            
+    
                 if end <= start:
                     st.warning("End time must be after start time.")
                 else:
-                    availability_date = date.isoformat()  # ✅ define before insert
-            
-                    try:
-                        supabase.table("availability").insert({
-                            "mentorid": mentor_id,
-                            "start": start.isoformat(),
-                            "end": end.isoformat(),
-                            "date": availability_date  # ✅ now defined
-                        }).execute()
-                        st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to add availability: {e}")
-
+                    availability_date = date.isoformat()
+    
+                    # Check for overlap
+                    overlapping = [
+                        s for s in slots
+                        if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
+                    ]
+    
+                    if overlapping:
+                        st.warning("⛔ This slot overlaps with an existing one. Please choose a different time.")
+                    else:
+                        try:
+                            supabase.table("availability").insert({
+                                "mentorid": mentor_id,
+                                "start": start.isoformat(),
+                                "end": end.isoformat(),
+                                "date": availability_date
+                            }).execute()
+                            st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to add availability: {e}")
+    
         st.markdown("### Existing Availability")
     
         # Fetch all availability slots
@@ -164,7 +173,7 @@ def show():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to remove slot: {e}")
-                else:    
+                else:
                     col2.markdown("🔒")  # Locked from deletion
         else:
             st.info("No availability slots added yet.")
