@@ -131,7 +131,21 @@ def show():
     
                     overlapping = [
                         s for s in slots
-                        if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
+                        s_start = s.get("start")
+                        s_end = s.get("end")
+                        
+                        # Ensure both are present before comparison
+                        if s_start and s_end:
+                            try:
+                                slot_start = datetime.fromisoformat(s_start.replace("Z", "+00:00"))
+                                slot_end = datetime.fromisoformat(s_end.replace("Z", "+00:00"))
+                                
+                                if not (end <= slot_start or start >= slot_end):
+                                    overlapping.append(s)
+                            except Exception as e:
+                                st.warning(f"⚠️ Skipping invalid slot format: {e}")
+
+#                        if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
                     ]
     
                     if overlapping:
