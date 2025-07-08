@@ -177,13 +177,13 @@ def show():
             st.info("No availability slots added yet.")
 
 ####
-        # --- Requests Tab ---
+    # --- Requests Tab ---
     with tabs[2]:
         st.subheader("Incoming Mentorship Requests")
         requests = supabase.table("mentorshiprequest") \
             .select("*, mentee:users!mentorshiprequest_menteeid_fkey(email, userid)") \
             .eq("mentorid", mentor_id).eq("status", "PENDING").execute().data or []
-
+    
         if not requests:
             st.info("No pending requests.")
         else:
@@ -192,40 +192,59 @@ def show():
                 mentee_email = mentee.get("email", "Unknown")
                 mentee_id = mentee.get("userid")
                 req_id = req["mentorshiprequestid"]
-
+    
                 mentee_profile_data = supabase.table("profile").select("*").eq("userid", mentee_id).execute().data
                 mentee_profile = mentee_profile_data[0] if mentee_profile_data else {}
-
+    
                 with st.expander(f"Request from {mentee_email}"):
                     if mentee_profile.get("profile_image_url"):
                         st.image(mentee_profile["profile_image_url"], width=100)
-
+    
                     st.markdown(f"""
                     **Name:** {mentee_profile.get("name", "N/A")}  
                     **Bio:** {mentee_profile.get("bio", "N/A")}  
                     **Skills:** {mentee_profile.get("skills", "N/A")}  
                     **Goals:** {mentee_profile.get("goals", "N/A")}
                     """)
-
-                    col1, col2 = st.columns(2)
-                    if col1.button("✅ Accept", key=f"accept_{req_id}"):
-                        now = datetime.now(WAT)
-                        start = now + timedelta(minutes=5)
-                        end = start + timedelta(minutes=30)
-
-                        success, msg = create_session_with_meet_and_email(
-                            supabase, mentor_id, mentee_id, start, end
-                        )
-
-                        if success:
-                            supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
-                                .eq("mentorshiprequestid", req_id).execute()
-                            st.success("Request accepted and session booked!")
-                            st.rerun()
+    
+                    try:
+                        # Get all unused slots for this mentor
+                        all_slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
+                        used_sessions = supabase.table("session").select("availabilityid").execute().data or []
+                        used_ids = {s["availabilityid"] for s in used_sessions if s.get("availabilityid")}
+                        available_slots = [s for s in all_slots if s["availabilityid"] not in used_ids]
+    
+                        if available_slots:
+                            selected_slot = st.selectbox(
+                                "📅 Choose an available slot",
+                                available_slots,
+                                format_func=lambda s: f"{format_datetime_safe(s['start'])} ➡ {format_datetime_safe(s['end'])}",
+                                key=f"slot_select_{req_id}"
+                            )
+    
+                            if st.button("✅ Accept and Book Slot", key=f"accept_{req_id}"):
+                                try:
+                                    supabase.table("session").insert({
+                                        "mentorid": mentor_id,
+                                        "menteeid": mentee_id,
+                                        "mentorshiprequestid": req_id,
+                                        "availabilityid": selected_slot["availabilityid"]
+                                    }).execute()
+    
+                                    supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
+                                        .eq("mentorshiprequestid", req_id).execute()
+    
+                                    st.success("✅ Request accepted and session booked!")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Failed to save session to database: {e}")
                         else:
-                            st.error(msg)
-
-                    if col2.button("❌ Reject", key=f"reject_{req_id}"):
+                            st.warning("❌ No available slots to schedule a session.")
+    
+                    except Exception as e:
+                        st.error(f"❌ Error checking availability: {e}")
+    
+                    if st.button("❌ Reject", key=f"reject_{req_id}"):
                         supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
                             .eq("mentorshiprequestid", req_id).execute()
                         st.info("Request rejected.")
