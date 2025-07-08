@@ -57,21 +57,25 @@ def show():
     with tabs[0]:
         st.subheader("Register New User")
     
-        with st.form("register_user", clear_on_submit=True):
+        with st.form("register_user_form", clear_on_submit=True):
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
             role = st.selectbox("Assign Role", ["Select a role", "Mentor", "Mentee"])
-            submitted = st.form_submit_button("Create")
+            submitted = st.form_submit_button("➕ Create")
     
         if submitted:
             if not user_email or role == "Select a role":
                 st.warning("⚠️ Please fill in both email and role.")
             else:
-                register_user(user_email, role)
-                st.success(f"✅ User '{user_email}' registered as {role}.")
-                time.sleep(1)
-                st.rerun()
+                try:
+                    register_user(user_email, role)
+                    st.success(f"✅ User '{user_email}' registered as {role}.")
+                    time.sleep(1)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Registration failed: {e}")
     
         st.subheader("All Users")
+    
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -104,29 +108,34 @@ def show():
     
             st.dataframe(filtered_df.reset_index(drop=True), use_container_width=True)
     
-            selected_email = st.selectbox(
-                "✏️ Select User to Update",
-                ["Select an email..."] + df["Email"].tolist()
-            )
+            st.subheader("Update User Status")
     
-            new_status = st.selectbox(
-                "🛠️ New Status",
-                ["Select status...", "Active", "Inactive", "Delete"]
-            )
-    
-            confirm_delete_1 = confirm_delete_2 = False
-            if new_status == "Delete":
-                st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
-                confirm_delete_1 = st.checkbox(
-                    "I understand that deleting this user is permanent and cannot be undone.",
-                    key="confirm_delete_1"
-                )
-                confirm_delete_2 = st.checkbox(
-                    "Yes, I really want to delete this user.",
-                    key="confirm_delete_2"
+            with st.form("update_status_form", clear_on_submit=True):
+                selected_email = st.selectbox(
+                    "✏️ Select User to Update",
+                    ["Select an email..."] + df["Email"].tolist()
                 )
     
-            if st.button("✅ Update Status"):
+                new_status = st.selectbox(
+                    "🛠️ New Status",
+                    ["Select status...", "Active", "Inactive", "Delete"]
+                )
+    
+                confirm_delete_1 = confirm_delete_2 = False
+                if new_status == "Delete":
+                    st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
+                    confirm_delete_1 = st.checkbox(
+                        "I understand that deleting this user is permanent and cannot be undone.",
+                        key="confirm_delete_1"
+                    )
+                    confirm_delete_2 = st.checkbox(
+                        "Yes, I really want to delete this user.",
+                        key="confirm_delete_2"
+                    )
+    
+                update_submitted = st.form_submit_button("✅ Update Status")
+    
+            if update_submitted:
                 if selected_email == "Select an email..." or new_status == "Select status...":
                     st.warning("⚠️ Please select both a valid user and a status.")
                 else:
@@ -137,7 +146,6 @@ def show():
                         if new_status == "Delete":
                             if confirm_delete_1 and confirm_delete_2:
                                 # 🚨 CASCADE DELETE LOGIC 🚨
-                                # 🚨 CASCADE DELETE LOGIC 🚨
                                 supabase.table("session").delete().or_(
                                     f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
                                 ).execute()
@@ -145,7 +153,7 @@ def show():
                                     f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
                                 ).execute()
                                 supabase.table("availability").delete().eq("mentorid", user_id).execute()
-                                supabase.table("users").delete().eq("userid", user_id).execute()                                
+                                supabase.table("users").delete().eq("userid", user_id).execute()
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
                                 st.rerun()
                             else:
@@ -156,6 +164,7 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
+
     
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
