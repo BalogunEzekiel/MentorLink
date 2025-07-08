@@ -7,11 +7,14 @@ from datetime import datetime, timedelta
 import pytz
 import time
 import uuid
+from datetime import datetime
+import pytz
 
 # 🕓 Streamlit JS Eval to get local timezone
 from streamlit_js_eval import streamlit_js_eval
 
 WAT = pytz.timezone("Africa/Lagos")
+now_wat = datetime.now(WAT)
 
 def classify_session(start_time_str, end_time_str):
     now = datetime.now(WAT)
