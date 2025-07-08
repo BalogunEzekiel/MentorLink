@@ -198,16 +198,23 @@ def show():
                     upcoming_free_slots = []
                     for slot in availability:
                         slot_start_str = slot.get("start")
-                        if not slot_start_str:
-                            continue  # skip if start is missing
+                        availability_id = slot.get("availabilityid")
+                        
+                        if not slot_start_str or not availability_id:
+                            continue  # skip if key data is missing
                         
                         try:
-                            slot_start = datetime.fromisoformat(slot_start_str)
+                            # Handle possible 'Z' suffix for UTC
+                            if slot_start_str.endswith("Z"):
+                                slot_start = datetime.fromisoformat(slot_start_str.replace("Z", "+00:00"))
+                            else:
+                                slot_start = datetime.fromisoformat(slot_start_str)
                         except Exception as e:
-                            st.warning(f"⚠️ Invalid datetime format in slot: {e}")
+                            st.warning(f"⚠️ Skipping invalid slot due to bad date: {e}")
                             continue
                         
-                        if slot.get("availabilityid") not in used_ids and slot_start > now_utc:                          
+                        if availability_id not in used_ids and slot_start > now_utc:
+                          
                             local_start = slot_start.astimezone()
                             local_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00")).astimezone()
                             label = f"{local_start.strftime('%A %d %b %Y %I:%M %p')} ➡ {local_end.strftime('%I:%M %p')}"
