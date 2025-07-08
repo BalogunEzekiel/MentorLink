@@ -228,9 +228,10 @@ def show():
                                         "mentorid": mentor_id,
                                         "menteeid": mentee_id,
                                         "mentorshiprequestid": req_id,
-                                        "availabilityid": selected_slot["availabilityid"]
+                                        "availabilityid": selected_slot["availabilityid"],
+                                        "date": selected_slot.get("date")  # <-- fix: supply date
                                     }).execute()
-    
+
                                     supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
                                         .eq("mentorshiprequestid", req_id).execute()
     
