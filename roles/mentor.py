@@ -146,7 +146,7 @@ def show():
                                 st.warning(f"⚠️ Skipping invalid slot format: {e}")
 
 #                        if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
-                    ]
+#                    ]
     
                     if overlapping:
                         st.warning("⛔ This slot overlaps with an existing one. Please choose a different time.")
