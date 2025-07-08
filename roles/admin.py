@@ -435,55 +435,77 @@ def show():
             df = df.dropna(subset=[date_col])
             df["Year"] = df[date_col].dt.year
             df["Month"] = df[date_col].dt.strftime("%B")
+        
             if selected_year != "All":
                 df = df[df["Year"] == selected_year]
             if selected_month != "All":
                 df = df[df["Month"] == selected_month]
             return df
-    
+        
+        # Apply date filters safely
         df_users = apply_date_filter(df_users, "created_at")
         df_sessions = apply_date_filter(df_sessions, "date")
         df_requests = apply_date_filter(df_requests, "createdat")
-    
-        # Original copies for safe filtering
+        
+        # Backup originals
         df_users_all = df_users.copy()
         df_sessions_all = df_sessions.copy()
         df_requests_all = df_requests.copy()
-    
-        # Prepare lookups
+        
+        # Confirm necessary columns exist before lookup
+        required_user_fields = {"userid", "email", "role"}
+        if not required_user_fields.issubset(df_users_all.columns):
+            st.error(f"Missing required fields in df_users. Found: {df_users_all.columns.tolist()}")
+            st.stop()
+        
+        # Prepare mentor and mentee lookups
         mentor_lookup = df_users_all[df_users_all["role"] == "Mentor"][["userid", "email"]]
         mentee_lookup = df_users_all[df_users_all["role"] == "Mentee"][["userid", "email"]]
-    
-        # Merge mentor and mentee emails
+        
+        # Confirm merge keys exist in session data
+        if not {"mentorid", "menteeid"}.issubset(df_sessions_all.columns):
+            st.error("Missing 'mentorid' or 'menteeid' in session data.")
+            st.stop()
+        
+        # Merge mentor and mentee emails into session records
         df_sessions_merged = df_sessions_all.copy()
-        df_sessions_merged = df_sessions_merged.merge(
-            mentor_lookup,
-            left_on="mentorid",
-            right_on="userid",
-            how="left",
-            suffixes=("", "_mentor")
-        )
-        df_sessions_merged = df_sessions_merged.merge(
-            mentee_lookup,
-            left_on="menteeid",
-            right_on="userid",
-            how="left",
-            suffixes=("", "_mentee")
-        )
-    
+        
+        # Merge mentor email
+        if not mentor_lookup.empty:
+            df_sessions_merged = df_sessions_merged.merge(
+                mentor_lookup,
+                left_on="mentorid",
+                right_on="userid",
+                how="left",
+                suffixes=("", "_mentor")
+            )
+        
+        # Merge mentee email
+        if not mentee_lookup.empty:
+            df_sessions_merged = df_sessions_merged.merge(
+                mentee_lookup,
+                left_on="menteeid",
+                right_on="userid",
+                how="left",
+                suffixes=("", "_mentee")
+            )
+        
         # Role-based filters
         if role_filter == "Mentors":
             df_users = df_users_all[df_users_all["role"] == "Mentor"]
             df_sessions_merged = df_sessions_merged[df_sessions_merged["email"].notna()]
             df_requests = df_requests_all[df_requests_all["menteeid"].isin(df_users_all["userid"])]
+        
         elif role_filter == "Mentees":
             df_users = df_users_all[df_users_all["role"] == "Mentee"]
             df_sessions_merged = df_sessions_merged[df_sessions_merged["email_mentee"].notna()]
             df_requests = df_requests_all[df_requests_all["menteeid"].isin(df_users["userid"])]
+        
         else:
             df_users = df_users_all
             df_sessions_merged = df_sessions_merged
             df_requests = df_requests_all
+
     
         # --- Metrics ---
         st.markdown("### 📌 Key Metrics")
