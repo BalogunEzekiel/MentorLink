@@ -162,6 +162,15 @@ def show():
                     if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
                 ]
     
+            # Fetch used availability slots
+            try:
+                matched_sessions = supabase.table("session").select("availabilityid").execute().data or []
+                used_ids = {s.get("availabilityid") for s in matched_sessions if s.get("availabilityid")}
+            except Exception as e:
+                used_ids = set()
+    
+            now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+    
             cols = st.columns(2)
             for i, mentor in enumerate(mentors):
                 col = cols[i % 2]
@@ -178,11 +187,30 @@ def show():
     
                     try:
                         availability = supabase.table("availability") \
-                            .select("availabilityid").eq("mentorid", mentor["userid"]).execute().data or []
+                            .select("availabilityid, start, end").eq("mentorid", mentor["userid"]).execute().data or []
                     except Exception as e:
                         availability = []
     
-                    if availability:
+                    # Filter out matched or past slots
+                    upcoming_free_slots = []
+                    for slot in availability:
+                        slot_start = datetime.fromisoformat(slot["start"].replace("Z", "+00:00"))
+                        if slot["availabilityid"] not in used_ids and slot_start > now_utc:
+                            local_start = slot_start.astimezone()
+                            local_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00")).astimezone()
+                            label = f"{local_start.strftime('%A %d %b %Y %I:%M %p')} ➡ {local_end.strftime('%I:%M %p')}"
+                            upcoming_free_slots.append((label, slot["availabilityid"]))
+    
+                    if upcoming_free_slots:
+                        slot_labels = [label for label, _ in upcoming_free_slots]
+                        slot_mapping = {label: aid for label, aid in upcoming_free_slots}
+    
+                        selected_slot = st.selectbox(
+                            "🕒 Choose a time slot",
+                            options=slot_labels,
+                            key=f"slot_select_{mentor['userid']}"
+                        )
+    
                         if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
                             existing = supabase.table("mentorshiprequest") \
                                 .select("mentorshiprequestid", "status") \
@@ -197,12 +225,13 @@ def show():
                                 supabase.table("mentorshiprequest").insert({
                                     "mentorid": mentor["userid"],
                                     "menteeid": user_id,
-                                    "status": "PENDING"
+                                    "status": "PENDING",
+                                    "availabilityid": slot_mapping[selected_slot]
                                 }).execute()
                                 st.success(f"✅ Request sent to {mentor['email']}!")
                                 st.rerun()
                     else:
-                        st.warning("This mentor has no availability yet.")
+                        st.warning("This mentor has no upcoming free slots.")
 
     # --- My Requests Tab ---
     with tabs[2]:
