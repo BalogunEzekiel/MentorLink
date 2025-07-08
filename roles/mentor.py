@@ -257,7 +257,7 @@ def show():
                 end_fmt = format_datetime_safe(end_str, tz=WAT) if end_str else "❌ Missing"
     
                 meet_link = s.get("meet_link", "#")
-                status, emoji = classify_session(start_str, end_str)
+#                status, emoji = classify_session(start_str, end_str)
     
                 st.markdown(f"""
                 ### {emoji} {status} Session
