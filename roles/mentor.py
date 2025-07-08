@@ -98,83 +98,83 @@ def show():
                 st.rerun()
 
     # --- Availability Tab ---
-with tabs[1]:
-    st.subheader("Add Availability Slot")
-
-    # Fetch slots early so it's available for overlap checks
-    slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
-
-    with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
-        now_wat = datetime.now(WAT)
-
-        date = st.date_input("Date", value=now_wat.date())
-        start_time = st.time_input("Start Time")
-        end_time = st.time_input("End Time")
-        submitted = st.form_submit_button("➕ Add Slot")
-
-        if submitted:
-            start = datetime.combine(date, start_time).replace(tzinfo=WAT)
-            end = datetime.combine(date, end_time).replace(tzinfo=WAT)
-
-            if end <= start:
-                st.warning("End time must be after start time.")
-            else:
-                availability_date = date.isoformat()
-
-                overlapping = [
-                    s for s in slots
-                    if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
-                ]
-
-                if overlapping:
-                    st.warning("⛔ This slot overlaps with an existing one. Please choose a different time.")
+    with tabs[1]:
+        st.subheader("Add Availability Slot")
+    
+        # Fetch slots early so it's available for overlap checks
+        slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
+    
+        with st.form(f"availability_form_{mentor_id}", clear_on_submit=True):
+            now_wat = datetime.now(WAT)
+    
+            date = st.date_input("Date", value=now_wat.date())
+            start_time = st.time_input("Start Time")
+            end_time = st.time_input("End Time")
+            submitted = st.form_submit_button("➕ Add Slot")
+    
+            if submitted:
+                start = datetime.combine(date, start_time).replace(tzinfo=WAT)
+                end = datetime.combine(date, end_time).replace(tzinfo=WAT)
+    
+                if end <= start:
+                    st.warning("End time must be after start time.")
                 else:
-                    try:
-                        supabase.table("availability").insert({
-                            "mentorid": mentor_id,
-                            "start": start.isoformat(),
-                            "end": end.isoformat(),
-                            "date": availability_date
-                        }).execute()
-                        st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to add availability: {e}")
-
-    st.markdown("### Existing Availability")
-
-    # Fetch all sessions and build a set of used availabilityids
-    try:
-        session_records = supabase.table("session").select("availabilityid, date").execute().data or []
-        used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
-    except Exception as e:
-        used_availability_ids = set()
-        st.error(f"Failed to fetch session data: {e}")
-
-    if slots:
-        for slot in slots:
-            availability_id = slot.get("availabilityid")
-            start = format_datetime_safe(slot.get("start"), tz=WAT)
-            end = format_datetime_safe(slot.get("end"), tz=WAT)
-
-            is_used = availability_id in used_availability_ids
-            status_text = "✅ Matched" if is_used else "🟢 Available"
-
-            col1, col2 = st.columns([6, 1])
-            col1.markdown(f"- 🕒 {start} ➡ {end} &nbsp;&nbsp; **{status_text}**")
-
-            if not is_used:
-                if col2.button("❌", key=f"delete_slot_{availability_id}"):
-                    try:
-                        supabase.table("availability").delete().eq("availabilityid", availability_id).execute()
-                        st.success("Availability removed.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to remove slot: {e}")
-            else:
-                col2.markdown("🔒")
-    else:
-        st.info("No availability slots added yet.")
+                    availability_date = date.isoformat()
+    
+                    overlapping = [
+                        s for s in slots
+                        if not (end <= datetime.fromisoformat(s["start"]) or start >= datetime.fromisoformat(s["end"]))
+                    ]
+    
+                    if overlapping:
+                        st.warning("⛔ This slot overlaps with an existing one. Please choose a different time.")
+                    else:
+                        try:
+                            supabase.table("availability").insert({
+                                "mentorid": mentor_id,
+                                "start": start.isoformat(),
+                                "end": end.isoformat(),
+                                "date": availability_date
+                            }).execute()
+                            st.success(f"Availability added: {format_datetime_safe(start)} ➡ {format_datetime_safe(end)}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to add availability: {e}")
+    
+        st.markdown("### Existing Availability")
+    
+        # Fetch all sessions and build a set of used availabilityids
+        try:
+            session_records = supabase.table("session").select("availabilityid, date").execute().data or []
+            used_availability_ids = {s["availabilityid"] for s in session_records if s.get("availabilityid")}
+        except Exception as e:
+            used_availability_ids = set()
+            st.error(f"Failed to fetch session data: {e}")
+    
+        if slots:
+            for slot in slots:
+                availability_id = slot.get("availabilityid")
+                start = format_datetime_safe(slot.get("start"), tz=WAT)
+                end = format_datetime_safe(slot.get("end"), tz=WAT)
+    
+                is_used = availability_id in used_availability_ids
+                status_text = "✅ Matched" if is_used else "🟢 Available"
+    
+                col1, col2 = st.columns([6, 1])
+                col1.markdown(f"- 🕒 {start} ➡ {end} &nbsp;&nbsp; **{status_text}**")
+    
+                if not is_used:
+                    if col2.button("❌", key=f"delete_slot_{availability_id}"):
+                        try:
+                            supabase.table("availability").delete().eq("availabilityid", availability_id).execute()
+                            st.success("Availability removed.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to remove slot: {e}")
+                else:
+                    col2.markdown("🔒")
+        else:
+            st.info("No availability slots added yet.")
 
 ####
         # --- Requests Tab ---
