@@ -421,7 +421,9 @@ def show():
         st.markdown("### 🧑‍💼 Filter Sessions By Role")
         role_filter = st.radio("Filter By:", ["All", "Mentors", "Mentees"], horizontal=True)
 
-        st.write("✅ df_sessions columns:", df_sessions.columns.tolist())
+#        st.write("✅ df_sessions columns:", df_sessions.columns.tolist())
+        st.write("Session Columns:", df_sessions.columns.tolist())
+
     
         # Apply date filters
         def apply_date_filter(df, date_col):
