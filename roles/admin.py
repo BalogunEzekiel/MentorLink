@@ -161,9 +161,6 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
-        else:
-            st.info("No users found.")
-
     
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
