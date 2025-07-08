@@ -259,8 +259,7 @@ def show():
                                     supabase.table("mentorshiprequest").insert({
                                         "mentorid": mentor["userid"],
                                         "menteeid": user_id,
-                                        "status": "PENDING",
-                                        "availabilityid": slot_mapping[selected_slot]
+                                        "status": "PENDING"
                                     }).execute()
                                     st.success(f"✅ Request sent to {mentor['email']}!")
                                     st.rerun()
