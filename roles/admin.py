@@ -106,32 +106,33 @@ def show():
     
             st.subheader("Update User Status")
     
+            selected_email = st.selectbox(
+                "✏️ Select User to Update",
+                ["Select an email..."] + df["Email"].tolist()
+            )
+    
+            new_status = st.selectbox(
+                "🛠️ New Status",
+                ["Select status...", "Active", "Inactive", "Delete"],
+                key="status_selector"
+            )
+    
+            confirm_delete_1 = confirm_delete_2 = False
+            if new_status == "Delete":
+                st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
+                confirm_delete_1 = st.checkbox(
+                    "I understand that deleting this user is permanent and cannot be undone.",
+                    key="confirm_delete_1"
+                )
+                confirm_delete_2 = st.checkbox(
+                    "Yes, I really want to delete this user.",
+                    key="confirm_delete_2"
+                )
+    
             with st.form("update_status_form", clear_on_submit=True):
-                selected_email = st.selectbox(
-                    "✏️ Select User to Update",
-                    ["Select an email..."] + df["Email"].tolist()
-                )
+                submitted = st.form_submit_button("✅ Update Status")
     
-                new_status = st.selectbox(
-                    "🛠️ New Status",
-                    ["Select status...", "Active", "Inactive", "Delete"]
-                )
-    
-                confirm_delete_1 = confirm_delete_2 = False
-                if new_status == "Delete":
-                    st.warning("⚠️ Deleting a user is permanent. Please confirm below:")
-                    confirm_delete_1 = st.checkbox(
-                        "I understand that deleting this user is permanent and cannot be undone.",
-                        key="confirm_delete_1"
-                    )
-                    confirm_delete_2 = st.checkbox(
-                        "Yes, I really want to delete this user.",
-                        key="confirm_delete_2"
-                    )
-    
-                update_submitted = st.form_submit_button("✅ Update Status")
-    
-            if update_submitted:
+            if submitted:
                 if selected_email == "Select an email..." or new_status == "Select status...":
                     st.warning("⚠️ Please select both a valid user and a status.")
                 else:
@@ -161,6 +162,7 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
+
     
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
