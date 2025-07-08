@@ -232,7 +232,7 @@ def show():
         sessions = supabase.table("session").select("*, users!session_menteeid_fkey(email)") \
             .eq("mentorid", mentor_id).execute().data or []
     
-            # Load all availability records for this mentor
+        # Load all availability records for this mentor
         availability_records = supabase.table("availability").select("*") \
             .eq("mentorid", mentor_id).execute().data or []
     
@@ -247,11 +247,10 @@ def show():
                 start_str = s.get("start")
                 end_str = s.get("end")
     
-                # If start or end is missing, use values from availability
-                if not start_str or not end_str:
-                    availability_id = s.get("availabilityid")
-                    if availability_id in availability_map:
-                        start_str, end_str = availability_map[availabilityid]
+                # ✅ Use availability slot if start or end is missing
+                availability_id = s.get("availabilityid")
+                if (not start_str or not end_str) and availability_id in availability_map:
+                    start_str, end_str = availability_map[availability_id]
     
                 start_fmt = format_datetime_safe(start_str, tz=WAT) if start_str else "❌ Missing"
                 end_fmt = format_datetime_safe(end_str, tz=WAT) if end_str else "❌ Missing"
