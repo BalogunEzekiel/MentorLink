@@ -216,6 +216,12 @@ def show():
                         try:
                             slot_start = datetime.fromisoformat(slot_start_str.replace("Z", "+00:00"))
                             slot_end = datetime.fromisoformat(slot_end_str.replace("Z", "+00:00"))
+    
+                            # Ensure timezone-awareness
+                            if slot_start.tzinfo is None:
+                                slot_start = slot_start.replace(tzinfo=pytz.utc)
+                            if slot_end.tzinfo is None:
+                                slot_end = slot_end.replace(tzinfo=pytz.utc)
                         except Exception as e:
                             st.warning(f"⚠️ Invalid slot datetime: {e}")
                             continue
