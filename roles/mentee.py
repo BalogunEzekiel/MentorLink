@@ -197,8 +197,17 @@ def show():
                     # Filter out matched or past slots
                     upcoming_free_slots = []
                     for slot in availability:
-                        slot_start = datetime.fromisoformat(slot["start"].replace("Z", "+00:00"))
-                        if slot["availabilityid"] not in used_ids and slot_start > now_utc:
+                        slot_start_str = slot.get("start")
+                        if not slot_start_str:
+                            continue  # skip if start is missing
+                        
+                        try:
+                            slot_start = datetime.fromisoformat(slot_start_str)
+                        except Exception as e:
+                            st.warning(f"⚠️ Invalid datetime format in slot: {e}")
+                            continue
+                        
+                        if slot.get("availabilityid") not in used_ids and slot_start > now_utc:                          
                             local_start = slot_start.astimezone()
                             local_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00")).astimezone()
                             label = f"{local_start.strftime('%A %d %b %Y %I:%M %p')} ➡ {local_end.strftime('%I:%M %p')}"
