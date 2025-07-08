@@ -57,25 +57,21 @@ def show():
     with tabs[0]:
         st.subheader("Register New User")
     
-        with st.form("register_user_form", clear_on_submit=True):
+        with st.form("register_user", clear_on_submit=True):
             user_email = st.text_input("User Email", placeholder="e.g. user@example.com")
             role = st.selectbox("Assign Role", ["Select a role", "Mentor", "Mentee"])
-            submitted = st.form_submit_button("➕ Create")
+            submitted = st.form_submit_button("Create")
     
         if submitted:
             if not user_email or role == "Select a role":
                 st.warning("⚠️ Please fill in both email and role.")
             else:
-                try:
-                    register_user(user_email, role)
-                    st.success(f"✅ User '{user_email}' registered as {role}.")
-                    time.sleep(1)
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Registration failed: {e}")
+                register_user(user_email, role)
+                st.success(f"✅ User '{user_email}' registered as {role}.")
+                time.sleep(1)
+                st.rerun()
     
         st.subheader("All Users")
-    
         try:
             users = supabase.table("users").select("""
                 userid, email, role, must_change_password, profile_completed, created_at, status
@@ -154,6 +150,7 @@ def show():
                                 ).execute()
                                 supabase.table("availability").delete().eq("mentorid", user_id).execute()
                                 supabase.table("users").delete().eq("userid", user_id).execute()
+    
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
                                 st.rerun()
                             else:
@@ -164,6 +161,8 @@ def show():
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
+        else:
+            st.info("No users found.")
 
     
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
