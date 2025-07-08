@@ -136,73 +136,73 @@ def show():
                     st.error(f"Failed to update profile: {e}")
 
     # --- Browse Mentors Tab ---
-with tabs[1]:
-    st.subheader("Browse Available Mentors")
-    try:
-        mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
-            .eq("role", "Mentor").eq("status", "Active").execute().data or []
-    except Exception as e:
-        st.error(f"Failed to load mentors: {e}")
-        mentors = []
-
-    if not mentors:
-        st.info("No mentors available.")
-    else:
-        all_skills = []
-        for mentor in mentors:
-            skills = mentor.get("profile", {}).get("skills", "")
-            if skills:
-                all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
-        unique_skills = sorted(set(all_skills))
-        selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
-
-        if selected_skill != "All":
-            mentors = [
-                m for m in mentors
-                if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
-            ]
-
-        cols = st.columns(2)
-        for i, mentor in enumerate(mentors):
-            col = cols[i % 2]
-            with col:
-                profile = mentor.get("profile") or {}
-                name = profile.get("name", "Unnamed Mentor")
-                avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128"
-                bio = profile.get("bio", "No bio")
-                skills = profile.get("skills", "Not listed")
-                goals = profile.get("goals", "Not set")
-
-                st.image(avatar_url, width=120, caption=name)
-                st.markdown(f"**Bio:** {bio}  \n**Skills:** {skills}  \n**Goals:** {goals}")
-
-                try:
-                    availability = supabase.table("availability") \
-                        .select("availabilityid").eq("mentorid", mentor["userid"]).execute().data or []
-                except Exception as e:
-                    availability = []
-
-                if availability:
-                    if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
-                        existing = supabase.table("mentorshiprequest") \
-                            .select("mentorshiprequestid", "status") \
-                            .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
-                            .in_("status", ["PENDING", "ACCEPTED"]).execute().data
-
-                        if existing:
-                            st.warning("❗ You already have a pending or accepted request with this mentor.")
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            supabase.table("mentorshiprequest").insert({
-                                "mentorid": mentor["userid"],
-                                "menteeid": user_id,
-                                "status": "PENDING"
-                            }).execute()
-                            st.success(f"✅ Request sent to {mentor['email']}!")
-                            st.rerun()
-                else:
-                    st.warning("This mentor has no availability yet.")
+    with tabs[1]:
+        st.subheader("Browse Available Mentors")
+        try:
+            mentors = supabase.table("users").select("*, profile(name, bio, skills, goals, profile_image_url)") \
+                .eq("role", "Mentor").eq("status", "Active").execute().data or []
+        except Exception as e:
+            st.error(f"Failed to load mentors: {e}")
+            mentors = []
+    
+        if not mentors:
+            st.info("No mentors available.")
+        else:
+            all_skills = []
+            for mentor in mentors:
+                skills = mentor.get("profile", {}).get("skills", "")
+                if skills:
+                    all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
+            unique_skills = sorted(set(all_skills))
+            selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
+    
+            if selected_skill != "All":
+                mentors = [
+                    m for m in mentors
+                    if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
+                ]
+    
+            cols = st.columns(2)
+            for i, mentor in enumerate(mentors):
+                col = cols[i % 2]
+                with col:
+                    profile = mentor.get("profile") or {}
+                    name = profile.get("name", "Unnamed Mentor")
+                    avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=128"
+                    bio = profile.get("bio", "No bio")
+                    skills = profile.get("skills", "Not listed")
+                    goals = profile.get("goals", "Not set")
+    
+                    st.image(avatar_url, width=120, caption=name)
+                    st.markdown(f"**Bio:** {bio}  \n**Skills:** {skills}  \n**Goals:** {goals}")
+    
+                    try:
+                        availability = supabase.table("availability") \
+                            .select("availabilityid").eq("mentorid", mentor["userid"]).execute().data or []
+                    except Exception as e:
+                        availability = []
+    
+                    if availability:
+                        if st.button("Request Mentorship", key=f"req_{mentor['userid']}"):
+                            existing = supabase.table("mentorshiprequest") \
+                                .select("mentorshiprequestid", "status") \
+                                .eq("menteeid", user_id).eq("mentorid", mentor["userid"]) \
+                                .in_("status", ["PENDING", "ACCEPTED"]).execute().data
+    
+                            if existing:
+                                st.warning("❗ You already have a pending or accepted request with this mentor.")
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                supabase.table("mentorshiprequest").insert({
+                                    "mentorid": mentor["userid"],
+                                    "menteeid": user_id,
+                                    "status": "PENDING"
+                                }).execute()
+                                st.success(f"✅ Request sent to {mentor['email']}!")
+                                st.rerun()
+                    else:
+                        st.warning("This mentor has no availability yet.")
 
     # --- My Requests Tab ---
     with tabs[2]:
