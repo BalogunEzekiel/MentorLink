@@ -137,6 +137,7 @@ def show():
                         if new_status == "Delete":
                             if confirm_delete_1 and confirm_delete_2:
                                 # 🚨 CASCADE DELETE LOGIC 🚨
+                                # 🚨 CASCADE DELETE LOGIC 🚨
                                 supabase.table("session").delete().or_(
                                     f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
                                 ).execute()
@@ -144,9 +145,8 @@ def show():
                                     f"mentorid.eq.{user_id},menteeid.eq.{user_id}"
                                 ).execute()
                                 supabase.table("availability").delete().eq("mentorid", user_id).execute()
-                                supabase.table("session").delete().eq("userid", user_id).execute()
                                 supabase.table("activitylog").delete().eq("userid", user_id).execute()
-                                supabase.table("users").delete().eq("userid", user_id).execute()
+                                supabase.table("users").delete().eq("userid", user_id).execute()                                
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
                                 st.rerun()
                             else:
