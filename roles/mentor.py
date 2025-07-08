@@ -207,43 +207,11 @@ def show():
                     **Goals:** {mentee_profile.get("goals", "N/A")}
                     """)
     
-                    try:
-                        # Get all unused slots for this mentor
-                        all_slots = supabase.table("availability").select("*").eq("mentorid", mentor_id).execute().data or []
-                        used_sessions = supabase.table("session").select("availabilityid").execute().data or []
-                        used_ids = {s["availabilityid"] for s in used_sessions if s.get("availabilityid")}
-                        available_slots = [s for s in all_slots if s["availabilityid"] not in used_ids]
-    
-                        if available_slots:
-                            selected_slot = st.selectbox(
-                                "📅 Choose an available slot",
-                                available_slots,
-                                format_func=lambda s: f"{format_datetime_safe(s['start'])} ➡ {format_datetime_safe(s['end'])}",
-                                key=f"slot_select_{req_id}"
-                            )
-    
-                            if st.button("✅ Accept and Book Slot", key=f"accept_{req_id}"):
-                                try:
-                                    supabase.table("session").insert({
-                                        "mentorid": mentor_id,
-                                        "menteeid": mentee_id,
-                                        "mentorshiprequestid": req_id,
-                                        "availabilityid": selected_slot["availabilityid"],
-                                        "date": selected_slot.get("date")  # <-- fix: supply date
-                                    }).execute()
-
-                                    supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
-                                        .eq("mentorshiprequestid", req_id).execute()
-    
-                                    st.success("✅ Request accepted and session booked!")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"❌ Failed to save session to database: {e}")
-                        else:
-                            st.warning("❌ No available slots to schedule a session.")
-    
-                    except Exception as e:
-                        st.error(f"❌ Error checking availability: {e}")
+                    if st.button("✅ Accept", key=f"accept_{req_id}"):
+                        supabase.table("mentorshiprequest").update({"status": "ACCEPTED"}) \
+                            .eq("mentorshiprequestid", req_id).execute()
+                        st.success("✅ Request accepted!")
+                        st.rerun()
     
                     if st.button("❌ Reject", key=f"reject_{req_id}"):
                         supabase.table("mentorshiprequest").update({"status": "REJECTED"}) \
