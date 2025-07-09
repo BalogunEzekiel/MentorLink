@@ -172,7 +172,6 @@ def show():
                             supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
                             st.success(f"✅ Updated {selected_email} to {new_status}")
                             st.session_state.reset_flags = True
-                            time.sleep(1)
                             st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
