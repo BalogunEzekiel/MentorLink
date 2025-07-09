@@ -164,6 +164,7 @@ def show():
     
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
                                 st.session_state.reset_flags = True
+                                time.sleep(1)
                                 st.rerun()
                             else:
                                 st.warning("☑️ You must confirm both checkboxes to proceed with deletion.")
