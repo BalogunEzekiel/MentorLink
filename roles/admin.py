@@ -111,6 +111,10 @@ def show():
                 ["Select an email..."] + df["Email"].tolist()
             )
     
+            # Select status and store it in session_state
+            if "status_selector" not in st.session_state:
+                st.session_state["status_selector"] = "Select status..."
+    
             new_status = st.selectbox(
                 "🛠️ New Status",
                 ["Select status...", "Active", "Inactive", "Delete"],
@@ -130,9 +134,9 @@ def show():
                 )
     
             with st.form("update_status_form", clear_on_submit=True):
-                submitted = st.form_submit_button("✅ Update Status")
+                update_submitted = st.form_submit_button("✅ Update Status")
     
-            if submitted:
+            if update_submitted:
                 if selected_email == "Select an email..." or new_status == "Select status...":
                     st.warning("⚠️ Please select both a valid user and a status.")
                 else:
@@ -151,18 +155,23 @@ def show():
                                 ).execute()
                                 supabase.table("availability").delete().eq("mentorid", user_id).execute()
                                 supabase.table("users").delete().eq("userid", user_id).execute()
-    
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
-                                st.rerun()
                             else:
                                 st.warning("☑️ You must confirm both checkboxes to proceed with deletion.")
+                                st.stop()
                         else:
                             supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
                             st.success(f"✅ Updated {selected_email} to {new_status}")
-                            st.rerun()
+    
+                        # 🔁 Clear status and checkboxes from session_state
+                        st.session_state["status_selector"] = "Select status..."
+                        st.session_state["confirm_delete_1"] = False
+                        st.session_state["confirm_delete_2"] = False
+                        time.sleep(1)
+                        st.rerun()
+    
                     except Exception as e:
                         st.error(f"❌ Failed to update user: {e}")
-
     
             # ✅ Promotion logic (only for Active Mentees with completed profiles)
             if selected_email != "Select an email...":
