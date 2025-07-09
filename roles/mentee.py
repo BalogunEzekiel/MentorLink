@@ -357,13 +357,17 @@ def show():
                 start_str = availability.get("start")
                 end_str = availability.get("end")
     
-                start_dt = datetime.fromisoformat(start_str) if start_str else None
-                end_dt = datetime.fromisoformat(end_str) if end_str else None
+                # Parse datetime safely
+                try:
+                    start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00")) if start_str else None
+                    end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+                except Exception:
+                    start_dt, end_dt = None, None
     
                 has_feedback = session.get("rating") and session.get("feedback")
     
-                # Only prompt feedback for sessions that have expired and no feedback yet
-                if end_dt and now_wat > end_dt and not has_feedback:
+                # Ensure end_dt is valid before comparing
+                if end_dt is not None and now_wat > end_dt and not has_feedback:
                     pending_feedback_sessions.append(session)
     
             if not pending_feedback_sessions:
