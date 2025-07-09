@@ -335,68 +335,67 @@ def show():
 
     # --- Feedback Tab ---
     with tabs[4]:
-with tabs[4]:
-    st.subheader("Rate Mentors & Provide Feedback")
-
-    try:
-        sessions = supabase.table("session") \
-            .select("sessionid, rating, feedback, availability:availabilityid(start, end), users!session_mentorid_fkey(email)") \
-            .eq("menteeid", user_id).execute().data or []
-    except Exception as e:
-        st.error(f"Could not fetch sessions for feedback: {e}")
-        sessions = []
-
-    now_wat = datetime.now(WAT)
-    pending_feedback_sessions = []
-
-    if not sessions:
-        st.info("No sessions to give feedback for.")
-    else:
-        for session in sessions:
-            mentor_email = session.get("users", {}).get("email", "Unknown")
-            availability = session.get("availability", {})
-            start_str = availability.get("start")
-            end_str = availability.get("end")
-
-            # Parse datetime and ensure timezone awareness
-            try:
-                start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00")) if start_str else None
-                if start_dt and start_dt.tzinfo is None:
-                    start_dt = start_dt.replace(tzinfo=WAT)
-
-                end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
-                if end_dt and end_dt.tzinfo is None:
-                    end_dt = end_dt.replace(tzinfo=WAT)
-            except Exception as e:
-                start_dt, end_dt = None, None
-                st.warning(f"⚠️ Failed to parse datetime for session: {e}")
-
-            has_feedback = session.get("rating") and session.get("feedback")
-
-            # Only include sessions that have ended and lack feedback
-            if end_dt is not None and now_wat > end_dt and not has_feedback:
-                pending_feedback_sessions.append(session)
-
-        if not pending_feedback_sessions:
-            st.success("✅ You have completed all required feedback.")
+        st.subheader("Rate Mentors & Provide Feedback")
+    
+        try:
+            sessions = supabase.table("session") \
+                .select("sessionid, rating, feedback, availability:availabilityid(start, end), users!session_mentorid_fkey(email)") \
+                .eq("menteeid", user_id).execute().data or []
+        except Exception as e:
+            st.error(f"Could not fetch sessions for feedback: {e}")
+            sessions = []
+    
+        now_wat = datetime.now(WAT)
+        pending_feedback_sessions = []
+    
+        if not sessions:
+            st.info("No sessions to give feedback for.")
         else:
-            st.warning("⚠️ You must submit feedback for expired sessions to continue.")
-            for session in pending_feedback_sessions:
+            for session in sessions:
                 mentor_email = session.get("users", {}).get("email", "Unknown")
-                start_str = session["availability"].get("start")
-                date_str = format_datetime_safe(start_str, tz=WAT) if start_str else "Unavailable"
-
-                with st.expander(f"Session with {mentor_email} on {date_str}"):
-                    rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
-                    feedback = st.text_area("Feedback", key=f"feedback_{session['sessionid']}")
-
-                    if st.button("Submit Feedback", key=f"submit_feedback_{session['sessionid']}"):
-                        try:
-                            supabase.table("session").update({
-                                "rating": rating,
-                                "feedback": feedback
-                            }).eq("sessionid", session["sessionid"]).execute()
-                            st.success("✅ Feedback submitted.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Error submitting feedback: {e}")
+                availability = session.get("availability", {})
+                start_str = availability.get("start")
+                end_str = availability.get("end")
+    
+                # Parse datetime and ensure timezone awareness
+                try:
+                    start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00")) if start_str else None
+                    if start_dt and start_dt.tzinfo is None:
+                        start_dt = start_dt.replace(tzinfo=WAT)
+    
+                    end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+                    if end_dt and end_dt.tzinfo is None:
+                        end_dt = end_dt.replace(tzinfo=WAT)
+                except Exception as e:
+                    start_dt, end_dt = None, None
+                    st.warning(f"⚠️ Failed to parse datetime for session: {e}")
+    
+                has_feedback = session.get("rating") and session.get("feedback")
+    
+                # Only include sessions that have ended and lack feedback
+                if end_dt is not None and now_wat > end_dt and not has_feedback:
+                    pending_feedback_sessions.append(session)
+    
+            if not pending_feedback_sessions:
+                st.success("✅ You have completed all required feedback.")
+            else:
+                st.warning("⚠️ You must submit feedback for expired sessions to continue.")
+                for session in pending_feedback_sessions:
+                    mentor_email = session.get("users", {}).get("email", "Unknown")
+                    start_str = session["availability"].get("start")
+                    date_str = format_datetime_safe(start_str, tz=WAT) if start_str else "Unavailable"
+    
+                    with st.expander(f"Session with {mentor_email} on {date_str}"):
+                        rating = st.selectbox("Rating", [1, 2, 3, 4, 5], key=f"rating_{session['sessionid']}")
+                        feedback = st.text_area("Feedback", key=f"feedback_{session['sessionid']}")
+    
+                        if st.button("Submit Feedback", key=f"submit_feedback_{session['sessionid']}"):
+                            try:
+                                supabase.table("session").update({
+                                    "rating": rating,
+                                    "feedback": feedback
+                                }).eq("sessionid", session["sessionid"]).execute()
+                                st.success("✅ Feedback submitted.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Error submitting feedback: {e}")
