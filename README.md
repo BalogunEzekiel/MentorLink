@@ -122,6 +122,7 @@ This project is open-source and available under the **MIT License**.
 - 🌐 Portfolio/Blog: [https://ezekieldatatech.hashnode.dev](https://datatech.hashnode.dev)  
 - 📍 Location: Nigeria (Remote Friendly 🌍)
 
+## Watch the video demo here: https://drive.google.com/file/d/1_bfASyPUohiQHCoEb9A4wC2KJVMZ1x1E/view?usp=sharing
 ---
 
 ## 📢 Call to Action
