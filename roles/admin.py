@@ -158,7 +158,6 @@ def show():
                                 st.success(f"✅ Deleted user: {selected_email} and all related records")
                             else:
                                 st.warning("☑️ You must confirm both checkboxes to proceed with deletion.")
-                                st.stop()
                         else:
                             supabase.table("users").update({"status": new_status}).eq("userid", user_id).execute()
                             st.success(f"✅ Updated {selected_email} to {new_status}")
@@ -167,7 +166,6 @@ def show():
                         st.session_state["status_selector"] = "Select status..."
                         st.session_state["confirm_delete_1"] = False
                         st.session_state["confirm_delete_2"] = False
-                        time.sleep(1)
                         st.rerun()
     
                     except Exception as e:
