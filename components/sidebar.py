@@ -7,7 +7,6 @@ def sidebar():
         st.session_state.logged_in = False
 
     with st.sidebar:
-        st.markdown("## 🔐 Session")
 
         # ✅ Authenticated User
         if st.session_state.get("logged_in") and "user" in st.session_state:
