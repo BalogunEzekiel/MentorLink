@@ -83,7 +83,7 @@ def show():
     
         sub_tab = st.radio(
             "Select Section",
-            ["📊 Summary", "🙍‍♀️ Update Profile", "📥 Inbox"],
+            ["📊 Summary", "🙍‍♀️ Profile", "📥 Inbox"],
             horizontal=True
         )
     
@@ -93,9 +93,9 @@ def show():
             st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
             st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
     
-        elif sub_tab == "🙍‍♀️ Update Profile":
+        elif sub_tab == "🙍‍♀️ Profile":
             # Your update profile content here
-            st.markdown("### 🙍‍♀️ Update Profile")
+            st.markdown("### 🙍‍♀️ Profile")
             avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
             st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
     
