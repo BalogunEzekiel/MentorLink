@@ -49,53 +49,86 @@ def show():
 
     # --- Dashboard Tab ---
     with tabs[0]:
-        st.subheader("Welcome to your Mentor Dashboard")
-
+        st.title("Mentor Dashboard")
+    
+        sub_tab = st.radio(
+            "Select Section",
+            ["📊 Summary", "🙍‍♂️ Update Profile", "📥 Inbox"],
+            horizontal=True
+        )
+    
         profile_data = supabase.table("profile").select("*").eq("userid", mentor_id).execute().data
         profile = profile_data[0] if profile_data else {}
-
+    
         total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("mentorid", mentor_id).execute().data or []
         total_sessions = supabase.table("session").select("sessionid").eq("mentorid", mentor_id).execute().data or []
-
-        st.markdown("### 📊 Summary")
-        st.write(f"- 📥 Incoming Requests: **{len(total_requests)}**")
-        st.write(f"- 📅 Total Sessions: **{len(total_sessions)}**")
-
-        st.markdown("### 🙍‍♂️ Update Profile")
-
-        if profile.get("profile_image_url"):
-            st.image(profile["profile_image_url"], width=100, caption="Current Profile Picture")
-
-        with st.form("mentor_profile_form"):
-            name = st.text_input("Name", value=profile.get("name", ""))
-            bio = st.text_area("Bio", value=profile.get("bio", ""))
-            skills = st.text_area("Skills", value=profile.get("skills", ""))
-            goals = st.text_area("Goals", value=profile.get("goals", ""))
-            profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
-
-            if st.form_submit_button("Update Profile"):
-                update_data = {
-                    "userid": mentor_id,
-                    "name": name,
-                    "bio": bio,
-                    "skills": skills,
-                    "goals": goals,
-                }
-
-                if profile_image:
-                    try:
-                        file_ext = profile_image.type.split("/")[-1]
-                        file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
-                        file_bytes = profile_image.getvalue()
-                        supabase.storage.from_("profilepics").upload(file_name, file_bytes)
-                        public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
-                        update_data["profile_image_url"] = public_url
-                    except Exception as e:
-                        st.error(f"Profile image upload failed: {e}")
-
-                supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
-                st.success("✅ Profile updated successfully!")
-                st.rerun()
+    
+        if sub_tab == "📊 Summary":
+            st.markdown("### 📊 Summary")
+            st.write(f"- 📥 Incoming Requests: **{len(total_requests)}**")
+            st.write(f"- 📅 Total Sessions: **{len(total_sessions)}**")
+    
+        elif sub_tab == "🙍‍♂️ Update Profile":
+            st.markdown("### 🙍‍♂️ Update Profile")
+    
+            if profile.get("profile_image_url"):
+                st.image(profile["profile_image_url"], width=100, caption="Current Profile Picture")
+    
+            with st.form("mentor_profile_form"):
+                name = st.text_input("Name", value=profile.get("name", ""))
+                bio = st.text_area("Bio", value=profile.get("bio", ""))
+                skills = st.text_area("Skills", value=profile.get("skills", ""))
+                goals = st.text_area("Goals", value=profile.get("goals", ""))
+                profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
+    
+                if st.form_submit_button("Update Profile"):
+                    update_data = {
+                        "userid": mentor_id,
+                        "name": name,
+                        "bio": bio,
+                        "skills": skills,
+                        "goals": goals,
+                    }
+    
+                    if profile_image:
+                        try:
+                            file_ext = profile_image.type.split("/")[-1]
+                            file_name = f"{mentor_id}_{uuid.uuid4()}.{file_ext}"
+                            file_bytes = profile_image.getvalue()
+                            supabase.storage.from_("profilepics").upload(file_name, file_bytes)
+                            public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
+                            update_data["profile_image_url"] = public_url
+                        except Exception as e:
+                            st.error(f"Profile image upload failed: {e}")
+    
+                    supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
+                    st.success("✅ Profile updated successfully!")
+                    st.rerun()
+    
+        elif sub_tab == "📥 Inbox":
+            st.subheader("📥 Inbox")
+    
+            user_role = st.session_state.get("user_role")
+            user_id = st.session_state.get("user_id")
+    
+            try:
+                messages = supabase.table("messages") \
+                    .select("*") \
+                    .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
+                    .order("created_at", desc=True) \
+                    .execute().data or []
+    
+                unread_count = sum(not m["is_read"] for m in messages)
+                st.markdown(f"🔔 Unread Messages: **{unread_count}**")
+    
+                for msg in messages:
+                    with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
+                        st.write(msg["body"])
+                        if not msg["is_read"]:
+                            supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
+    
+            except Exception as e:
+                st.error(f"❌ Failed to load messages: {e}")
 
     # --- Availability Tab ---
     with tabs[1]:
