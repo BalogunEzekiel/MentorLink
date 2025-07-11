@@ -395,49 +395,48 @@ def show():
 
     #---------Broadcast----------
     with tabs[4]:
-        if selected_tab == "📢 Send Broadcast":
-            st.subheader("📢 Send Broadcast Message")
+        st.subheader("📢 Send Broadcast Message")
     
-            if st.session_state.get("user_role") != "ADMIN":
-                st.error("Access Denied. Admins only.")
-                st.stop()
+        if st.session_state.get("user_role") != "ADMIN":
+            st.error("Access Denied. Admins only.")
+            st.stop()
     
-            title = st.text_input("Message Title")
-            body = st.text_area("Message Body")
-            target = st.selectbox("Send To", ["All Users", "Mentors", "Mentees", "Individual"])
+        title = st.text_input("Message Title")
+        body = st.text_area("Message Body")
+        target = st.selectbox("Send To", ["All Users", "Mentors", "Mentees", "Individual"])
     
-            receiver_id = None
-            role = None
+        receiver_id = None
+        role = None
     
-            if target == "Individual":
-                user_email = st.text_input("Enter User Email")
-                if user_email:
-                    user = supabase.table("users").select("userid").eq("email", user_email).execute().data
-                    if user:
-                        receiver_id = user[0]["userid"]
-                    else:
-                        st.warning("User not found")
-            elif target == "Mentors":
-                role = "MENTOR"
-            elif target == "Mentees":
-                role = "MENTEE"
-    
-            if st.button("📤 Send Message"):
-                if not title or not body:
-                    st.warning("Please provide both title and body.")
+        if target == "Individual":
+            user_email = st.text_input("Enter User Email")
+            if user_email:
+                user = supabase.table("users").select("userid").eq("email", user_email).execute().data
+                if user:
+                    receiver_id = user[0]["userid"]
                 else:
-                    message_data = {
-                        "id": str(uuid.uuid4()),
-                        "sender_id": st.session_state.get("user_id"),
-                        "receiver_id": receiver_id,
-                        "role": role,
-                        "title": title,
-                        "body": body,
-                        "created_at": datetime.now().isoformat(),
-                        "is_read": False
-                    }
-                    supabase.table("messages").insert(message_data).execute()
-                    st.success("✅ Message sent successfully!")
+                    st.warning("User not found")
+        elif target == "Mentors":
+            role = "MENTOR"
+        elif target == "Mentees":
+            role = "MENTEE"
+    
+        if st.button("📤 Send Message"):
+            if not title or not body:
+                st.warning("Please provide both title and body.")
+            else:
+                message_data = {
+                    "id": str(uuid.uuid4()),
+                    "sender_id": st.session_state.get("user_id"),
+                    "receiver_id": receiver_id,
+                    "role": role,
+                    "title": title,
+                    "body": body,
+                    "created_at": datetime.now().isoformat(),
+                    "is_read": False
+                }
+                supabase.table("messages").insert(message_data).execute()
+                st.success("✅ Message sent successfully!")
     
         # --- Analytics Tab ---
     with tabs[5]:
