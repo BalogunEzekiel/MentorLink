@@ -15,6 +15,7 @@ from components.sidebar import sidebar
 from components.mentorchat_widget import mentorchat_widget
 from roles import admin, mentor, mentee
 from utils.footer import app_footer
+from components import SendBroadcast
 
 # ✅ Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
@@ -81,6 +82,8 @@ setup_admin_account()
 cancel_expired_requests()
 sidebar()
 mentorchat_widget()
+
+selected_page = st.session_state.get("selected_page", "Dashboard")
 
 if selected_page == "Dashboard":
     Dashboard.show()
