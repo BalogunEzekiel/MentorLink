@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 import pytz
 import plotly.express as px
+import uuid
 
 # Adjust path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
