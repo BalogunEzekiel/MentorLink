@@ -55,48 +55,48 @@ def show():
     
         with col1:
             summary_btn = st.button("📊 Summary")
-            profile_btn = st.button("🙍‍♂️ Update Profile")
+            profile_btn = st.button("🙍‍♂️ Profile")  # ✅ Renamed button
             inbox_btn = st.button("📥 Inbox")
-    
+        
         # Session state to track sub-tab
         if "mentor_sub_tab" not in st.session_state:
             st.session_state.mentor_sub_tab = "📊 Summary"
-    
+        
         if summary_btn:
             st.session_state.mentor_sub_tab = "📊 Summary"
         elif profile_btn:
-            st.session_state.mentor_sub_tab = "🙍‍♂️ Profile"
+            st.session_state.mentor_sub_tab = "🙍‍♂️ Profile"  # ✅ Renamed state
         elif inbox_btn:
             st.session_state.mentor_sub_tab = "📥 Inbox"
-    
+        
         with col2:
             sub_tab = st.session_state.mentor_sub_tab
-    
+        
             # Fetch profile and stats
             profile_data = supabase.table("profile").select("*").eq("userid", mentor_id).execute().data
             profile = profile_data[0] if profile_data else {}
-    
+        
             total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("mentorid", mentor_id).execute().data or []
             total_sessions = supabase.table("session").select("sessionid").eq("mentorid", mentor_id).execute().data or []
-    
+        
             if sub_tab == "📊 Summary":
                 st.markdown("### 📊 Summary")
                 st.write(f"- 📥 Incoming Requests: **{len(total_requests)}**")
                 st.write(f"- 📅 Total Sessions: **{len(total_sessions)}**")
-    
-            elif sub_tab == "🙍‍♂️ Update Profile":
-                st.markdown("### 🙍‍♂️ Update Profile")
-            
+        
+            elif sub_tab == "🙍‍♂️ Profile":  # ✅ Renamed condition
+                st.markdown("### 🙍‍♂️ Profile")  # ✅ Renamed heading
+        
                 if profile.get("profile_image_url"):
                     st.image(profile["profile_image_url"], width=100, caption="Current Profile Picture")
-            
+        
                 with st.form("mentor_profile_form"):
                     name = st.text_input("Name", value=profile.get("name", ""))
                     bio = st.text_area("Bio", value=profile.get("bio", ""))
                     skills = st.text_area("Skills", value=profile.get("skills", ""))
                     goals = st.text_area("Goals", value=profile.get("goals", ""))
                     profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
-            
+        
                     if st.form_submit_button("Update Profile"):
                         update_data = {
                             "userid": mentor_id,
@@ -105,7 +105,7 @@ def show():
                             "skills": skills,
                             "goals": goals,
                         }
-            
+        
                         if profile_image:
                             try:
                                 file_ext = profile_image.type.split("/")[-1]
@@ -116,7 +116,7 @@ def show():
                                 update_data["profile_image_url"] = public_url
                             except Exception as e:
                                 st.error(f"Profile image upload failed: {e}")
-            
+        
                         try:
                             response = supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
                             st.success("✅ Profile updated successfully!")
