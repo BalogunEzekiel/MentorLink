@@ -153,32 +153,7 @@ def show():
             
                     except Exception as e:
                         st.error(f"❌ Failed to load messages: {e}")
-######
-    
-            elif sub_tab == "📥 Inbox":
-                st.subheader("📥 Inbox")
-    
-                user_role = st.session_state.get("user_role")
-                user_id = st.session_state.get("user_id")
-    
-                try:
-                    messages = supabase.table("messages") \
-                        .select("*") \
-                        .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
-                        .order("created_at", desc=True) \
-                        .execute().data or []
-    
-                    unread_count = sum(not m["is_read"] for m in messages)
-                    st.markdown(f"🔔 Unread Messages: **{unread_count}**")
-    
-                    for msg in messages:
-                        with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
-                            st.write(msg["body"])
-                            if not msg["is_read"]:
-                                supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
-    
-                except Exception as e:
-                    st.error(f"❌ Failed to load messages: {e}")
+###### 
                 
     # --- Availability Tab ---
     with tabs[1]:
