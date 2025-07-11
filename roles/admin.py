@@ -427,7 +427,7 @@ def show():
                 st.warning("Please provide both title and body.")
             else:
                 sender_id = st.session_state.get("user_id")
-            
+    
                 if not sender_id:
                     st.error("Your session is missing a user_id.")
                 else:
@@ -441,10 +441,7 @@ def show():
                         "created_at": datetime.now().isoformat(),
                         "is_read": False
                     }
-            
-                    # Show data for debugging
-#                    st.write("📦 Inserting:", message_data)
-            
+    
                     try:
                         supabase.table("messages").insert(message_data).execute()
                         st.success("✅ Message sent successfully!")
@@ -452,7 +449,6 @@ def show():
                         st.error(f"❌ Failed to insert message: {e}")
                         time.sleep(1)
                         st.rerun()
-
     
         # --- Analytics Tab ---
     with tabs[5]:
