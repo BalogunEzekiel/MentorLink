@@ -49,15 +49,13 @@ def show():
 
     # --- Dashboard Tab ---
     with tabs[0]:
-        st.title("Mentor Dashboard")
     
         # Create vertical menu on the left
         col1, col2 = st.columns([1, 4])
     
         with col1:
-            st.markdown("### Menu")
             summary_btn = st.button("📊 Summary")
-            profile_btn = st.button("🙍‍♂️ Profile")
+            profile_btn = st.button("🙍‍♂️ Update Profile")
             inbox_btn = st.button("📥 Inbox")
     
         # Session state to track sub-tab
@@ -86,7 +84,7 @@ def show():
                 st.write(f"- 📥 Incoming Requests: **{len(total_requests)}**")
                 st.write(f"- 📅 Total Sessions: **{len(total_sessions)}**")
     
-            elif sub_tab == "🙍‍♂️ Profile":
+            elif sub_tab == "🙍‍♂️ Update Profile":
                 st.markdown("### 🙍‍♂️ Update Profile")
     
                 if profile.get("profile_image_url"):
