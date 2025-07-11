@@ -110,23 +110,50 @@ def show():
                 st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
                 st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
     
-            elif sub_tab == "🙍‍♀️ Update Profile":
-                st.markdown("### 🙍‍♀️ Update Profile")
-    
+            elif sub_tab == "🙍‍♀️ Profile":
+                st.markdown("### 🙍‍♀️ Profile")
+            
+                # Fetch mentee profile
+                profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
+                profile = profile_data[0] if profile_data else {}
+            
                 avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
                 st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
-    
+            
                 with st.form("mentee_profile_form"):
                     name = st.text_input("Name", value=profile.get("name", ""))
                     bio = st.text_area("Bio", value=profile.get("bio", ""))
-                    skills = st.text_area("Skills", value=profile.get("skills", ""))
+                    skills = st.text_area("Skills (comma-separated)", value=profile.get("skills", ""))
                     goals = st.text_area("Goals", value=profile.get("goals", ""))
                     profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
                     submit_btn = st.form_submit_button("Update Profile")
-    
+            
                     if submit_btn:
-                        # Upload logic here...
-                        pass
+                        update_data = {
+                            "userid": user_id,
+                            "name": name,
+                            "bio": bio,
+                            "skills": skills,
+                            "goals": goals,
+                        }
+            
+                        if profile_image:
+                            try:
+                                file_ext = profile_image.type.split("/")[-1]
+                                file_name = f"{user_id}_{uuid.uuid4()}.{file_ext}"
+                                file_bytes = profile_image.getvalue()
+                                supabase.storage.from_("profilepics").upload(file_name, file_bytes)
+                                public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
+                                update_data["profile_image_url"] = public_url
+                            except Exception as e:
+                                st.error(f"Profile image upload failed: {e}")
+            
+                        try:
+                            supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
+                            st.success("✅ Profile updated successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update profile: {e}")
     
             elif sub_tab == "📥 Inbox":
                 st.subheader("📥 Inbox")
