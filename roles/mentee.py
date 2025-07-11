@@ -81,60 +81,75 @@ def show():
     with tabs[0]:
         st.title("Mentee Dashboard")
     
-        sub_tab = st.radio(
-            "Select Section",
-            ["📊 Summary", "🙍‍♀️ Profile", "📥 Inbox"],
-            horizontal=True
-        )
+        # Layout: 2 columns (left for buttons, right for content)
+        col1, col2 = st.columns([1, 4])
     
-        if sub_tab == "📊 Summary":
-            # Your summary content here
-            st.markdown("### 📊 Summary")
-            st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
-            st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
+        with col1:
+            st.markdown("### Menu")
+            summary_btn = st.button("📊 Summary")
+            profile_btn = st.button("🙍‍♀️ Profile")
+            inbox_btn = st.button("📥 Inbox")
     
-        elif sub_tab == "🙍‍♀️ Profile":
-            # Your update profile content here
-            st.markdown("### 🙍‍♀️ Profile")
+        # Use session state to track selected tab
+        if "mentee_sub_tab" not in st.session_state:
+            st.session_state.mentee_sub_tab = "📊 Summary"
     
-            avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
-            st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
+        if summary_btn:
+            st.session_state.mentee_sub_tab = "📊 Summary"
+        elif profile_btn:
+            st.session_state.mentee_sub_tab = "🙍‍♀️ Profile"
+        elif inbox_btn:
+            st.session_state.mentee_sub_tab = "📥 Inbox"
     
-            with st.form("mentee_profile_form"):
-                name = st.text_input("Name", value=profile.get("name", ""))
-                bio = st.text_area("Bio", value=profile.get("bio", ""))
-                skills = st.text_area("Skills", value=profile.get("skills", ""))
-                goals = st.text_area("Goals", value=profile.get("goals", ""))
-                profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
-                submit_btn = st.form_submit_button("Update Profile")
+        with col2:
+            sub_tab = st.session_state.mentee_sub_tab
     
-                if submit_btn:
-                    # [Upload image and save logic... same as yours]
-                    pass
+            if sub_tab == "📊 Summary":
+                st.markdown("### 📊 Summary")
+                st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
+                st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
     
-        elif sub_tab == "📥 Inbox":
-            st.subheader("📥 Inbox")
+            elif sub_tab == "🙍‍♀️ Profile":
+                st.markdown("### 🙍‍♀️ Profile")
     
-            user_role = st.session_state.get("user_role")
+                avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
+                st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
     
-            try:
-                messages = supabase.table("messages") \
-                    .select("*") \
-                    .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
-                    .order("created_at", desc=True) \
-                    .execute().data or []
+                with st.form("mentee_profile_form"):
+                    name = st.text_input("Name", value=profile.get("name", ""))
+                    bio = st.text_area("Bio", value=profile.get("bio", ""))
+                    skills = st.text_area("Skills", value=profile.get("skills", ""))
+                    goals = st.text_area("Goals", value=profile.get("goals", ""))
+                    profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
+                    submit_btn = st.form_submit_button("Update Profile")
     
-                unread_count = sum(not m["is_read"] for m in messages)
-                st.markdown(f"🔔 Unread Messages: **{unread_count}**")
+                    if submit_btn:
+                        # Upload logic here...
+                        pass
     
-                for msg in messages:
-                    with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
-                        st.write(msg["body"])
-                        if not msg["is_read"]:
-                            supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
+            elif sub_tab == "📥 Inbox":
+                st.subheader("📥 Inbox")
+                user_role = st.session_state.get("user_role")
     
-            except Exception as e:
-                st.error(f"❌ Failed to load messages: {e}")
+                try:
+                    messages = supabase.table("messages") \
+                        .select("*") \
+                        .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
+                        .order("created_at", desc=True) \
+                        .execute().data or []
+    
+                    unread_count = sum(not m["is_read"] for m in messages)
+                    st.markdown(f"🔔 Unread Messages: **{unread_count}**")
+    
+                    for msg in messages:
+                        with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
+                            st.write(msg["body"])
+                            if not msg["is_read"]:
+                                supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
+    
+                except Exception as e:
+                    st.error(f"❌ Failed to load messages: {e}")
+
                     
     # --- Browse Mentors Tab ---
     with tabs[1]:
