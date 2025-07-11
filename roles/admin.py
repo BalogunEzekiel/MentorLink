@@ -443,13 +443,15 @@ def show():
                     }
             
                     # Show data for debugging
-                    st.write("📦 Inserting:", message_data)
+#                    st.write("📦 Inserting:", message_data)
             
                     try:
                         supabase.table("messages").insert(message_data).execute()
                         st.success("✅ Message sent successfully!")
                     except Exception as e:
                         st.error(f"❌ Failed to insert message: {e}")
+                        time.sleep(1)
+                        st.rerun()
 
     
         # --- Analytics Tab ---
