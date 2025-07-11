@@ -98,6 +98,9 @@ def show():
             st.session_state.mentee_sub_tab = "🙍‍♀️ Profile"
         elif inbox_btn:
             st.session_state.mentee_sub_tab = "📥 Inbox"
+
+        total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
+        total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
     
         with col2:
             sub_tab = st.session_state.mentee_sub_tab
