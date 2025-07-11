@@ -85,7 +85,7 @@ def show():
     
         with col1:
             summary_btn = st.button("📊 Summary")
-            profile_btn = st.button("🙍‍♀️ Update Profile")
+            profile_btn = st.button("🙍‍♀️ Profile")
             inbox_btn = st.button("📥 Inbox")
     
         # Use session state to track selected tab
