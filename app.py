@@ -82,6 +82,9 @@ cancel_expired_requests()
 sidebar()
 mentorchat_widget()
 
+if selected_page == "Dashboard":
+    Dashboard.show()
+
 elif selected_page == "Send Broadcast":
     SendBroadcast.show()
 
