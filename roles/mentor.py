@@ -137,21 +137,28 @@ def show():
                     st.warning("⚠️ User ID not found in session. Please log in again.")
                 else:
                     try:
-                        messages = supabase.table("messages") \
-                            .select("*") \
-                            .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
-                            .order("created_at", desc=True) \
-                            .execute().data or []
-
-                        unread_count = sum(not m["is_read"] for m in messages)
+                        messages = supabase.table("messages").select("*").or_(
+                            f"receiver_id.eq.{st.session_state.user['userid']},and(receiver_id.is.null(),role.is.null())"
+                        ).order("created_at", desc=True).execute().data
+                    
+                        # Count only messages that are either direct to this user OR general broadcast, and unread
+                        unread_count = sum(
+                            not m["is_read"] and (m["receiver_id"] == st.session_state.user["userid"] or (m["receiver_id"] is None and m["role"] is None))
+                            for m in messages
+                        )
+                    
                         st.markdown(f"🔔 Unread Messages: **{unread_count}**")
-
+                    
                         for msg in messages:
                             with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
                                 st.write(msg["body"])
-                                if not msg["is_read"]:
+                    
+                                # ✅ Only mark as read if it's a personal message
+                                if not msg["is_read"] and msg["receiver_id"] == st.session_state.user["userid"]:
                                     supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
-
+                    
+                                # 🛑 Do NOT mark as read if it's a shared/broadcast message (receiver_id is null)
+                    
                     except Exception as e:
                         st.error(f"❌ Failed to load messages: {e}")
 
