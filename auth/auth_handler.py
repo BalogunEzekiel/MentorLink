@@ -8,12 +8,6 @@ import pytz
 # West Africa Timezone (UTC+1)
 WAT = pytz.timezone("Africa/Lagos")
 
-# 🔐 Default admin accounts
-DEFAULT_ADMINS = {
-    "admin01@theincubatorhub.com": "Admin01@123",
-    "admin02@theincubatorhub.com": "Admin02@123"
-}
-
 def login():
     st.title("Login")
 
@@ -25,26 +19,7 @@ def login():
             st.warning("Please enter both email and password.")
             return
 
-        # 🔧 Auto-create default admins if needed
-        if email in DEFAULT_ADMINS:
-            try:
-                result = supabase.table("users").select("*").eq("email", email).execute()
-                if not result.data:
-                    hashed_pw = bcrypt.hashpw(DEFAULT_ADMINS[email].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-                    supabase.table("users").insert({
-                        "email": email,
-                        "password": hashed_pw,
-                        "role": "Admin",
-                        "must_change_password": True,
-                        "profile_completed": False,
-                        "status": "Active",
-                        "created_at": datetime.now(WAT).isoformat()
-                    }).execute()
-            except Exception as e:
-                st.error(f"Error auto-creating admin account: {e}")
-                return
-
-        # 🔍 Fetch user after potential auto-insert
+        # 🔍 Fetch user
         try:
             result = supabase.table("users").select("*").ilike("email", email).execute()
             users = result.data
@@ -72,6 +47,7 @@ def login():
             st.session_state.logged_in = True
             st.session_state.user = user
             st.session_state.role = user.get("role")
+            st.session_state["user_role"] = user.get("role").upper()
 
             if user["email"].lower() == "admin@theincubatorhub.com":
                 st.session_state["user_display_name"] = "Admin"
