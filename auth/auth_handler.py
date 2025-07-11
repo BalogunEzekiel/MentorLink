@@ -42,10 +42,10 @@ def login():
         # ✅ Validate password
         stored_hashed = user.get("password")
         if bcrypt.checkpw(password.encode("utf-8"), stored_hashed.encode("utf-8")):
-            # Store session info
             st.session_state.authenticated = True
             st.session_state.logged_in = True
             st.session_state.user = user
+            st.session_state["user_id"] = user["userid"]
             st.session_state.role = user.get("role")
             st.session_state["user_role"] = user.get("role").upper()
 
