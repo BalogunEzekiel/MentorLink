@@ -82,6 +82,9 @@ cancel_expired_requests()
 sidebar()
 mentorchat_widget()
 
+elif selected_page == "Send Broadcast":
+    SendBroadcast.show()
+
 # ✅ Auth & Routing Logic
 if not st.session_state.get("authenticated", False):
     login()
