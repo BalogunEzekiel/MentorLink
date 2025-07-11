@@ -51,7 +51,7 @@ def show():
     with tabs[0]:
     
         # Create vertical menu on the left
-        col1, col2 = st.columns([1, 4])
+        col1, col2 = st.columns([1, 3])
     
         with col1:
             summary_btn = st.button("📊 Summary")
