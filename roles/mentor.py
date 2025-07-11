@@ -128,37 +128,54 @@ def show():
                         
             elif sub_tab == "📥 Inbox":
                 st.subheader("📥 Inbox")
-
-                # Ensure user_id is assigned from mentor_id
-                user_id = mentor_id
+            
+                user_id = mentor_id  # Already set in session earlier
                 user_role = st.session_state.get("user_role")
-
+            
                 if not user_id:
                     st.warning("⚠️ User ID not found in session. Please log in again.")
                 else:
                     try:
+                        # Fetch messages: personal OR broadcast
                         messages = supabase.table("messages").select("*").or_(
-                            f"receiver_id.eq.{st.session_state.user['userid']},and(receiver_id.is.null(),role.is.null())"
+                            f"receiver_id.eq.{user_id},and(receiver_id.is.null(),role.is.null())"
                         ).order("created_at", desc=True).execute().data
-                    
-                        # Count only messages that are either direct to this user OR general broadcast, and unread
-                        unread_count = sum(
-                            not m["is_read"] and (m["receiver_id"] == st.session_state.user["userid"] or (m["receiver_id"] is None and m["role"] is None))
-                            for m in messages
-                        )
-                    
+            
+                        # Fetch broadcast message_ids this user has already read
+                        read_result = supabase.table("message_reads").select("message_id").eq("user_id", user_id).execute()
+                        read_broadcast_ids = {r["message_id"] for r in read_result.data}
+            
+                        unread_count = 0
+                        for m in messages:
+                            if m["receiver_id"] == user_id and not m["is_read"]:
+                                unread_count += 1
+                            elif m["receiver_id"] is None and m["role"] is None and m["id"] not in read_broadcast_ids:
+                                unread_count += 1
+            
                         st.markdown(f"🔔 Unread Messages: **{unread_count}**")
-                    
+            
                         for msg in messages:
-                            with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
+                            is_personal = msg["receiver_id"] == user_id
+                            is_broadcast = msg["receiver_id"] is None and msg["role"] is None
+                            is_read = False
+            
+                            if is_personal:
+                                is_read = msg["is_read"]
+                            elif is_broadcast:
+                                is_read = msg["id"] in read_broadcast_ids
+            
+                            with st.expander(f"{'📨' if not is_read else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
                                 st.write(msg["body"])
-                    
-                                # ✅ Only mark as read if it's a personal message
-                                if not msg["is_read"] and msg["receiver_id"] == st.session_state.user["userid"]:
+            
+                                if is_personal and not is_read:
                                     supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
-                    
-                                # 🛑 Do NOT mark as read if it's a shared/broadcast message (receiver_id is null)
-                    
+            
+                                elif is_broadcast and not is_read:
+                                    supabase.table("message_reads").insert({
+                                        "message_id": msg["id"],
+                                        "user_id": user_id
+                                    }).execute()
+            
                     except Exception as e:
                         st.error(f"❌ Failed to load messages: {e}")
 
