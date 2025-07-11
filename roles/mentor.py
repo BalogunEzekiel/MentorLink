@@ -129,6 +129,7 @@ def show():
     
             except Exception as e:
                 st.error(f"❌ Failed to load messages: {e}")
+
                 
     # --- Availability Tab ---
     with tabs[1]:
