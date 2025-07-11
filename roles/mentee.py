@@ -79,61 +79,65 @@ def show():
     
     # --- Dashboard Tab ---
     with tabs[0]:
-        st.title("Mentee Dashboard")
-    
-        sub_tab = st.radio(
-            "Select Section",
-            ["📊 Summary", "🙍‍♀️ Profile", "📥 Inbox"],
-            horizontal=True
-        )
-    
-        if sub_tab == "📊 Summary":
-            # Your summary content here
-            st.markdown("### 📊 Summary")
-            st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
-            st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
-    
-        elif sub_tab == "🙍‍♀️ Profile":
-            # Your update profile content here
-            st.markdown("### 🙍‍♀️ Profile")
-            avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
-            st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
-    
-            with st.form("mentee_profile_form"):
-                name = st.text_input("Name", value=profile.get("name", ""))
-                bio = st.text_area("Bio", value=profile.get("bio", ""))
-                skills = st.text_area("Skills", value=profile.get("skills", ""))
-                goals = st.text_area("Goals", value=profile.get("goals", ""))
-                profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
-                submit_btn = st.form_submit_button("Update Profile")
-    
-                if submit_btn:
-                    # [Upload image and save logic... same as yours]
-    
-        elif sub_tab == "📥 Inbox":
-            st.subheader("📥 Inbox")
-    
-            user_role = st.session_state.get("user_role")
-    
-            try:
-                messages = supabase.table("messages") \
-                    .select("*") \
-                    .or_(f"receiver_id.eq.{user_id},role.eq.{user_role},role.is.null") \
-                    .order("created_at", desc=True) \
-                    .execute().data or []
-    
-                unread_count = sum(not m["is_read"] for m in messages)
-                st.markdown(f"🔔 Unread Messages: **{unread_count}**")
-    
-                for msg in messages:
-                    with st.expander(f"{'📨' if not msg['is_read'] else '📄'} {msg['title']} ({msg['created_at'][:16]})"):
-                        st.write(msg["body"])
-                        if not msg["is_read"]:
-                            supabase.table("messages").update({"is_read": True}).eq("id", msg["id"]).execute()
-    
-            except Exception as e:
-                st.error(f"❌ Failed to load messages: {e}")
+        st.subheader("Welcome to your Mentee Dashboard")
+        try:
+            profile_data = supabase.table("profile").select("*").eq("userid", user_id).execute().data
+            profile = profile_data[0] if profile_data else {}
 
+            total_requests = supabase.table("mentorshiprequest").select("mentorshiprequestid").eq("menteeid", user_id).execute().data or []
+            total_sessions = supabase.table("session").select("sessionid").eq("menteeid", user_id).execute().data or []
+        except Exception as e:
+            st.error(f"🚫 Failed to fetch profile or summary data: {e}")
+            return
+
+        st.markdown("### 📊 Summary")
+        st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
+        st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
+
+        st.markdown("### 🙍‍♀️ Update Profile")
+        avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
+        st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
+
+        with st.form("mentee_profile_form"):
+            name = st.text_input("Name", value=profile.get("name", ""))
+            bio = st.text_area("Bio", value=profile.get("bio", ""))
+            skills = st.text_area("Skills", value=profile.get("skills", ""))
+            goals = st.text_area("Goals", value=profile.get("goals", ""))
+            profile_image = st.file_uploader("Upload Profile Picture", type=["jpg", "jpeg", "png"])
+            submit_btn = st.form_submit_button("Update Profile")
+
+            if submit_btn:
+                update_data = {
+                    "userid": user_id,
+                    "name": name,
+                    "bio": bio,
+                    "skills": skills,
+                    "goals": goals,
+                }
+
+                if profile_image:
+                    file_extension = profile_image.name.split(".")[-1]
+                    file_name = f"{user_id}_{uuid.uuid4()}.{file_extension}"
+                    try:
+                        file_bytes = profile_image.getvalue()
+                        supabase.storage.from_("profilepics").upload(
+                            path=file_name,
+                            file=file_bytes,
+                            file_options={"content-type": profile_image.type, "x-upsert": "true"}
+                        )
+                        public_url = supabase.storage.from_("profilepics").get_public_url(file_name)
+                        update_data["profile_image_url"] = public_url
+                    except Exception as e:
+                        st.warning(f"❗ Image upload failed: {e}")
+                        update_data["profile_image_url"] = f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&size=256"
+
+                try:
+                    supabase.table("profile").upsert(update_data, on_conflict=["userid"]).execute()
+                    st.success("✅ Profile updated successfully!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to update profile: {e}")
+                    
     # --- Browse Mentors Tab ---
     with tabs[1]:
         st.subheader("Browse Available Mentors")
