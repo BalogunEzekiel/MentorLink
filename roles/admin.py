@@ -426,18 +426,31 @@ def show():
             if not title or not body:
                 st.warning("Please provide both title and body.")
             else:
-                message_data = {
-                    "id": str(uuid.uuid4()),
-                    "sender_id": st.session_state.get("user_id"),
-                    "receiver_id": receiver_id,
-                    "role": role,
-                    "title": title,
-                    "body": body,
-                    "created_at": datetime.now().isoformat(),
-                    "is_read": False
-                }
-                supabase.table("messages").insert(message_data).execute()
-                st.success("✅ Message sent successfully!")
+                sender_id = st.session_state.get("user_id")
+            
+                if not sender_id:
+                    st.error("Your session is missing a user_id.")
+                else:
+                    message_data = {
+                        "id": str(uuid.uuid4()),
+                        "sender_id": sender_id,
+                        "receiver_id": receiver_id,  # Can be None
+                        "role": role,  # Can be None
+                        "title": title,
+                        "body": body,
+                        "created_at": datetime.now().isoformat(),
+                        "is_read": False
+                    }
+            
+                    # Show data for debugging
+                    st.write("📦 Inserting:", message_data)
+            
+                    try:
+                        supabase.table("messages").insert(message_data).execute()
+                        st.success("✅ Message sent successfully!")
+                    except Exception as e:
+                        st.error(f"❌ Failed to insert message: {e}")
+
     
         # --- Analytics Tab ---
     with tabs[5]:
