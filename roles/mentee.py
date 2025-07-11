@@ -79,15 +79,13 @@ def show():
     
     # --- Dashboard Tab ---
     with tabs[0]:
-        st.title("Mentee Dashboard")
     
         # Layout: 2 columns (left for buttons, right for content)
-        col1, col2 = st.columns([1, 4])
+        col1, col2 = st.columns([1, 3])
     
         with col1:
-            st.markdown("### Menu")
             summary_btn = st.button("📊 Summary")
-            profile_btn = st.button("🙍‍♀️ Profile")
+            profile_btn = st.button("🙍‍♀️ Update Profile")
             inbox_btn = st.button("📥 Inbox")
     
         # Use session state to track selected tab
@@ -109,8 +107,8 @@ def show():
                 st.write(f"- 📥 Sent Requests: **{len(total_requests)}**")
                 st.write(f"- 📅 Sessions Booked: **{len(total_sessions)}**")
     
-            elif sub_tab == "🙍‍♀️ Profile":
-                st.markdown("### 🙍‍♀️ Profile")
+            elif sub_tab == "🙍‍♀️ Update Profile":
+                st.markdown("### 🙍‍♀️ Update Profile")
     
                 avatar_url = profile.get("profile_image_url") or f"https://ui-avatars.com/api/?name={profile.get('name', 'Mentee').replace(' ', '+')}&size=128"
                 st.image(avatar_url, width=100, caption=profile.get("name", "Your Profile"))
