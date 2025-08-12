@@ -136,7 +136,7 @@ def show():
                     st.warning("⚠️ User ID not found in session. Please log in again.")
                 else:
                     try:
-                        # Fetch messages: personal OR broadcast
+                        # Fetch messages: personal OR broadcast (receiver_id IS NULL AND role IS NULL)
                         messages = (
                             supabase.table("messages")
                             .select("*")
@@ -147,7 +147,12 @@ def show():
                         )
             
                         # Fetch broadcast message_ids this user has already read
-                        read_result = supabase.table("message_reads").select("message_id").eq("user_id", user_id).execute()
+                        read_result = (
+                            supabase.table("message_reads")
+                            .select("message_id")
+                            .eq("user_id", user_id)
+                            .execute()
+                        )
                         read_broadcast_ids = {r["message_id"] for r in read_result.data}
             
                         unread_count = 0
@@ -183,6 +188,7 @@ def show():
             
                     except Exception as e:
                         st.error(f"❌ Failed to load messages: {e}")
+
 
                
     # --- Availability Tab ---
