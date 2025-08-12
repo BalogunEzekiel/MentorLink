@@ -136,11 +136,11 @@ def show():
                     st.warning("⚠️ User ID not found in session. Please log in again.")
                 else:
                     try:
-                        # Fetch messages: personal OR broadcast (receiver_id IS NULL AND role IS NULL)
+                        # Ensure UUID is wrapped in quotes for PostgREST
                         messages = (
                             supabase.table("messages")
                             .select("*")
-                            .or_(f"receiver_id.eq.{user_id},and(receiver_id.is.null(),role.is.null())")
+                            .or_(f'receiver_id.eq."{user_id}",and(receiver_id.is.null(),role.is.null())')
                             .order("created_at", desc=True)
                             .execute()
                             .data
