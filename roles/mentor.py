@@ -137,9 +137,14 @@ def show():
                 else:
                     try:
                         # Fetch messages: personal OR broadcast
-                        messages = supabase.table("messages").select("*").or_(
-                            f"receiver_id.eq.{user_id},and(receiver_id.is.null(),role.is.null())"
-                        ).order("created_at", desc=True).execute().data
+                        messages = (
+                            supabase.table("messages")
+                            .select("*")
+                            .or_(f"receiver_id.eq.{user_id},and(receiver_id.is.null(),role.is.null())")
+                            .order("created_at", desc=True)
+                            .execute()
+                            .data
+                        )
             
                         # Fetch broadcast message_ids this user has already read
                         read_result = supabase.table("message_reads").select("message_id").eq("user_id", user_id).execute()
