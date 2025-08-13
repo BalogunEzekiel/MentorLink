@@ -223,12 +223,14 @@ def show():
         if not mentors:
             st.info("No mentors available.")
         else:
-            # Build skill filter
+            # Build skill filter safely
             all_skills = []
             for mentor in mentors:
-                skills = mentor.get("profile", {}).get("skills", "")
+                profile = mentor.get("profile") or {}  # ✅ Avoid NoneType errors
+                skills = profile.get("skills", "")
                 if skills:
                     all_skills.extend([skill.strip().lower() for skill in skills.split(",")])
+    
             unique_skills = sorted(set(all_skills))
     
             selected_skill = st.selectbox("🎯 Filter by Skill", ["All"] + unique_skills)
@@ -236,9 +238,9 @@ def show():
             if selected_skill != "All":
                 mentors = [
                     m for m in mentors
-                    if selected_skill.lower() in (m.get("profile", {}).get("skills", "").lower())
+                    if selected_skill.lower() in ((m.get("profile") or {}).get("skills", "").lower())
                 ]
-    
+        
             # Fetch used availability slots from session table
             try:
                 matched_sessions = supabase.table("session").select("availabilityid").execute().data or []
