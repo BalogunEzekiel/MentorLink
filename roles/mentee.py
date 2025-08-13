@@ -164,10 +164,11 @@ def show():
                     messages = supabase.table("messages") \
                         .select("*") \
                         .or_(
-                            f"receiver_id.eq.\"{user_id}\",and(receiver_id.is.null(),role.is.null())"
+                            f"and(receiver_id.eq.{user_id}),and(receiver_id.is.null(),role.is.null())"
                         ) \
                         .order("created_at", desc=True) \
                         .execute().data
+
             
                     # Fetch IDs of broadcast messages already read by this user
                     read_result = supabase.table("message_reads").select("message_id").eq("user_id", user_id).execute()
