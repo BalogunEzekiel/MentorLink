@@ -140,7 +140,7 @@ def show():
                         messages = (
                             supabase.table("messages")
                             .select("*")
-                            .or_(f'receiver_id.eq."{user_id}",receiver_id.is.null().and(role.is.null())')
+                            .or_(f"receiver_id.eq.{user_id},and(receiver_id.is.null,role.is.null)")
                             .order("created_at", desc=True)
                             .execute()
                             .data
