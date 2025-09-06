@@ -17,6 +17,9 @@ from roles import admin, mentor, mentee
 from utils.footer import app_footer
 from components import SendBroadcast
 
+# ✅ Import matching utils
+from utils.matching import UserProfile, recommend_mentors
+
 # ✅ Set app configuration
 st.set_page_config(page_title="MentorLink", layout="wide")
 
@@ -114,3 +117,47 @@ if not st.session_state.get("authenticated", False):
 if st.session_state.get("do_rerun"):
     st.session_state["do_rerun"] = False
     st.rerun()
+
+# ----------------- 🔗 MentorLink Auto-Match Demo -----------------
+st.title("🔗 MentorLink Auto-Match Demo")
+
+# Example mentee
+mentee = UserProfile(
+    user_id="u001",
+    role="mentee",
+    bio="Aspiring product designer interested in UX and problem solving",
+    skills=["UI/UX", "Prototyping"],
+    goals="Improve my product design skills and learn about design systems"
+)
+
+# Example mentors
+mentors = [
+    UserProfile(
+        user_id="m101",
+        role="mentor",
+        bio="Senior UX designer with 10 years experience in design systems and usability testing",
+        skills=["UI/UX", "Design Systems", "Prototyping"],
+        goals="Guide mentees in building user experiences"
+    ),
+    UserProfile(
+        user_id="m102",
+        role="mentor",
+        bio="Marketing specialist passionate about branding and customer acquisition",
+        skills=["Marketing", "Branding"],
+        goals="Help mentees with effective marketing campaigns"
+    ),
+]
+
+# Recommend mentors
+recommendations = recommend_mentors(mentee, mentors)
+
+# Display in Streamlit
+st.subheader("Recommended Mentors for You")
+for rec in recommendations:
+    st.markdown(f"""
+    **Mentor ID:** {rec['mentorId']}  
+    **Match Score:** {rec['score'] * 100:.0f}%  
+    **Shared Skills:** {", ".join(rec['sharedSkills']) if rec['sharedSkills'] else "None"}  
+    **Bio:** {rec['bio']}
+    ---
+    """)
